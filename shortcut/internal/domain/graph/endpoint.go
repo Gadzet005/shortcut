@@ -64,8 +64,8 @@ func (e Endpoint) Run(
 		return RunNodeResponse{}, errorsutils.WrapFail(err, "make request")
 	}
 	if !resp.IsSuccess() {
-		return RunNodeResponse{}, errorsutils.WrapFail(
-			err, "request failed with status code %d and body %s",
+		return RunNodeResponse{}, errorsutils.Errorf(
+			"request failed with status code %d and body %s",
 			resp.StatusCode(), resp.String(),
 		)
 	}
