@@ -6,27 +6,15 @@ import (
 	"github.com/Gadzet005/shortcut/shortcut/internal/domain/graph"
 )
 
-type RunGraphRequest struct {
-	GraphID graph.GraphID
+type Request struct {
+	GraphID graph.ID
 	Data    []byte
 }
 
-type RunGraphResponse struct {
+type Response struct {
 	Data []byte
 }
 
 type UseCase interface {
-	RunGraph(ctx context.Context, input RunGraphRequest) (RunGraphResponse, error)
-}
-
-type nodeResult map[graph.ItemID]graph.Item
-type nodeResults map[graph.NodeID]nodeResult
-
-func (r nodeResults) Get(nodeID graph.NodeID, itemID graph.ItemID) (graph.Item, bool) {
-	nodeResult, ok := r[nodeID]
-	if !ok {
-		return graph.Item{}, false
-	}
-	item, ok := nodeResult[itemID]
-	return item, ok
+	RunGraph(ctx context.Context, input Request) (Response, error)
 }

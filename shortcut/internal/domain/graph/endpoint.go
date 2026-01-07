@@ -11,7 +11,7 @@ import (
 
 func NewEndpoint(
 	id NodeID,
-	dependencies []ItemID,
+	dependencies []Dependency,
 	backend Backend,
 	path string,
 ) Endpoint {
@@ -25,13 +25,13 @@ func NewEndpoint(
 
 type Endpoint struct {
 	id           NodeID
-	dependencies []ItemID
+	dependencies []Dependency
 	backend      Backend
 	path         string
 }
 
 type Backend struct {
-	BaseURL url.URL
+	BaseURL *url.URL
 }
 
 func (e Endpoint) URL() string {
@@ -42,7 +42,7 @@ func (e Endpoint) ID() NodeID {
 	return e.id
 }
 
-func (e Endpoint) Dependencies() []ItemID {
+func (e Endpoint) Dependencies() []Dependency {
 	return e.dependencies
 }
 
@@ -51,7 +51,7 @@ func (e Endpoint) Run(
 	logger *zap.Logger,
 	req RunNodeRequest,
 ) (RunNodeResponse, error) {
-	formData := make(map[string]string, len(e.dependencies))
+	formData := make(map[string]string, len(req.Items))
 	for id, item := range req.Items {
 		formData[id.String()] = string(item.Data)
 	}
@@ -59,6 +59,7 @@ func (e Endpoint) Run(
 	resp, err := req.Client.R().
 		SetContext(ctx).
 		SetFormData(formData).
+		SetDoNotParseResponse(true).
 		Post(e.URL())
 	if err != nil {
 		return RunNodeResponse{}, errorsutils.WrapFail(err, "make request")
@@ -70,7 +71,7 @@ func (e Endpoint) Run(
 		)
 	}
 
-	body := resp.RawBody()
+	body := resp.RawResponse.Body
 	defer body.Close()
 
 	data, err := multipartutils.ReadMultipartData(resp.Header(), body)
@@ -78,9 +79,9 @@ func (e Endpoint) Run(
 		return RunNodeResponse{}, errorsutils.WrapFail(err, "read multipart data")
 	}
 
-	items := make(map[ItemName]Item, len(data))
+	items := make(map[ItemID]Item, len(data))
 	for id, item := range data {
-		items[ItemName(id)] = Item{Data: item}
+		items[ItemID(id)] = Item{Data: item}
 	}
 
 	return RunNodeResponse{Items: items}, nil

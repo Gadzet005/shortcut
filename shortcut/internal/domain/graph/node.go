@@ -2,21 +2,15 @@ package graph
 
 import (
 	"context"
-	"strings"
 
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
 )
 
 const (
-	InputNodeID     NodeID   = "input"
-	DefaultItemName ItemName = "default"
+	InputNodeID   NodeID = "input"
+	DefaultItemID ItemID = "default"
 )
-
-var DefaultItemID = ItemID{
-	NodeID: InputNodeID,
-	Name:   DefaultItemName,
-}
 
 type NodeID string
 
@@ -24,28 +18,20 @@ func (i NodeID) String() string {
 	return string(i)
 }
 
-type ItemName string
-
-func (i ItemName) String() string {
-	return string(i)
-}
-
-type ItemID struct {
-	NodeID NodeID
-	Name   ItemName
-}
+type ItemID string
 
 func (i ItemID) String() string {
-	var builder strings.Builder
-	builder.Grow(len(i.NodeID) + len(i.Name) + 1)
-	builder.WriteString(i.NodeID.String())
-	builder.WriteString(".")
-	builder.WriteString(i.Name.String())
-	return builder.String()
+	return string(i)
 }
 
 type Item struct {
 	Data []byte
+}
+
+type Dependency struct {
+	NodeID          NodeID
+	ItemID          ItemID
+	OverridenItemID ItemID
 }
 
 type RunNodeRequest struct {
@@ -54,7 +40,7 @@ type RunNodeRequest struct {
 }
 
 type RunNodeResponse struct {
-	Items map[ItemName]Item
+	Items map[ItemID]Item
 }
 
 type Node interface {
@@ -64,5 +50,5 @@ type Node interface {
 		req RunNodeRequest,
 	) (RunNodeResponse, error)
 	ID() NodeID
-	Dependencies() []ItemID
+	Dependencies() []Dependency
 }

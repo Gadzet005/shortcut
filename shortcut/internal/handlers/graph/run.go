@@ -15,7 +15,7 @@ import (
 func (h handlerBase) RunGraph(c *gin.Context) {
 	logger := h.logger.Named("RunGraph")
 
-	graphID := c.Request.PathValue("graph_id")
+	graphID := c.Param("graph_id")
 	if graphID == "" {
 		logger.Warn("graph_id is required")
 		c.JSON(http.StatusBadRequest, errorsutils.NewJSONError("graph_id is required"))
@@ -31,8 +31,8 @@ func (h handlerBase) RunGraph(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.runGraphUC.RunGraph(c.Request.Context(), rungraph.RunGraphRequest{
-		GraphID: graph.GraphID(graphID),
+	resp, err := h.runGraphUC.RunGraph(c.Request.Context(), rungraph.Request{
+		GraphID: graph.ID(graphID),
 		Data:    data,
 	})
 	switch {

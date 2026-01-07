@@ -1,5 +1,5 @@
 package graph
 
-type GraphRepo interface {
-	GetGraph(id GraphID) (Graph, error)
+type Repo interface {
+	GetGraph(id ID) (Graph, error)
 }

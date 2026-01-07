@@ -12,7 +12,7 @@ import (
 func NewUseCase(
 	client *resty.Client,
 	logger *zap.Logger,
-	graphRepo graph.GraphRepo,
+	graphRepo graph.Repo,
 ) useCase {
 	return useCase{
 		client:    client,
@@ -24,13 +24,13 @@ func NewUseCase(
 type useCase struct {
 	client    *resty.Client
 	logger    *zap.Logger
-	graphRepo graph.GraphRepo
+	graphRepo graph.Repo
 }
 
-func (u useCase) RunGraph(ctx context.Context, input RunGraphRequest) (RunGraphResponse, error) {
+func (u useCase) RunGraph(ctx context.Context, input Request) (Response, error) {
 	g, err := u.graphRepo.GetGraph(input.GraphID)
 	if err != nil {
-		return RunGraphResponse{}, errorsutils.WrapFail(err, "get graph")
+		return Response{}, errorsutils.WrapFail(err, "get graph")
 	}
 
 	resp, err := g.Run(ctx, u.logger, graph.RunNodeRequest{
@@ -40,14 +40,14 @@ func (u useCase) RunGraph(ctx context.Context, input RunGraphRequest) (RunGraphR
 		},
 	})
 	if err != nil {
-		return RunGraphResponse{}, errorsutils.WrapFail(err, "run graph")
+		return Response{}, errorsutils.WrapFail(err, "run graph")
 	}
 
-	item, ok := resp.Items[graph.DefaultItemName]
+	item, ok := resp.Items[graph.DefaultItemID]
 	if !ok {
-		return RunGraphResponse{}, errorsutils.WrapFail(err, "get item")
+		return Response{}, errorsutils.WrapFail(err, "get item")
 	}
-	return RunGraphResponse{
+	return Response{
 		Data: item.Data,
 	}, nil
 }

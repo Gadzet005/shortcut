@@ -29,11 +29,15 @@ func NewService(config Config, logger *zap.Logger) (service, error) {
 	graphRepo := graphrepostub.NewStubRepo()
 	runGraphUC := rungraph.NewUseCase(client, logger, graphRepo)
 
+	r.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
+
 	{
 		handlerBase := graphhandler.NewHandlerBase(logger, runGraphUC)
 
-		g := r.Group("/graphs")
-		g.POST("/run", handlerBase.RunGraph)
+		g := r.Group("/graph")
+		g.POST("/:graph_id/run", handlerBase.RunGraph)
 	}
 
 	return service{
