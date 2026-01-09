@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  shortcut:
+    build:
+      context: ../..
+      dockerfile: shortcut/Dockerfile
+      shm_size: '2gb'
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "8080:8080"
+    depends_on:
+      mock-service-8081:
+        condition: service_healthy
+      mock-service-8082:
+        condition: service_healthy
+      mock-service-8083:
+        condition: service_healthy
+    networks:
+      - test-network
+    environment:
+      - MOCK_SERVICE_8080=http://mock-service-8081:8080
+      - MOCK_SERVICE_8081=http://mock-service-8082:8080
+      - MOCK_SERVICE_8082=http://mock-service-8083:8080
+    command: ["-c", "./configs/base.yaml,./configs/dev.yaml"]
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  mock-service-8081:
+    build:
+      context: ../..
+      dockerfile: tests/infra/mock-service/Dockerfile
+      shm_size: '2gb'
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "8081:8080"
+    command: ["-port", "8080"]
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  mock-service-8082:
+    build:
+      context: ../..
+      dockerfile: tests/infra/mock-service/Dockerfile
+      shm_size: '2gb'
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "8082:8080"
+    command: ["-port", "8080"]
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  mock-service-8083:
+    build:
+      context: ../..
+      dockerfile: tests/infra/mock-service/Dockerfile
+      shm_size: '2gb'
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "8083:8080"
+    command: ["-port", "8080"]
+    networks:
+      - test-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+networks:
+  test-network:
+    driver: bridge

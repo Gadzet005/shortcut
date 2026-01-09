@@ -21,10 +21,14 @@ prod:
 	go run $(MAIN_PATH)/main.go -c "./shortcut/configs/base.yaml,./shortcut/configs/prod.yaml"
 
 test:
-	go test -v -race ./...
+	go test -v -race -short ./...
+
+test-e2e: podman-up
+	go test -v -race ./tests/e2e/...
+	$(MAKE) podman-down
 
 test-coverage:
-	go test -v -race -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./...
+	go test -v -race -short -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./...
 	go tool cover -html=$(COVERAGE_FILE) -o $(COVERAGE_HTML)
 
 lint:
@@ -50,5 +54,36 @@ clean:
 
 deps:
 	go mod download
+
+podman-build:
+	podman-compose -f tests/infra/docker-compose.yaml build
+
+podman-up:
+	podman-compose -f tests/infra/docker-compose.yaml up -d
+
+podman-down:
+	podman-compose -f tests/infra/docker-compose.yaml down -v
+
+podman-logs:
+	podman-compose -f tests/infra/docker-compose.yaml logs -f shortcut
+
+podman-logs-shortcut:
+	podman-compose -f tests/infra/docker-compose.yaml logs -f shortcut
+
+podman-logs-mock-8081:
+	podman-compose -f tests/infra/docker-compose.yaml logs -f mock-service-8081
+
+podman-logs-mock-8082:
+	podman-compose -f tests/infra/docker-compose.yaml logs -f mock-service-8082
+
+podman-logs-mock-8083:
+	podman-compose -f tests/infra/docker-compose.yaml logs -f mock-service-8083
+
+podman-logs-all-mocks:
+	podman-compose -f tests/infra/docker-compose.yaml logs -f mock-service-8081 mock-service-8082 mock-service-8083
+
+podman-clean:
+	podman-compose -f tests/infra/docker-compose.yaml down -v
+	podman system prune -af
 
 check: fmt vet lint test
