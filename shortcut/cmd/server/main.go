@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/Gadzet005/shortcut/shortcut/internal/app"
 	"github.com/Gadzet005/shortcut/shortcut/pkg/lifecycle"
 	configutils "github.com/Gadzet005/shortcut/shortcut/pkg/utils/config"
+	graphlocalrepo "github.com/Gadzet005/shortcut/shortcut/internal/repo/graph/local"
 	"github.com/spf13/pflag"
 	"go.uber.org/zap"
 )
@@ -29,7 +31,19 @@ func main() {
 		log.Fatalf("failed to create logger: %v", err)
 	}
 
-	service, err := app.NewService(config, logger)
+	graphConfigs, err := setupServices(config.Namespace)
+	if err != nil {
+		log.Fatalf("failed to setup configs: %v", err)
+	}
+	
+	logger.Info("Start with config of graphs", zap.String("config", fmt.Sprintf("%v", graphConfigs)))
+
+	repo := graphlocalrepo.NewLocalRepo(graphConfigs)
+	if err != nil {
+		log.Fatalf("failed to create repo: %v", err)
+	}
+
+	service, err := app.NewService(config, logger, repo)
 	if err != nil {
 		logger.Fatal("failed to create service", zap.Error(err))
 	}

@@ -2,3 +2,18 @@ env: dev
 
 http-server:
   port: 8080
+
+namespace:
+  orders:
+    services:
+      - shortcut/configs/orders/services/orders.yaml
+      - shortcut/configs/orders/services/users.yaml
+    graphs:
+      - shortcut/configs/orders/graphs/get-orders.yaml
+  mock:
+    services:
+      - shortcut/configs/mock/services/echo1.yaml
+      - shortcut/configs/mock/services/echo2.yaml
+      - shortcut/configs/mock/services/sum.yaml
+    graphs:
+      - shortcut/configs/mock/graphs/sum-echoes.yaml

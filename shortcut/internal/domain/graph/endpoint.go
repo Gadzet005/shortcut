@@ -14,12 +14,14 @@ func NewEndpoint(
 	dependencies []Dependency,
 	backend Backend,
 	path string,
+	returnIDs 	 []ItemID,
 ) Endpoint {
 	return Endpoint{
 		id:           id,
 		dependencies: dependencies,
 		backend:      backend,
 		path:         path,
+		returnIDs:    returnIDs,
 	}
 }
 
@@ -28,6 +30,7 @@ type Endpoint struct {
 	dependencies []Dependency
 	backend      Backend
 	path         string
+	returnIDs 	 []ItemID
 }
 
 type Backend struct {
@@ -44,6 +47,15 @@ func (e Endpoint) ID() NodeID {
 
 func (e Endpoint) Dependencies() []Dependency {
 	return e.dependencies
+}
+
+func (e Endpoint) WithDependencies(newDependencies []Dependency) Node {
+	e.dependencies = newDependencies
+	return e
+}
+
+func (e Endpoint) ReturnIDs() []ItemID {
+	return e.returnIDs
 }
 
 func (e Endpoint) Run(

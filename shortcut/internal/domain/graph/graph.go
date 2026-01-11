@@ -18,6 +18,7 @@ func (i ID) String() string {
 type Graph struct {
 	ID    ID
 	Nodes map[NodeID]Node
+	FailureStrategy FailureStrategy 
 }
 
 func (g Graph) Run(
@@ -30,11 +31,12 @@ func (g Graph) Run(
 		results.Add(InputNodeID, id, item)
 	}
 
-	levelIDs, err := topSort(g)
+	levelIDs, err := TopSort(g)
 	if err != nil {
 		return RunNodeResponse{}, errorsutils.WrapFail(err, "top sort by levels")
 	}
 	levelIDs = levelIDs[1:] // входную вершину не посещаем
+
 
 	for _, levelNodeIDs := range levelIDs {
 		level := make([]Node, 0, len(levelNodeIDs))

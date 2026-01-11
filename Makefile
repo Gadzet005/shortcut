@@ -15,7 +15,7 @@ build:
 	go build -o $(BUILD_DIR)/$(APP_NAME) $(MAIN_PATH)
 
 dev:
-	go run $(MAIN_PATH)/main.go
+	go run $(MAIN_PATH)/*.go
 
 prod:
 	go run $(MAIN_PATH)/main.go -c "./shortcut/configs/base.yaml,./shortcut/configs/prod.yaml"

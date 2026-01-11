@@ -1,0 +1,19 @@
+nodes:
+    sum:
+        endpoint_id: sum/sum
+        dependencies:
+            echo1/echo:
+              - resp
+            echo2/echo:
+              - resp
+    echo1:
+        endpoint_id: echo1/echo
+        dependencies:
+            input:
+              - default
+    echo2:
+        endpoint_id: echo2/echo
+        dependencies:
+            input:
+              - default
+failure_strategy: ignore
