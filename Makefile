@@ -18,7 +18,7 @@ dev:
 	go run $(MAIN_PATH)/*.go
 
 prod:
-	go run $(MAIN_PATH)/main.go -c "./shortcut/configs/base.yaml,./shortcut/configs/prod.yaml"
+	go run $(MAIN_PATH)/main.go -c "./tests/e2e/configs/base.yaml,./tests/e2e/configs/prod.yaml"
 
 test:
 	go test -v -race -short ./...

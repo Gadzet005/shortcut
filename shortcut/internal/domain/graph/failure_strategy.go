@@ -3,19 +3,20 @@ package graph
 type FailureStrategy string
 
 const (
+	AbsentFailureStrategy FailureStrategy = ""
 	IgnoreFailureStrategy FailureStrategy = "ignore"
 	RevertFailureStrategy FailureStrategy = "revert"
 )
 
-func ParseFailureStrategy(fs string) FailureStrategy {
+func ParseFailureStrategy(fs string) (FailureStrategy, bool) {
 	retFs := FailureStrategy(fs)
 
 	switch retFs {
 	case IgnoreFailureStrategy,
 		RevertFailureStrategy:
-		return FailureStrategy(fs)
+		return FailureStrategy(fs), true
 	default:
-		return IgnoreFailureStrategy
+		return IgnoreFailureStrategy, false
 	}
 }
 

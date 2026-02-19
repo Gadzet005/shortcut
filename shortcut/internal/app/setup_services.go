@@ -1,18 +1,19 @@
-package main
+package app
 
 import (
 	"net/url"
 	"strings"
 
-	"github.com/Gadzet005/shortcut/shortcut/internal/app"
 	"github.com/Gadzet005/shortcut/shortcut/internal/domain/graph"
 	configutils "github.com/Gadzet005/shortcut/shortcut/pkg/utils/config"
 	errorsutils "github.com/Gadzet005/shortcut/shortcut/pkg/utils/errors"
 	"github.com/Gadzet005/shortcut/shortcut/pkg/utils/sets"
 	"github.com/Gadzet005/shortcut/shortcut/pkg/utils/slices"
+
+	"go.uber.org/zap"
 )
 
-func setupServices(namespaceConfigs map[string]app.NamespaceConfig) (map[graph.ID]graph.Graph, error) {
+func setupServices(namespaceConfigs map[string]NamespaceConfig, logger *zap.Logger) (map[graph.ID]graph.Graph, error) {
 	serviceMap := make(map[graph.ID]graph.Graph)
 
 	for namespace, namespaceConfig := range(namespaceConfigs) {
@@ -61,10 +62,19 @@ func setupServices(namespaceConfigs map[string]app.NamespaceConfig) (map[graph.I
 				nodes[graph.NodeID(nodeConfig.EndpointID)] = node 
 			}
 
+			parsedFailureStrategy, ok := graph.ParseFailureStrategy(gc.FailureStrategy)
+			if ok == false {
+				logger.Info("Failure strategy not specified for graph %s. Ignore strategy will be used by default.", zap.String("name", graphName))
+			}
+
 			retGraph := graph.Graph{
 				ID: graph.ID(id),
 				Nodes: nodes,
-				FailureStrategy: graph.ParseFailureStrategy(gc.FailureStrategy),
+				FailureStrategy: parsedFailureStrategy,
+			}
+
+			if retGraph.FailureStrategy == graph.AbsentFailureStrategy {
+
 			}
 
 			numRetNodes := 0
@@ -107,7 +117,7 @@ func readServiceConfigs(configsPath []string) (map[string]graph.Node, *sets.Set[
 			return nil, nil, errorsutils.Errorf("Found duplicate service with name %s", serviceName)
 		}
 
-		config, err := configutils.LoadConfig[app.ServiceConfig]([]string{configPath})
+		config, err := configutils.LoadConfig[ServiceConfig]([]string{configPath})
 		if err != nil {
 			return nil, nil, errorsutils.WrapFail(err, "load service config")
 		}
@@ -143,8 +153,8 @@ func readServiceConfigs(configsPath []string) (map[string]graph.Node, *sets.Set[
 	return serviceConfigs, existingDependencies, nil
 }
 
-func readGraphConfigs(configsPath []string) (map[string]app.GraphConfig, error) {
-	graphConfigs := make(map[string]app.GraphConfig)
+func readGraphConfigs(configsPath []string) (map[string]GraphConfig, error) {
+	graphConfigs := make(map[string]GraphConfig)
 
 	for _, configPath := range(configsPath) {
 		graphName := getFilenameFromPath(configPath)
@@ -154,7 +164,7 @@ func readGraphConfigs(configsPath []string) (map[string]app.GraphConfig, error) 
 			return nil, errorsutils.Errorf("Found duplicate graph with name %s", graphName)
 		}
 
-		config, err := configutils.LoadConfig[app.GraphConfig]([]string{configPath})
+		config, err := configutils.LoadConfig[GraphConfig]([]string{configPath})
 		if err != nil {
 			return nil, errorsutils.WrapFail(err, "load graph config")
 		}

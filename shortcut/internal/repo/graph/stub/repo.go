@@ -77,6 +77,7 @@ func (s *StubRepo) GetGraph(id graph.ID) (graph.Graph, error) {
 					BaseURL: &s.echo1Backend,
 				},
 				echoPath,
+				[]graph.ItemID{"resp"},
 			),
 			echo2Node: graph.NewEndpoint(
 				echo2Node,
@@ -85,6 +86,7 @@ func (s *StubRepo) GetGraph(id graph.ID) (graph.Graph, error) {
 					BaseURL: &s.echo2Backend,
 				},
 				echoPath,
+				[]graph.ItemID{"resp"},
 			),
 			sumNode: graph.NewEndpoint(
 				sumNode,
@@ -93,6 +95,7 @@ func (s *StubRepo) GetGraph(id graph.ID) (graph.Graph, error) {
 					BaseURL: &s.sumBackend,
 				},
 				sumPath,
+				[]graph.ItemID{"resp"},
 			),
 		},
 	}, nil

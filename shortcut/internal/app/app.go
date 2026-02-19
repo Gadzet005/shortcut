@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	errorsutils "github.com/Gadzet005/shortcut/shortcut/pkg/utils/errors"
 	graphhandler "github.com/Gadzet005/shortcut/shortcut/internal/handlers/graph"
 	"github.com/Gadzet005/shortcut/shortcut/internal/middleware"
 	graphlocalrepo "github.com/Gadzet005/shortcut/shortcut/internal/repo/graph/local"
@@ -16,9 +17,21 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewService(config Config, logger *zap.Logger, repo *graphlocalrepo.LocalRepo) (service, error) {
+func NewService(config Config, logger *zap.Logger) (service, error) {
 	if config.Env.IsProd() {
 		gin.SetMode(gin.ReleaseMode)
+	}
+
+	graphConfigs, err := setupServices(config.Namespace, logger)
+	if err != nil {
+		return service{}, errorsutils.WrapFail(err, "failed to setup services: %s", err.Error)
+	}
+	
+	logger.Info("Start with config of graphs", zap.String("config", fmt.Sprintf("%v", graphConfigs)))
+
+	repo := graphlocalrepo.NewLocalRepo(graphConfigs)
+	if err != nil {
+		return service{}, errorsutils.WrapFail(err, "failed to create repo: %s", err.Error)
 	}
 
 	r := gin.New()
