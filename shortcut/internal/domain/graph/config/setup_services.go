@@ -11,7 +11,7 @@ import (
 	"github.com/Gadzet005/shortcut/shortcut/pkg/utils/slices"
 )
 
-func SetupServices(namespaceConfigs map[string]NamespaceConfig, warnUser func (s string)) (map[graph.ID]graph.Graph, error) {
+func ParseConfig(namespaceConfigs map[string]NamespaceConfig, warnUser func (s string)) (map[graph.ID]graph.Graph, error) {
 	serviceMap := make(map[graph.ID]graph.Graph)
 
 	for namespace, namespaceConfig := range(namespaceConfigs) {

@@ -23,7 +23,7 @@ func NewService(config Config, serviceConfig graphconfig.Config,  logger *zap.Lo
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	graphConfigs, err := graphconfig.SetupServices(serviceConfig.Namespace, func (s string) {
+	graphConfigs, err := graphconfig.ParseConfig(serviceConfig.Namespace, func (s string) {
 		logger.Info(s)
 	})
 	if err != nil {
