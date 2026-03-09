@@ -3,4 +3,6 @@ env: dev
 http-server:
   port: 8080
 
-logs: "/var/log/shortcut/app.log"
+metrics-port: 2112
+
+logs: "test-infra/app.log"

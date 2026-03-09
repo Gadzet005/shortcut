@@ -11,7 +11,7 @@ import (
     "github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-func NewService(port int, logger *zap.Logger) (service, error) {
+func NewService(port uint, logger *zap.Logger) (service, error) {
 	return service{
 		logger: logger,
 		srv: &http.Server{
