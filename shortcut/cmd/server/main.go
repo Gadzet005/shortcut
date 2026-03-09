@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"path/filepath"
+	"fmt"
 	"log"
 	"os"
 
@@ -47,7 +49,7 @@ func main() {
 		log.Fatalf("failed to create logger: %v", err)
 	}
 
-	metricsService, err := metrics.NewService(2112, logger)
+	metricsService, err := metrics.NewService(config.MetricsPort, logger)
 	if err != nil {
 		logger.Fatal("failed to run metrics service", zap.Error(err))
 	}
@@ -67,29 +69,42 @@ func main() {
 }
 
 func newLogger(config app.Config) (*zap.Logger, error) {
-	f, err := os.OpenFile("/var/log/shortcut/app.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    defer f.Close()
-
-	writers := []zapcore.WriteSyncer{zapcore.AddSync(os.Stdout)}
+    var writers []zapcore.WriteSyncer
+    writers = append(writers, zapcore.AddSync(os.Stdout))
     
     if config.LogPath != "" {
+        logDir := filepath.Dir(config.LogPath)
+        if err := os.MkdirAll(logDir, 0755); err != nil {
+            return nil, fmt.Errorf("failed to create log directory: %w", err)
+        }
+        
         fileWriter := &lumberjack.Logger{
             Filename:   config.LogPath,
             MaxSize:    100,
             MaxBackups: 3,
             MaxAge:     28,
             Compress:   true,
+            LocalTime:  true,
         }
         writers = append(writers, zapcore.AddSync(fileWriter))
     }
 
-	if config.Env.IsDev() {
-		return zap.NewDevelopment()
-	}
-
-	return zap.NewProduction()
+    core := zapcore.NewCore(
+        zapcore.NewJSONEncoder(zap.NewProductionEncoderConfig()),
+        zapcore.NewMultiWriteSyncer(writers...),
+        zap.InfoLevel,
+    )
+    
+    if config.Env.IsDev() {
+        developmentConfig := zap.NewDevelopmentConfig()
+        developmentConfig.OutputPaths = []string{"stdout"}
+        if config.LogPath != "" {
+            developmentConfig.OutputPaths = append(developmentConfig.OutputPaths, config.LogPath)
+        }
+        return developmentConfig.Build()
+    }
+    
+    logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zap.ErrorLevel))
+    
+    return logger, nil
 }

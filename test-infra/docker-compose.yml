@@ -37,11 +37,13 @@ services:
     container_name: promtail
     volumes:
       - ./promtail-config.yaml:/etc/promtail/config.yaml
-      - /var/log:/var/log:ro  # Логи хоста
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro  # Логи Docker контейнеров
+      - ./:/host/project:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
     command: -config.file=/etc/promtail/config.yaml
     depends_on:
       - loki
 
 volumes:
   grafana-storage:
+  loki-data:
