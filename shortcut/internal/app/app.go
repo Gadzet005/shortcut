@@ -7,18 +7,34 @@ import (
 	"net/http"
 	"time"
 
+	errorsutils "github.com/Gadzet005/shortcut/shortcut/pkg/utils/errors"
 	graphhandler "github.com/Gadzet005/shortcut/shortcut/internal/handlers/graph"
 	"github.com/Gadzet005/shortcut/shortcut/internal/middleware"
-	graphrepostub "github.com/Gadzet005/shortcut/shortcut/internal/repo/graph/stub"
+	graphlocalrepo "github.com/Gadzet005/shortcut/shortcut/internal/repo/graph/local"
 	rungraph "github.com/Gadzet005/shortcut/shortcut/internal/usecases/run-graph"
+	graphconfig "github.com/Gadzet005/shortcut/shortcut/internal/domain/graph/config"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
 )
 
-func NewService(config Config, logger *zap.Logger) (service, error) {
+func NewService(config Config, serviceConfig graphconfig.Config,  logger *zap.Logger) (service, error) {
 	if config.Env.IsProd() {
 		gin.SetMode(gin.ReleaseMode)
+	}
+
+	graphConfigs, err := graphconfig.ParseConfig(serviceConfig.Namespace, func (s string) {
+		logger.Info(s)
+	})
+	if err != nil {
+		return service{}, errorsutils.WrapFail(err, "failed to setup services: %s", err.Error)
+	}
+	
+	logger.Info("Start with config of graphs", zap.String("config", fmt.Sprintf("%v", graphConfigs)))
+
+	repo := graphlocalrepo.NewLocalRepo(graphConfigs)
+	if err != nil {
+		return service{}, errorsutils.WrapFail(err, "failed to create repo: %s", err.Error)
 	}
 
 	r := gin.New()
@@ -26,8 +42,7 @@ func NewService(config Config, logger *zap.Logger) (service, error) {
 	r.Use(middleware.ZapRecovery(logger, true))
 
 	client := resty.New()
-	graphRepo := graphrepostub.NewStubRepo()
-	runGraphUC := rungraph.NewUseCase(client, logger, graphRepo)
+	runGraphUC := rungraph.NewUseCase(client, logger, repo)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
