@@ -11,6 +11,7 @@ import (
 	"github.com/Gadzet005/shortcut/shortcut/internal/middleware"
 	graphrepostub "github.com/Gadzet005/shortcut/shortcut/internal/repo/graph/stub"
 	rungraph "github.com/Gadzet005/shortcut/shortcut/internal/usecases/run-graph"
+	"github.com/Gadzet005/shortcut/shortcut/pkg/metrics"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
@@ -21,7 +22,10 @@ func NewService(config Config, logger *zap.Logger) (service, error) {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
+	serviceMetrics := metrics.NewHTTPServiceMetrics("shortcut") // TODO: add name of deployment to configs.
+
 	r := gin.New()
+	r.Use(serviceMetrics.MetricsMiddleware())
 	r.Use(middleware.ZapLogger(logger))
 	r.Use(middleware.ZapRecovery(logger, true))
 

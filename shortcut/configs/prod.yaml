@@ -1,4 +1,4 @@
 env: prod
 
 http-server:
-  port: 80
+  port: 8080
