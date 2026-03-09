@@ -12,17 +12,20 @@ import (
 	"github.com/Gadzet005/shortcut/shortcut/internal/middleware"
 	graphlocalrepo "github.com/Gadzet005/shortcut/shortcut/internal/repo/graph/local"
 	rungraph "github.com/Gadzet005/shortcut/shortcut/internal/usecases/run-graph"
+	graphconfig "github.com/Gadzet005/shortcut/shortcut/internal/domain/graph/config"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
 )
 
-func NewService(config Config, logger *zap.Logger) (service, error) {
+func NewService(config Config, serviceConfig graphconfig.Config,  logger *zap.Logger) (service, error) {
 	if config.Env.IsProd() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	graphConfigs, err := setupServices(config.Namespace, logger)
+	graphConfigs, err := graphconfig.SetupServices(serviceConfig.Namespace, func (s string) {
+		logger.Info(s)
+	})
 	if err != nil {
 		return service{}, errorsutils.WrapFail(err, "failed to setup services: %s", err.Error)
 	}

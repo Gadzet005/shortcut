@@ -1,4 +1,4 @@
-package app
+package config
 
 import (
 	"net/url"
@@ -9,11 +9,9 @@ import (
 	errorsutils "github.com/Gadzet005/shortcut/shortcut/pkg/utils/errors"
 	"github.com/Gadzet005/shortcut/shortcut/pkg/utils/sets"
 	"github.com/Gadzet005/shortcut/shortcut/pkg/utils/slices"
-
-	"go.uber.org/zap"
 )
 
-func setupServices(namespaceConfigs map[string]NamespaceConfig, logger *zap.Logger) (map[graph.ID]graph.Graph, error) {
+func SetupServices(namespaceConfigs map[string]NamespaceConfig, warnUser func (s string)) (map[graph.ID]graph.Graph, error) {
 	serviceMap := make(map[graph.ID]graph.Graph)
 
 	for namespace, namespaceConfig := range(namespaceConfigs) {
@@ -30,51 +28,26 @@ func setupServices(namespaceConfigs map[string]NamespaceConfig, logger *zap.Logg
 		for graphName, gc := range(graphConfig) {
 			id := graph.ID(strings.Join([]string{namespace, graphName}, "::"))
 
-			nodes :=  make(map[graph.NodeID]graph.Node)
+			nodes := make(map[graph.NodeID]graph.Node)
 
 			for _, nodeConfig := range(gc.Nodes) {
-				node, ok := servicesConfig[nodeConfig.EndpointID]
-
-				if !ok {
-					return nil, errorsutils.Errorf("node with id %s not found in namespace %s", nodeConfig.EndpointID, namespace)
-				}
-				
-				var dependencies []graph.Dependency
-				for node, deps := range(nodeConfig.Dependencies) {
-					newDependencies := slices.Map(deps, func(dependencyName string) graph.Dependency {
-						return graph.Dependency{
-							NodeID: graph.NodeID(node),
-							ItemID: graph.ItemID(dependencyName),
-						}
-					})
-
-					for _, dep := range(newDependencies) {
-						if !existingDependencies.Contains(dep) {
-							return nil, errorsutils.Errorf("dependency %v not found in namespace %s", dep, namespace)
-						}
-					}
-
-					dependencies = append(dependencies, newDependencies...)
+				node, err := readNodeConfig(nodeConfig, servicesConfig, existingDependencies, namespace)
+				if err != nil {
+					return nil, errorsutils.WrapFail(err, "read node %s config in namespace %s", nodeConfig.EndpointID, namespace)
 				}
 
-				node = node.WithDependencies(dependencies)
-
-				nodes[graph.NodeID(nodeConfig.EndpointID)] = node 
+				nodes[graph.NodeID(nodeConfig.EndpointID)] = node
 			}
 
 			parsedFailureStrategy, ok := graph.ParseFailureStrategy(gc.FailureStrategy)
-			if ok == false {
-				logger.Info("Failure strategy not specified for graph %s. Ignore strategy will be used by default.", zap.String("name", graphName))
+			if !ok {
+				warnUser("Failure strategy not specified for graph " + graphName + ". Ignore strategy will be used by default.")
 			}
 
 			retGraph := graph.Graph{
 				ID: graph.ID(id),
 				Nodes: nodes,
 				FailureStrategy: parsedFailureStrategy,
-			}
-
-			if retGraph.FailureStrategy == graph.AbsentFailureStrategy {
-
 			}
 
 			numRetNodes := 0
@@ -91,7 +64,7 @@ func setupServices(namespaceConfigs map[string]NamespaceConfig, logger *zap.Logg
 
 			_, err := graph.TopSort(retGraph)
 			if err != nil {
-				return nil, errorsutils.WrapFail(err, "found cyclic dependency in namespace %s", namespace)
+				return nil, errorsutils.WrapFail(err, "top sort error %s", namespace)
 			}
 
 			serviceMap[id] = retGraph
@@ -173,6 +146,33 @@ func readGraphConfigs(configsPath []string) (map[string]GraphConfig, error) {
 	}
 
 	return graphConfigs, nil
+}
+
+func readNodeConfig(nodeConfig NodeConfig, servicesConfig map[string]graph.Node, existingDependencies *sets.Set[graph.Dependency], namespace string) (graph.Node, error) {
+	node, ok := servicesConfig[nodeConfig.EndpointID]
+	if !ok {
+		return nil, errorsutils.Errorf("node with id %s not found in namespace %s", nodeConfig.EndpointID, namespace)
+	}
+	
+	var dependencies []graph.Dependency
+	for node, deps := range(nodeConfig.Dependencies) {
+		newDependencies := slices.Map(deps, func(dependencyName string) graph.Dependency {
+			return graph.Dependency{
+				NodeID: graph.NodeID(node),
+				ItemID: graph.ItemID(dependencyName),
+			}
+		})
+
+		for _, dep := range(newDependencies) {
+			if !existingDependencies.Contains(dep) {
+				return nil, errorsutils.Errorf("dependency %v not found in namespace %s", dep, namespace)
+			}
+		}
+
+		dependencies = append(dependencies, newDependencies...)
+	}
+
+	return node.WithDependencies(dependencies), nil
 }
 
 

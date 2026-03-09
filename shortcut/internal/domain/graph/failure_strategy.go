@@ -3,7 +3,7 @@ package graph
 type FailureStrategy string
 
 const (
-	AbsentFailureStrategy FailureStrategy = ""
+	AbsentFailureStrategy FailureStrategy = "absent"
 	IgnoreFailureStrategy FailureStrategy = "ignore"
 	RevertFailureStrategy FailureStrategy = "revert"
 )

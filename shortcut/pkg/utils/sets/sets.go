@@ -28,11 +28,7 @@ func (s *Set[T]) Erase(t T) {
 
 func (s *Set[T]) Contains(t T) bool {
 	_, ok := s.m[t]
-	if ok {
-		return true
-	}
-
-	return false
+	return ok
 }
 
 func (s *Set[T]) Size() int {

@@ -5,17 +5,17 @@ import (
 	"github.com/Gadzet005/shortcut/shortcut/pkg/shortcut"
 )
 
-func NewLocalRepo(cfg map[graph.ID]graph.Graph) *LocalRepo {
-	return &LocalRepo{
+func NewLocalRepo(cfg map[graph.ID]graph.Graph) *localRepo {
+	return &localRepo{
 		graphs: cfg,
 	}
 }
 
-type LocalRepo struct {
+type localRepo struct {
 	graphs map[graph.ID]graph.Graph
 }
 
-func (s *LocalRepo) GetGraph(id graph.ID) (graph.Graph, error) {
+func (s *localRepo) GetGraph(id graph.ID) (graph.Graph, error) {
 	curGraph, ok := s.graphs[id]
 	if !ok {
 		return graph.Graph{}, shortcut.ErrItemNotFound
