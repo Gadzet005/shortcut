@@ -13,6 +13,7 @@ import (
 	graphlocalrepo "github.com/Gadzet005/shortcut/shortcut/internal/repo/graph/local"
 	rungraph "github.com/Gadzet005/shortcut/shortcut/internal/usecases/run-graph"
 	graphconfig "github.com/Gadzet005/shortcut/shortcut/internal/domain/graph/config"
+	"github.com/Gadzet005/shortcut/shortcut/pkg/metrics"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
@@ -36,8 +37,10 @@ func NewService(config Config, serviceConfig graphconfig.Config,  logger *zap.Lo
 	if err != nil {
 		return service{}, errorsutils.WrapFail(err, "failed to create repo: %s", err.Error)
 	}
+	serviceMetrics := metrics.NewHTTPServiceMetrics("shortcut") // TODO: add name of deployment to configs.
 
 	r := gin.New()
+	r.Use(serviceMetrics.MetricsMiddleware())
 	r.Use(middleware.ZapLogger(logger))
 	r.Use(middleware.ZapRecovery(logger, true))
 

@@ -2,3 +2,5 @@ env: dev
 
 http-server:
   port: 8080
+
+logs: "/var/log/shortcut/app.log"
