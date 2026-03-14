@@ -32,11 +32,11 @@ func (g Graph) Run(
 	}
 
 	levelIDs, err := TopSort(g)
+
 	if err != nil {
 		return RunNodeResponse{}, errorsutils.WrapFail(err, "top sort by levels")
 	}
 	levelIDs = levelIDs[1:] // входную вершину не посещаем
-
 
 	for _, levelNodeIDs := range levelIDs {
 		level := make([]Node, 0, len(levelNodeIDs))

@@ -7,12 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	errorsutils "github.com/Gadzet005/shortcut/shortcut/pkg/utils/errors"
 	graphhandler "github.com/Gadzet005/shortcut/shortcut/internal/handlers/graph"
 	"github.com/Gadzet005/shortcut/shortcut/internal/middleware"
-	graphlocalrepo "github.com/Gadzet005/shortcut/shortcut/internal/repo/graph/local"
+	graphrepostub "github.com/Gadzet005/shortcut/shortcut/internal/repo/graph/stub"
 	rungraph "github.com/Gadzet005/shortcut/shortcut/internal/usecases/run-graph"
-	graphconfig "github.com/Gadzet005/shortcut/shortcut/internal/domain/graph/config"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
 	"go.uber.org/zap"
@@ -42,7 +40,8 @@ func NewService(config Config, serviceConfig graphconfig.Config,  logger *zap.Lo
 	r.Use(middleware.ZapRecovery(logger, true))
 
 	client := resty.New()
-	runGraphUC := rungraph.NewUseCase(client, logger, repo)
+	graphRepo := graphrepostub.NewStubRepo()
+	runGraphUC := rungraph.NewUseCase(client, logger, graphRepo)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
