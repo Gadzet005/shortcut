@@ -49,6 +49,8 @@ type Node interface {
 		logger *zap.Logger,
 		req RunNodeRequest,
 	) (RunNodeResponse, error)
+	WithDependencies(dependencies []Dependency) Node
+	ReturnIDs() []ItemID
 	ID() NodeID
 	Dependencies() []Dependency
 }

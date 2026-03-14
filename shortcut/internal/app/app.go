@@ -16,9 +16,23 @@ import (
 	"go.uber.org/zap"
 )
 
-func NewService(config Config, logger *zap.Logger) (service, error) {
+func NewService(config Config, serviceConfig graphconfig.Config,  logger *zap.Logger) (service, error) {
 	if config.Env.IsProd() {
 		gin.SetMode(gin.ReleaseMode)
+	}
+
+	graphConfigs, err := graphconfig.ParseConfig(serviceConfig.Namespace, func (s string) {
+		logger.Info(s)
+	})
+	if err != nil {
+		return service{}, errorsutils.WrapFail(err, "failed to setup services: %s", err.Error)
+	}
+	
+	logger.Info("Start with config of graphs", zap.String("config", fmt.Sprintf("%v", graphConfigs)))
+
+	repo := graphlocalrepo.NewLocalRepo(graphConfigs)
+	if err != nil {
+		return service{}, errorsutils.WrapFail(err, "failed to create repo: %s", err.Error)
 	}
 
 	r := gin.New()
