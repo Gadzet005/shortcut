@@ -109,12 +109,12 @@ func (m *HTTPServiceMetrics) MetricsMiddleware() gin.HandlerFunc {
 		m.requestsCnt.WithLabelValues(c.Request.Method, endpoint).Inc()
 		m.requestQuantiles.WithLabelValues(c.Request.Method, endpoint).Observe(duration)
 
-		if c.Request != nil {
-			m.requestSize.WithLabelValues(c.Request.Method, endpoint).Observe(float64(c.Request.ContentLength))
-			if c.Request.Response != nil {
-				m.codesTotal.WithLabelValues(c.Request.Method, endpoint, strconv.Itoa(c.Request.Response.StatusCode)).Inc() // TODO: fix getting sizes and status code
-				m.responseSize.WithLabelValues(c.Request.Method, endpoint).Observe(float64(c.Request.Response.ContentLength))
-			}
-		}
+		// if c.Request != nil {
+		// 	m.requestSize.WithLabelValues(c.Request.Method, endpoint).Observe(float64(c.Request.ContentLength))
+		// 	if c.Request.Response != nil {
+		// 		m.codesTotal.WithLabelValues(c.Request.Method, endpoint, strconv.Itoa(c.Request.Response.StatusCode)).Inc() // TODO: fix getting sizes and status code
+		// 		m.responseSize.WithLabelValues(c.Request.Method, endpoint).Observe(float64(c.Request.Response.ContentLength))
+		// 	}
+		// }
     }
 }
