@@ -1,25 +1,26 @@
-package graphrepolocal
+package graphlocalrepo
 
 import (
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
 	"github.com/Gadzet005/shortcut/pkg/shortcut"
 )
 
-func NewLocalRepo(cfg map[graph.ID]graph.Graph) *localRepo {
+var _ graph.NamespaceRepo = &localRepo{}
+
+func NewLocalRepo(namespaces map[graph.NamespaceID]graph.Namespace) *localRepo {
 	return &localRepo{
-		graphs: cfg,
+		namespaces: namespaces,
 	}
 }
 
 type localRepo struct {
-	graphs map[graph.ID]graph.Graph
+	namespaces map[graph.NamespaceID]graph.Namespace
 }
 
-func (s *localRepo) GetGraph(id graph.ID) (graph.Graph, error) {
-	curGraph, ok := s.graphs[id]
+func (r *localRepo) GetNamespace(id graph.NamespaceID) (graph.Namespace, error) {
+	namespace, ok := r.namespaces[id]
 	if !ok {
-		return graph.Graph{}, shortcut.ErrItemNotFound
+		return graph.Namespace{}, shortcut.ErrItemNotFound
 	}
-
-	return curGraph, nil
+	return namespace, nil
 }

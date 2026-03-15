@@ -1,8 +1,0 @@
-host: http://localhost:8082
-endpoints:
-    echo:
-        path: /echo
-        timeout_ms: 5000
-        retries_num: 2
-        result_ids:
-            - resp

@@ -44,7 +44,7 @@ func (c *Context) GetItem(id string) ([]byte, bool) {
 	return data, ok
 }
 
-func (c *Context) GetItemJSON(id string, v any) error {
+func (c *Context) GetJSONItem(id string, v any) error {
 	data, ok := c.GetItem(id)
 	if !ok {
 		return ErrItemNotFound

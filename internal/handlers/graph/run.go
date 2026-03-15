@@ -1,13 +1,12 @@
 package graphhandler
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
-	rungraph "github.com/Gadzet005/shortcut/internal/usecases/run-graph"
 	"github.com/Gadzet005/shortcut/pkg/errors"
 	httpcontext "github.com/Gadzet005/shortcut/pkg/http/context"
+	shortcutapi "github.com/Gadzet005/shortcut/pkg/shortcut/api"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -15,14 +14,14 @@ import (
 func (h handlerBase) RunGraph(c *gin.Context) {
 	logger := httpcontext.GetLogger(c).Named("RunGraph")
 
-	graphID := c.Param("graph_id")
-	if graphID == "" {
-		logger.Warn("graph_id is required")
-		c.JSON(http.StatusBadRequest, errors.Error("graph_id is required"))
+	namespaceID := c.Param("namespace_id")
+	if namespaceID == "" {
+		logger.Warn("namespace_id is required")
+		c.JSON(http.StatusBadRequest, errors.Error("namespace_id is required"))
 		return
 	}
 
-	logger = logger.With(zap.String("graph_id", graphID))
+	logger = logger.With(zap.String("namespace_id", namespaceID))
 
 	data, err := c.GetRawData()
 	if err != nil {
@@ -31,10 +30,15 @@ func (h handlerBase) RunGraph(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.runGraphUC.RunGraph(c.Request.Context(), rungraph.Request{
-		GraphID: graph.ID(graphID),
-		Data:    data,
-	})
+	httpRequest := shortcutapi.HttpRequest{
+		Method:  c.Request.Method,
+		Path:    c.Param("path"),
+		Headers: c.Request.Header,
+		Query:   c.Request.URL.Query(),
+		Body:    data,
+	}
+
+	resp, err := h.runGraphUC.RunGraph(c.Request.Context(), graph.NamespaceID(namespaceID), httpRequest)
 	switch {
 	case errors.Is(err, graph.ErrNotFound):
 		logger.Warn("graph not found", zap.Error(err))
@@ -46,5 +50,15 @@ func (h handlerBase) RunGraph(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, json.RawMessage(resp.Data))
+	for header, values := range resp.Headers {
+		for _, value := range values {
+			c.Header(header, value)
+		}
+	}
+
+	contentType := ""
+	if ct, ok := resp.Headers["Content-Type"]; ok && len(ct) > 0 {
+		contentType = ct[0]
+	}
+	c.Data(resp.StatusCode, contentType, []byte(resp.Body))
 }

@@ -15,7 +15,10 @@ build:
 	go build -o $(BUILD_DIR)/$(APP_NAME) $(MAIN_PATH)
 
 run:
-	go run $(MAIN_PATH)/main.go
+	go run $(MAIN_PATH)
+
+run/mock:
+	CONFIGS_DIR=./tests/mock-service/configs go run ./tests/mock-service
 
 test:
 	go test -v -race -short ./...

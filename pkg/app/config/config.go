@@ -13,17 +13,17 @@ import (
 
 const (
 	defaultConfigDir = "./configs"
-	configDirEnvVar  = "CONFIG_DIR"
+	configDirEnvVar  = "CONFIGS_DIR"
 	baseConfigName   = "base.yaml"
 )
 
 func LoadServiceConfig[T any](serviceName string, env env.Env) (T, error) {
-	configDir := os.Getenv(configDirEnvVar)
-	if configDir == "" {
-		configDir = path.Join(defaultConfigDir, serviceName)
+	configsDir := os.Getenv(configDirEnvVar)
+	if configsDir == "" {
+		configsDir = path.Join(defaultConfigDir, serviceName)
 	}
-	configPath := filepath.Join(configDir, env.String()+".yaml")
-	baseConfigPath := filepath.Join(configDir, baseConfigName)
+	configPath := filepath.Join(configsDir, env.String()+".yaml")
+	baseConfigPath := filepath.Join(configsDir, baseConfigName)
 
 	baseConfig, err := Load[T](baseConfigPath)
 	if err != nil {

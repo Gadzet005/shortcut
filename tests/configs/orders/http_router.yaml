@@ -1,0 +1,5 @@
+routes:
+  get-top-orders:
+    path: /orders/get-top-orders
+    method: POST
+    graph: get_top_orders

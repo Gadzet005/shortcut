@@ -21,14 +21,10 @@ func (g graphResults) Get(nodeID NodeID, itemID ItemID) (Item, bool) {
 	item, ok := nodeItems[itemID]
 	return item, ok
 }
-
-func (g graphResults) GetAny(nodeID NodeID) (Item, bool) {
+func (g graphResults) GetAll(nodeID NodeID) map[ItemID]Item {
 	nodeItems, ok := g[nodeID]
 	if !ok {
-		return Item{}, false
+		return nil
 	}
-	for _, item := range nodeItems {
-		return item, true
-	}
-	return Item{}, false
+	return nodeItems
 }

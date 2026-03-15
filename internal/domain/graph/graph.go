@@ -4,70 +4,71 @@ import (
 	"context"
 	"sync"
 
+	"github.com/Gadzet005/shortcut/pkg/algorithms/topsort"
+	"github.com/Gadzet005/shortcut/pkg/containers/slices"
 	errors "github.com/Gadzet005/shortcut/pkg/errors"
 	"go.uber.org/zap"
 )
 
-type ID string
+var _ Graph = graph{}
 
-func (i ID) String() string {
-	return string(i)
+func NewGraph(
+	nodes map[NodeID]Node,
+	inputNode NodeID,
+	outputNode NodeID,
+) (graph, error) {
+	if _, ok := nodes[inputNode]; !ok {
+		return graph{}, errors.Errorf("input node %s not found", inputNode)
+	}
+	if _, ok := nodes[outputNode]; !ok {
+		return graph{}, errors.Errorf("output node %s not found", outputNode)
+	}
+	return graph{
+		nodes:      nodes,
+		inputNode:  inputNode,
+		outputNode: outputNode,
+	}, nil
 }
 
-type Graph struct {
-	ID    ID
-	Nodes map[NodeID]Node
-	FailureStrategy FailureStrategy 
+type graph struct {
+	nodes      map[NodeID]Node
+	inputNode  NodeID
+	outputNode NodeID
 }
 
-func (g Graph) Run(
+func (g graph) Run(
 	ctx context.Context,
 	logger *zap.Logger,
-	req RunNodeRequest,
-) (RunNodeResponse, error) {
-	results := newGraphResults()
-	for id, item := range req.Items {
-		results.Add(InputNodeID, id, item)
-	}
-
-	levelIDs, err := TopSort(g)
-
+	items map[ItemID]Item,
+) (map[ItemID]Item, error) {
+	levelIDs, err := topSort(g, g.inputNode)
 	if err != nil {
-		return RunNodeResponse{}, errors.Wrap(err, "top sort by levels")
+		return nil, errors.Wrap(err, "top sort by levels")
 	}
-	levelIDs = levelIDs[1:] // входную вершину не посещаем
+
+	results := newGraphResults()
+	for itemID, item := range items {
+		results.Add(g.inputNode, itemID, item)
+	}
 
 	for _, levelNodeIDs := range levelIDs {
 		level := make([]Node, 0, len(levelNodeIDs))
 		for _, nodeID := range levelNodeIDs {
-			node, exists := g.Nodes[nodeID]
-			if !exists {
-				return RunNodeResponse{}, errors.Errorf("node %s not found", nodeID)
-			}
-			level = append(level, node)
+			level = append(level, g.nodes[nodeID])
 		}
-
-		err := visitNodes(ctx, logger, req, level, results)
+		err := visitNodes(ctx, logger, level, results)
 		if err != nil {
-			return RunNodeResponse{}, err
+			return nil, err
 		}
 	}
 
-	lastNodeID := levelIDs[len(levelIDs)-1][0]
-	lastNodeData, ok := results.GetAny(lastNodeID)
-	if !ok {
-		return RunNodeResponse{}, errors.Error("failed to get last node data")
-	}
-	return RunNodeResponse{Items: map[ItemID]Item{
-		DefaultItemID: lastNodeData,
-	}}, nil
+	return results.GetAll(g.outputNode), nil
 }
 
 // visitNodes посещает ноды паралельно и записывает ответы в results
 func visitNodes(
 	ctx context.Context,
 	logger *zap.Logger,
-	req RunNodeRequest,
 	nodes []Node,
 	results graphResults,
 ) error {
@@ -80,11 +81,13 @@ func visitNodes(
 		go func() {
 			defer wg.Done()
 
-			result, err := visitNode(ctx, logger, req, node, results)
+			logger = logger.With(zap.String("node_id", node.ID.String()))
+
+			result, err := visitNode(ctx, logger, node, results)
 			if err != nil {
 				nodeErrors[i] = err
 			}
-			tmpResults[i] = result
+			tmpResults[i] = result.Items
 		}()
 	}
 
@@ -92,13 +95,13 @@ func visitNodes(
 
 	for i, nodeError := range nodeErrors {
 		if nodeError != nil {
-			return errors.Wrapf(nodeError, "visit node %s", nodes[i].ID())
+			return errors.Wrapf(nodeError, "visit node %s", nodes[i].ID)
 		}
 	}
 
 	for i, result := range tmpResults {
 		for name, item := range result {
-			results.Add(nodes[i].ID(), name, item)
+			results.Add(nodes[i].ID, name, item)
 		}
 	}
 	return nil
@@ -107,25 +110,53 @@ func visitNodes(
 func visitNode(
 	ctx context.Context,
 	logger *zap.Logger,
-	req RunNodeRequest,
 	node Node,
 	results graphResults,
-) (map[ItemID]Item, error) {
-	items := make(map[ItemID]Item, len(node.Dependencies()))
-	for _, dep := range node.Dependencies() {
+) (NodeExecutorResponse, error) {
+	items := make(map[ItemID]Item, len(node.Dependencies))
+	for _, dep := range node.Dependencies {
 		result, ok := results.Get(dep.NodeID, dep.ItemID)
 		if !ok {
-			return nil, errors.Error("failed to get dependency")
+			return NodeExecutorResponse{}, errors.Error("dependency not found")
 		}
-		items[dep.OverridenItemID] = result
+		items[dep.OverrideItemID] = result
 	}
 
-	resp, err := node.Run(ctx, logger, RunNodeRequest{
-		Client: req.Client,
-		Items:  items,
-	})
+	resp, err := node.Executor.Run(ctx, logger, NodeExecutorRequest{Items: items})
 	if err != nil {
-		return nil, errors.Wrapf(err, "run node %s", node.ID())
+		return NodeExecutorResponse{}, errors.Wrapf(err, "run node %s", node.ID)
 	}
-	return resp.Items, nil
+	return resp, nil
+}
+
+func topSort(graph graph, inputNode NodeID) ([][]NodeID, error) {
+	g := map[string][]string{
+		inputNode.String(): nil,
+	}
+
+	for _, node := range graph.nodes {
+		g[node.ID.String()] = nil
+	}
+
+	for _, node := range graph.nodes {
+		for _, dep := range node.Dependencies {
+			n, ok := g[dep.NodeID.String()]
+			if !ok {
+				return nil, errors.Errorf("dependency not found: %s", dep.NodeID)
+			}
+			g[dep.NodeID.String()] = append(n, node.ID.String())
+		}
+	}
+
+	levels, ok := topsort.Sort(g)
+	if !ok {
+		return nil, errors.Errorf("graph has a cycle")
+	}
+
+	convertedLevels := slices.Map(levels, func(level []string) []NodeID {
+		return slices.Map(level, func(nodeID string) NodeID {
+			return NodeID(nodeID)
+		})
+	})
+	return convertedLevels, nil
 }

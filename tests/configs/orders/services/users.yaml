@@ -1,0 +1,6 @@
+host: localhost:9001
+endpoints:
+  get-users-by-ids:
+    path: orders/get-users-by-ids
+    timeout-ms: 1000
+    retries-num: 3

@@ -130,7 +130,7 @@ func (c *Container[Config]) Logger() *zap.Logger {
 		if cfg.Path != "" {
 			developmentConfig.OutputPaths = append(developmentConfig.OutputPaths, cfg.Path)
 		}
-		logger, err := developmentConfig.Build()
+		logger, err := developmentConfig.Build(zap.AddStacktrace(zap.FatalLevel))
 		if err != nil {
 			panic(errors.WrapFail(err, "failed to build development config"))
 		}

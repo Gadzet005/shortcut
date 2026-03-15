@@ -8,5 +8,5 @@ metrics:
   http:
     port: 2112
 
-logs: 
-  path: tests/infra/app.log
+logs:
+  path: logs/shortcut.log

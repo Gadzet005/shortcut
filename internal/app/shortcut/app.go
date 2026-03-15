@@ -5,7 +5,7 @@ import (
 
 	graphconfig "github.com/Gadzet005/shortcut/internal/domain/graph/config"
 	graphhandler "github.com/Gadzet005/shortcut/internal/handlers/graph"
-	graphrepolocal "github.com/Gadzet005/shortcut/internal/repo/graph/local"
+	graphlocalrepo "github.com/Gadzet005/shortcut/internal/repo/graph/local"
 	rungraph "github.com/Gadzet005/shortcut/internal/usecases/run-graph"
 	"github.com/Gadzet005/shortcut/pkg/app/di"
 	"github.com/Gadzet005/shortcut/pkg/app/lifecycle"
@@ -32,7 +32,7 @@ func (s service) Name() string {
 func (s service) Run(c lifecycle.Context) error {
 	graphConfigPath := flag.String(
 		"graphconfigs",
-		"./tests/e2e/configs",
+		"./tests/configs",
 		"path to graph config file",
 	)
 	flag.Parse()
@@ -41,13 +41,18 @@ func (s service) Run(c lifecycle.Context) error {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	graphConfig, err := graphconfig.Load(*graphConfigPath, func(msg string) {
-		s.Logger().Warn(msg)
-	})
+	cfg, err := graphconfig.Load(*graphConfigPath)
 	if err != nil {
-		return errors.WrapFailf(err, "failed to parse graph config")
+		return errors.WrapFailf(err, "failed to load graph config")
 	}
-	localRepo := graphrepolocal.NewLocalRepo(graphConfig)
+	client := resty.New()
+	graphConfig, err := graphconfig.Convert(cfg, func(msg string) {
+		s.Logger().Warn(msg)
+	}, client)
+	if err != nil {
+		return errors.WrapFailf(err, "failed to convert graph config")
+	}
+	localRepo := graphlocalrepo.NewLocalRepo(graphConfig)
 
 	r := s.HTTP("shortcut")
 	r.Use(
@@ -56,19 +61,14 @@ func (s service) Run(c lifecycle.Context) error {
 		httpmiddleware.Recover(),
 	)
 
-	client := resty.New()
 	runGraphUC := rungraph.NewUseCase(client, s.Logger(), localRepo)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	{
-		handlerBase := graphhandler.NewHandlerBase(runGraphUC)
-
-		g := r.Group("/graph")
-		g.POST("/:graph_id/run", handlerBase.RunGraph)
-	}
+	handlerBase := graphhandler.NewHandlerBase(runGraphUC)
+	r.Any("run/:namespace_id/*path", handlerBase.RunGraph)
 
 	return nil
 }

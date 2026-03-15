@@ -24,7 +24,7 @@ func (r *Response) AddItem(name string, data []byte) *Response {
 	return r
 }
 
-func (r *Response) AddItemJSON(name string, v any) *Response {
+func (r *Response) AddJSONItem(name string, v any) *Response {
 	data, err := json.Marshal(v)
 	if err != nil {
 		r.err = NewErrorWithCause(http.StatusInternalServerError, "failed to marshal json", err)
