@@ -1,0 +1,12 @@
+app:
+  shutdown-timeout: 10s
+
+http:
+  port: 8080
+
+metrics:
+  http:
+    port: 2112
+
+logs:
+  path: logs/shortcut.log

@@ -1,0 +1,8 @@
+app:
+  shutdown-timeout: 10s
+
+http:
+  port: 9001
+
+logs:
+  path: logs/mock.log

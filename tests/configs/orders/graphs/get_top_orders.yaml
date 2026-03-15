@@ -1,0 +1,25 @@
+nodes:
+  get-top-orders:
+    endpoint-id: orders/get-top-orders
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+  get-users-by-ids:
+    endpoint-id: users/get-users-by-ids
+    dependencies:
+      - node-id: get-top-orders
+        item-id: user_ids
+        overriden-item-id: ids
+  merge-orders-and-users:
+    endpoint-id: orders/merge-orders-and-users
+    dependencies:
+      - node-id: get-top-orders
+        item-id: orders
+        overriden-item-id: orders
+      - node-id: get-users-by-ids
+        item-id: users
+        overriden-item-id: users
+
+output-node: merge-orders-and-users
+failure-strategy: ignore

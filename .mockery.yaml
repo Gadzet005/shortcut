@@ -12,7 +12,3 @@ require-template-schema-exists: true
 template: testify
 template-schema: '{{.Template}}.schema.json'
 packages:
-  # Просто для примера, можно потом убрать
-  github.com/Gadzet005/shortcut/shortcut/pkg/lifecycle:
-    interfaces:
-      Cycler:

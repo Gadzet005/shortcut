@@ -1,0 +1,8 @@
+host: localhost:9001
+endpoints:
+  get-top-orders:
+    path: orders/get-top-orders
+    timeout-ms: 1000
+    retries-num: 3
+  merge-orders-and-users:
+    path: orders/merge-orders-and-users
