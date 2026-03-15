@@ -3,7 +3,6 @@ package e2e
 import (
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
@@ -12,14 +11,12 @@ import (
 
 const (
 	baseURL = "http://localhost:8080"
-	timeout = 30 * time.Second
 )
 
 func TestGraphRun(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping e2e test in short mode")
 	}
-	waitForService(t, baseURL+"/health", timeout)
 
 	tests := []struct {
 		name           string
@@ -70,22 +67,4 @@ func TestGraphRun(t *testing.T) {
 			assert.Equal(t, tt.expectedOutput, resp.String(), "unexpected result")
 		})
 	}
-}
-
-func waitForService(t *testing.T, url string, timeout time.Duration) {
-	t.Helper()
-
-	client := resty.New().
-		SetTimeout(5 * time.Second)
-
-	deadline := time.Now().Add(timeout)
-	for time.Now().Before(deadline) {
-		resp, err := client.R().Get(url)
-		if err == nil && resp.StatusCode() == http.StatusOK {
-			return
-		}
-		time.Sleep(1 * time.Second)
-	}
-
-	t.Fatalf("service did not become available within %v", timeout)
 }
