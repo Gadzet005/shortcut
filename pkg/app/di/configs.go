@@ -25,3 +25,27 @@ type HTTPConfig struct {
 func (c HTTPConfig) GetHTTPConfig() HTTPConfig {
 	return c
 }
+
+type MetricsConfigProvider interface {
+	GetMetricsConfig() MetricsConfig
+}
+
+type MetricsConfig struct {
+	HTTPConfig `yaml:"http"`
+}
+
+func (c MetricsConfig) GetMetricsConfig() MetricsConfig {
+	return c
+}
+
+type LogConfigProvider interface {
+	GetLogConfig() LogConfig
+}
+
+type LogConfig struct {
+	Path string `yaml:"path"`
+}
+
+func (c LogConfig) GetLogConfig() LogConfig {
+	return c
+}

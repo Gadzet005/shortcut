@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"path"
 	"path/filepath"
 
 	"dario.cat/mergo"
@@ -13,16 +14,16 @@ import (
 const (
 	defaultConfigDir = "./configs"
 	configDirEnvVar  = "CONFIG_DIR"
-	baseConfigName   = "base"
+	baseConfigName   = "base.yaml"
 )
 
 func LoadServiceConfig[T any](serviceName string, env env.Env) (T, error) {
 	configDir := os.Getenv(configDirEnvVar)
 	if configDir == "" {
-		configDir = defaultConfigDir
+		configDir = path.Join(defaultConfigDir, serviceName)
 	}
-	configPath := filepath.Join(configDir, serviceName, env.String()+".yaml")
-	baseConfigPath := filepath.Join(configDir, serviceName, baseConfigName+".yaml")
+	configPath := filepath.Join(configDir, env.String()+".yaml")
+	baseConfigPath := filepath.Join(configDir, baseConfigName)
 
 	baseConfig, err := Load[T](baseConfigPath)
 	if err != nil {

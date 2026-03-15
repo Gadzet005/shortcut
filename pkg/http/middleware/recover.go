@@ -1,13 +1,16 @@
-package middleware
+package httpmiddleware
 
 import (
+	httpcontext "github.com/Gadzet005/shortcut/pkg/http/context"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
-func ZapRecovery(logger *zap.Logger, stack bool) gin.HandlerFunc {
+func Recover() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
+			logger := httpcontext.GetLogger(c)
+
 			if err := recover(); err != nil {
 				logger.Error("panic recovered",
 					zap.Any("error", err),

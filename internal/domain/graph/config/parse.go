@@ -2,27 +2,43 @@ package graphconfig
 
 import (
 	"net/url"
+	"path/filepath"
 	"strings"
 
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
-	configutils "github.com/Gadzet005/shortcut/pkg/app/config"
+	"github.com/Gadzet005/shortcut/pkg/app/config"
 	"github.com/Gadzet005/shortcut/pkg/containers/sets"
 	"github.com/Gadzet005/shortcut/pkg/containers/slices"
-	errorsutils "github.com/Gadzet005/shortcut/pkg/errors"
+	"github.com/Gadzet005/shortcut/pkg/errors"
 )
 
-func ParseConfig(namespaceConfigs map[string]NamespaceConfig, warnUser func(s string)) (map[graph.ID]graph.Graph, error) {
+const (
+	configName = "graph.yaml"
+)
+
+type warnUserFunc func(s string)
+
+func Load(dir string, warnUser warnUserFunc) (map[graph.ID]graph.Graph, error) {
+	configPath := filepath.Join(dir, configName)
+	config, err := config.Load[Config](configPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "load graph config")
+	}
+	return Parse(dir, config.Namespaces, warnUser)
+}
+
+func Parse(dir string, namespaceConfigs map[string]NamespaceConfig, warnUser warnUserFunc) (map[graph.ID]graph.Graph, error) {
 	serviceMap := make(map[graph.ID]graph.Graph)
 
 	for namespace, namespaceConfig := range namespaceConfigs {
-		servicesConfig, existingDependencies, err := readServiceConfigs(namespaceConfig.Services)
+		servicesConfig, existingDependencies, err := readServiceConfigs(dir, namespaceConfig.Services)
 		if err != nil {
-			return nil, errorsutils.Wrapf(err, "read service configs in namespace %s", namespace)
+			return nil, errors.Wrapf(err, "read service configs in namespace %s", namespace)
 		}
 
-		graphConfig, err := readGraphConfigs(namespaceConfig.Graphs)
+		graphConfig, err := readGraphConfigs(dir, namespaceConfig.Graphs)
 		if err != nil {
-			return nil, errorsutils.Wrapf(err, "read graph configs in namespace %s", namespace)
+			return nil, errors.Wrapf(err, "read graph configs in namespace %s", namespace)
 		}
 
 		for graphName, gc := range graphConfig {
@@ -33,7 +49,7 @@ func ParseConfig(namespaceConfigs map[string]NamespaceConfig, warnUser func(s st
 			for _, nodeConfig := range gc.Nodes {
 				node, err := readNodeConfig(nodeConfig, servicesConfig, existingDependencies, namespace)
 				if err != nil {
-					return nil, errorsutils.Wrapf(err, "read node %s config in namespace %s", nodeConfig.EndpointID, namespace)
+					return nil, errors.Wrapf(err, "read node %s config in namespace %s", nodeConfig.EndpointID, namespace)
 				}
 
 				nodes[graph.NodeID(nodeConfig.EndpointID)] = node
@@ -59,12 +75,12 @@ func ParseConfig(namespaceConfigs map[string]NamespaceConfig, warnUser func(s st
 			}
 
 			if numRetNodes > 1 {
-				return nil, errorsutils.Wrapf(err, "found more than one ret node in graph %s, namespace %s", retGraph.ID, namespace)
+				return nil, errors.Wrapf(err, "found more than one ret node in graph %s, namespace %s", retGraph.ID, namespace)
 			}
 
 			_, err := graph.TopSort(retGraph)
 			if err != nil {
-				return nil, errorsutils.Wrapf(err, "top sort error %s", namespace)
+				return nil, errors.Wrapf(err, "top sort error %s", namespace)
 			}
 
 			serviceMap[id] = retGraph
@@ -74,7 +90,7 @@ func ParseConfig(namespaceConfigs map[string]NamespaceConfig, warnUser func(s st
 	return serviceMap, nil
 }
 
-func readServiceConfigs(configsPath []string) (map[string]graph.Node, *sets.Set[graph.Dependency], error) {
+func readServiceConfigs(dir string, configsPath []string) (map[string]graph.Node, *sets.Set[graph.Dependency], error) {
 	serviceConfigs := make(map[string]graph.Node)
 	existingDependencies := sets.New[graph.Dependency]()
 	existingDependencies.Add(graph.Dependency{
@@ -87,12 +103,12 @@ func readServiceConfigs(configsPath []string) (map[string]graph.Node, *sets.Set[
 
 		_, ok := serviceConfigs[serviceName]
 		if ok {
-			return nil, nil, errorsutils.Errorf("Found duplicate service with name %s", serviceName)
+			return nil, nil, errors.Errorf("Found duplicate service with name %s", serviceName)
 		}
 
-		config, err := configutils.Load[ServiceConfig](configPath)
+		config, err := config.Load[ServiceConfig](filepath.Join(dir, configPath))
 		if err != nil {
-			return nil, nil, errorsutils.WrapFail(err, "load service config")
+			return nil, nil, errors.Wrap(err, "load service config")
 		}
 
 		for endpointName, endpoint := range config.Endpoints {
@@ -106,7 +122,7 @@ func readServiceConfigs(configsPath []string) (map[string]graph.Node, *sets.Set[
 
 			baseURL, err := url.Parse(config.Host)
 			if err != nil {
-				return nil, nil, errorsutils.Wrapf(err, "parse url: %s", config.Host)
+				return nil, nil, errors.Wrapf(err, "parse url: %s", config.Host)
 			}
 
 			serviceConfigs[strings.Join([]string{serviceName, endpointName}, "/")] = graph.NewEndpoint(
@@ -126,7 +142,7 @@ func readServiceConfigs(configsPath []string) (map[string]graph.Node, *sets.Set[
 	return serviceConfigs, existingDependencies, nil
 }
 
-func readGraphConfigs(configsPath []string) (map[string]GraphConfig, error) {
+func readGraphConfigs(dir string, configsPath []string) (map[string]GraphConfig, error) {
 	graphConfigs := make(map[string]GraphConfig)
 
 	for _, configPath := range configsPath {
@@ -134,12 +150,12 @@ func readGraphConfigs(configsPath []string) (map[string]GraphConfig, error) {
 
 		_, ok := graphConfigs[graphName]
 		if ok {
-			return nil, errorsutils.Errorf("Found duplicate graph with name %s", graphName)
+			return nil, errors.Errorf("Found duplicate graph with name %s", graphName)
 		}
 
-		config, err := configutils.Load[GraphConfig](configPath)
+		config, err := config.Load[GraphConfig](filepath.Join(dir, configPath))
 		if err != nil {
-			return nil, errorsutils.WrapFail(err, "load graph config")
+			return nil, errors.Wrap(err, "load graph config")
 		}
 
 		graphConfigs[graphName] = config
@@ -148,10 +164,15 @@ func readGraphConfigs(configsPath []string) (map[string]GraphConfig, error) {
 	return graphConfigs, nil
 }
 
-func readNodeConfig(nodeConfig NodeConfig, servicesConfig map[string]graph.Node, existingDependencies *sets.Set[graph.Dependency], namespace string) (graph.Node, error) {
+func readNodeConfig(
+	nodeConfig NodeConfig,
+	servicesConfig map[string]graph.Node,
+	existingDependencies *sets.Set[graph.Dependency],
+	namespace string,
+) (graph.Node, error) {
 	node, ok := servicesConfig[nodeConfig.EndpointID]
 	if !ok {
-		return nil, errorsutils.Errorf("node with id %s not found in namespace %s", nodeConfig.EndpointID, namespace)
+		return nil, errors.Errorf("node with id %s not found in namespace %s", nodeConfig.EndpointID, namespace)
 	}
 
 	var dependencies []graph.Dependency
@@ -165,7 +186,7 @@ func readNodeConfig(nodeConfig NodeConfig, servicesConfig map[string]graph.Node,
 
 		for _, dep := range newDependencies {
 			if !existingDependencies.Contains(dep) {
-				return nil, errorsutils.Errorf("dependency %v not found in namespace %s", dep, namespace)
+				return nil, errors.Errorf("dependency %v not found in namespace %s", dep, namespace)
 			}
 		}
 

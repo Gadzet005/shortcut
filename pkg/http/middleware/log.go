@@ -1,14 +1,25 @@
-package middleware
+package httpmiddleware
 
 import (
 	"time"
 
+	httpcontext "github.com/Gadzet005/shortcut/pkg/http/context"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
 func ZapLogger(logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		logger = logger.With(
+			zap.String("path", c.Request.URL.Path),
+			zap.String("method", c.Request.Method),
+			zap.String("query", c.Request.URL.RawQuery),
+			zap.String("ip", c.ClientIP()),
+			zap.String("user-agent", c.Request.UserAgent()),
+			zap.String("host", c.Request.Host),
+		)
+		httpcontext.SetLogger(c, logger)
+
 		start := time.Now()
 		path := c.Request.URL.Path
 		query := c.Request.URL.RawQuery

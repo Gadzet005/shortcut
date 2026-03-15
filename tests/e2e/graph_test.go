@@ -27,28 +27,28 @@ func TestGraphRun(t *testing.T) {
 	}{
 		{
 			name:           "successful graph execution with number 3244",
-			graphID:        "12231",
+			graphID:        "sum-echoes",
 			input:          "3244",
 			expectedOutput: "6488",
 			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "successful graph execution with number 100",
-			graphID:        "12231",
+			graphID:        "sum-echoes",
 			input:          "100",
 			expectedOutput: "200",
 			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "successful graph execution with number 0",
-			graphID:        "12231",
+			graphID:        "sum-echoes",
 			input:          "0",
 			expectedOutput: "0",
 			expectedStatus: http.StatusOK,
 		},
 		{
 			name:           "successful graph execution with negative number",
-			graphID:        "12231",
+			graphID:        "sum-echoes",
 			input:          "-50",
 			expectedOutput: "-100",
 			expectedStatus: http.StatusOK,

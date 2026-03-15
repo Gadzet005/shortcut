@@ -1,7 +1,7 @@
 package graphconfig
 
 type Config struct {
-	Namespace map[string]NamespaceConfig `yaml:"namespace"`
+	Namespaces map[string]NamespaceConfig `yaml:"namespaces"`
 }
 
 type NamespaceConfig struct {

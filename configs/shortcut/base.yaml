@@ -1,6 +1,12 @@
-http-server:
+app:
+  shutdown-timeout: 10s
+
+http:
   port: 8080
 
-metrics-port: 2112
+metrics:
+  http:
+    port: 2112
 
-logs: "test-infra/app.log"
+logs: 
+  path: tests/infra/app.log

@@ -1,14 +1,14 @@
-namespace:
+namespaces:
   orders:
     services:
-      - tests/e2e/configs/orders/services/orders.yaml
-      - tests/e2e/configs/orders/services/users.yaml
+      - orders/services/orders.yaml
+      - orders/services/users.yaml
     graphs:
-      - tests/e2e/configs/orders/graphs/get-orders.yaml
+      - orders/graphs/get-orders.yaml
   mock:
     services:
-      - tests/e2e/configs/mock/services/echo1.yaml
-      - tests/e2e/configs/mock/services/echo2.yaml
-      - tests/e2e/configs/mock/services/sum.yaml
+      - mock/services/echo1.yaml
+      - mock/services/echo2.yaml
+      - mock/services/sum.yaml
     graphs:
-      - tests/e2e/configs/mock/graphs/sum-echoes.yaml
+      - mock/graphs/sum-echoes.yaml

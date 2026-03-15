@@ -1,0 +1,5 @@
+app:
+  shutdown-timeout: 10s
+
+http-server:
+  port: 8080

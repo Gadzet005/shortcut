@@ -7,12 +7,13 @@ import (
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
 	rungraph "github.com/Gadzet005/shortcut/internal/usecases/run-graph"
 	"github.com/Gadzet005/shortcut/pkg/errors"
+	httpcontext "github.com/Gadzet005/shortcut/pkg/http/context"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
 func (h handlerBase) RunGraph(c *gin.Context) {
-	logger := h.logger.Named("RunGraph")
+	logger := httpcontext.GetLogger(c).Named("RunGraph")
 
 	graphID := c.Param("graph_id")
 	if graphID == "" {
@@ -21,7 +22,7 @@ func (h handlerBase) RunGraph(c *gin.Context) {
 		return
 	}
 
-	logger = h.logger.With(zap.String("graph_id", graphID))
+	logger = logger.With(zap.String("graph_id", graphID))
 
 	data, err := c.GetRawData()
 	if err != nil {
