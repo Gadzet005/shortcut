@@ -16,10 +16,8 @@ nodes:
     dependencies:
       - node-id: get-top-orders
         item-id: orders
-        overriden-item-id: orders
       - node-id: get-users-by-ids
         item-id: users
-        overriden-item-id: users
 
 output-node: merge-orders-and-users
 failure-strategy: ignore

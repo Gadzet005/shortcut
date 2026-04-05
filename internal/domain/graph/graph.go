@@ -128,7 +128,11 @@ func visitNode(
 		if !ok {
 			return NodeExecutorResponse{}, errors.Error("dependency not found")
 		}
-		items[dep.OverrideItemID] = result
+		if dep.OverrideItemID != "" {
+			items[dep.OverrideItemID] = result
+		} else {
+			items[dep.ItemID] = result
+		}
 	}
 
 	resp, err := node.Executor.Run(ctx, logger, NodeExecutorRequest{Items: items})

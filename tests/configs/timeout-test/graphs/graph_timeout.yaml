@@ -10,7 +10,6 @@ nodes:
     dependencies:
       - node-id: slow-step1
         item-id: value
-        overriden-item-id: value
 
 output-node: slow-step2
 timeout-ms: 150

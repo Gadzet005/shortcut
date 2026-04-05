@@ -22,13 +22,10 @@ nodes:
     dependencies:
       - node-id: fetch-weather
         item-id: weather
-        overriden-item-id: weather
       - node-id: fetch-traffic
         item-id: traffic
-        overriden-item-id: traffic
       - node-id: fetch-events
         item-id: events
-        overriden-item-id: events
 
 output-node: aggregate-report
 failure-strategy: ignore

@@ -10,9 +10,7 @@ nodes:
     dependencies:
       - node-id: validate-item
         item-id: name
-        overriden-item-id: name
       - node-id: validate-item
         item-id: price
-        overriden-item-id: price
 
 output-node: save-item
