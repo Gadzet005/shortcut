@@ -4,5 +4,4 @@ app:
 http:
   port: 9001
 
-logs:
-  path: logs/mock.log
+logs: {}

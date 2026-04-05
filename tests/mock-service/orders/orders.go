@@ -4,15 +4,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"slices"
+	"strconv"
 
 	xslices "github.com/Gadzet005/shortcut/pkg/containers/slices"
 	"github.com/Gadzet005/shortcut/pkg/shortcut"
 	shortcutapi "github.com/Gadzet005/shortcut/pkg/shortcut/api"
 )
-
-type GetTopOrdersRequest struct {
-	Limit int `json:"limit"`
-}
 
 type GetTopOrdersResponse struct {
 	Orders []UserOrder `json:"orders"`
@@ -100,9 +97,13 @@ func GetTopOrders(ctx *shortcut.Context) error {
 		return err
 	}
 
-	var request GetTopOrdersRequest
-	if err := json.Unmarshal([]byte(httpRequest.Body), &request); err != nil {
-		return err
+	limitRaw := httpRequest.Query.Get("limit")
+	limit, err := strconv.Atoi(limitRaw)
+	if err != nil {
+		return shortcut.NewErrorWithCause(400, "failed to parse limit", err)
+	}
+	if limit < 0 {
+		return shortcut.NewError(400, "limit must be positive")
 	}
 
 	slices.SortFunc(orders, func(a, b Order) int {
@@ -110,8 +111,8 @@ func GetTopOrders(ctx *shortcut.Context) error {
 	})
 
 	responseOrders := orders
-	if len(responseOrders) > request.Limit {
-		responseOrders = responseOrders[:request.Limit]
+	if limit != 0 && len(responseOrders) > limit {
+		responseOrders = responseOrders[:limit]
 	}
 
 	userIDs := xslices.Map(responseOrders, func(order Order) string {
