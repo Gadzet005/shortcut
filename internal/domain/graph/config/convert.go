@@ -128,8 +128,12 @@ func convertNode(
 	}
 
 	executor := graphnodes.NewDefaultNodeExecutor(client, graphnodes.Endpoint{
-		URL:     ep.URL,
-		Timeout: time.Duration(ep.TimeoutMs) * time.Millisecond,
+		URL:               ep.URL,
+		Timeout:           time.Duration(ep.TimeoutMs) * time.Millisecond,
+		RetriesNum:        ep.RetriesNum,
+		InitialInterval:   time.Duration(ep.InitialIntervalMs) * time.Millisecond,
+		BackoffMultiplier: ep.BackoffMultiplier,
+		MaxInterval:       time.Duration(ep.MaxIntervalMs) * time.Millisecond,
 	})
 	return graph.Node{
 		ID:           graph.NodeID(nCfg.ID),

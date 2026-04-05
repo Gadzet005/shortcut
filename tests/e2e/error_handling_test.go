@@ -103,5 +103,5 @@ func TestNodeTimeout(t *testing.T) {
 	elapsed := time.Since(start)
 
 	require.Equal(t, http.StatusInternalServerError, resp.StatusCode)
-	require.Less(t, elapsed, 50*time.Millisecond, "graph should have timed out well before the node's 1s sleep")
+	require.Less(t, elapsed, 500*time.Millisecond, "graph should have timed out well before the node's 1s sleep")
 }

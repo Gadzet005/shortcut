@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
 	errors "github.com/Gadzet005/shortcut/pkg/errors"
@@ -31,19 +32,63 @@ func (e defaultNodeExecutor) Run(
 	logger *zap.Logger,
 	req graph.NodeExecutorRequest,
 ) (graph.NodeExecutorResponse, error) {
-	if e.endpoint.Timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, e.endpoint.Timeout)
-		defer cancel()
-	}
-
 	formData := make(map[string]string, len(req.Items))
 	for id, item := range req.Items {
 		formData[id.String()] = string(item.Data)
 	}
 
+	interval := e.endpoint.InitialInterval
+	var lastErr error
+
+	for attempt := 0; attempt <= e.endpoint.RetriesNum; attempt++ {
+		if attempt > 0 {
+			logger.Warn("retrying node request",
+				zap.Int("attempt", attempt),
+				zap.Int("retries_num", e.endpoint.RetriesNum),
+				zap.Duration("backoff", interval),
+				zap.Error(lastErr),
+			)
+			select {
+			case <-ctx.Done():
+				return graph.NodeExecutorResponse{}, errors.Wrap(lastErr, "context cancelled during retry backoff")
+			case <-time.After(interval):
+			}
+			interval = nextInterval(interval, e.endpoint.BackoffMultiplier, e.endpoint.MaxInterval)
+		}
+
+		resp, err := e.doRequest(ctx, formData)
+		if err == nil {
+			return resp, nil
+		}
+
+		var nodeErr *graph.NodeError
+		if errors.As(err, &nodeErr) && nodeErr.Code != graph.ErrCodeInternal {
+			return graph.NodeExecutorResponse{}, err
+		}
+
+		if ctx.Err() != nil {
+			return graph.NodeExecutorResponse{}, err
+		}
+
+		lastErr = err
+	}
+
+	return graph.NodeExecutorResponse{}, lastErr
+}
+
+func (e defaultNodeExecutor) doRequest(
+	ctx context.Context,
+	formData map[string]string,
+) (graph.NodeExecutorResponse, error) {
+	reqCtx := ctx
+	if e.endpoint.Timeout > 0 {
+		var cancel context.CancelFunc
+		reqCtx, cancel = context.WithTimeout(ctx, e.endpoint.Timeout)
+		defer cancel()
+	}
+
 	resp, err := e.client.R().
-		SetContext(ctx).
+		SetContext(reqCtx).
 		SetFormData(formData).
 		SetDoNotParseResponse(true).
 		Post(e.endpoint.URL)
@@ -75,6 +120,14 @@ func (e defaultNodeExecutor) Run(
 	}
 
 	return graph.NodeExecutorResponse{Items: results}, nil
+}
+
+func nextInterval(current time.Duration, multiplier float64, max time.Duration) time.Duration {
+	next := time.Duration(float64(current) * multiplier)
+	if max > 0 && next > max {
+		return max
+	}
+	return next
 }
 
 func httpStatusToErrorCode(status int) graph.ErrorCode {

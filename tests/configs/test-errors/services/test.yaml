@@ -3,12 +3,16 @@ endpoints:
   echo-error:
     path: test/echo-error
     timeout-ms: 1000
+    retries-num: 0
   invalid-content-type:
     path: test/invalid-content-type
     timeout-ms: 1000
+    retries-num: 0
   missing-http-response:
     path: test/missing-http-response
     timeout-ms: 1000
+    retries-num: 0
   slow-response:
     path: test/slow-response
     timeout-ms: 10
+    retries-num: 0

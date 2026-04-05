@@ -10,6 +10,7 @@ import (
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/dashboard"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/orders"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/pipeline"
+	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/retrytest"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/store"
 	"github.com/gin-gonic/gin"
 )
@@ -82,6 +83,11 @@ func (s *service) Run(ctx lifecycle.Context) error {
 		g.POST("/step3", shortcut.New(pipeline.Step3, s.Logger()))
 		g.POST("/step4", shortcut.New(pipeline.Step4, s.Logger()))
 		g.POST("/step5", shortcut.New(pipeline.Step5, s.Logger()))
+	}
+
+	{
+		g := r.Group("/retry-test")
+		g.POST("/flaky", shortcut.New(retrytest.FlakyEndpoint, s.Logger()))
 	}
 
 	{

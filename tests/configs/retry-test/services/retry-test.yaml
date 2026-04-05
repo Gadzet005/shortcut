@@ -1,0 +1,18 @@
+host: mock-service:9001
+endpoints:
+  # 3 total attempts (2 retries): enough to survive fail_count=2
+  flaky-retry-2:
+    path: retry-test/flaky
+    timeout-ms: 500
+    retries-num: 2
+    initial-interval-ms: 10
+    backoff-multiplier: 2.0
+    max-interval-ms: 100
+  # 2 total attempts (1 retry): not enough to survive fail_count=2
+  flaky-retry-1:
+    path: retry-test/flaky
+    timeout-ms: 500
+    retries-num: 1
+    initial-interval-ms: 10
+    backoff-multiplier: 2.0
+    max-interval-ms: 100
