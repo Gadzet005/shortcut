@@ -1,0 +1,9 @@
+nodes:
+  get-all-items:
+    endpoint-id: store/get-all-items
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+
+output-node: get-all-items

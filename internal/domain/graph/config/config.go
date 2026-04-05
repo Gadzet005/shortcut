@@ -22,6 +22,7 @@ type GraphConfig struct {
 	InputNode       string
 	OutputNode      string
 	FailureStrategy string
+	TimeoutMs       int
 }
 
 type NodeConfig struct {
@@ -36,9 +37,12 @@ type ServicesConfig struct {
 }
 
 type EndpointDef struct {
-	URL        string
-	TimeoutMs  int
-	RetriesNum int
+	URL               string
+	TimeoutMs         int
+	RetriesNum        int
+	InitialIntervalMs int
+	BackoffMultiplier float64
+	MaxIntervalMs     int
 }
 
 type HTTPRouterConfig struct {
@@ -57,9 +61,12 @@ type ServiceConfig struct {
 }
 
 type EndpointConfig struct {
-	Path       string `yaml:"path"`
-	TimeoutMs  int    `yaml:"timeout-ms"`
-	RetriesNum int    `yaml:"retries-num"`
+	Path              string  `yaml:"path"`
+	TimeoutMs         int     `yaml:"timeout-ms"`
+	RetriesNum        int     `yaml:"retries-num"`
+	InitialIntervalMs int     `yaml:"initial-interval-ms"`
+	BackoffMultiplier float64 `yaml:"backoff-multiplier"`
+	MaxIntervalMs     int     `yaml:"max-interval-ms"`
 }
 
 type GraphFileConfig struct {
@@ -67,6 +74,7 @@ type GraphFileConfig struct {
 	InputNode       string                    `yaml:"input-node"`
 	OutputNode      string                    `yaml:"output-node"`
 	FailureStrategy string                    `yaml:"failure-strategy"`
+	TimeoutMs       int                       `yaml:"timeout-ms"`
 }
 
 type NodeFileConfig struct {

@@ -1,0 +1,8 @@
+host: mock-service:9001
+endpoints:
+  slow-step1:
+    path: timeout-test/slow-step1
+    timeout-ms: 500
+  slow-step2:
+    path: timeout-test/slow-step2
+    timeout-ms: 500

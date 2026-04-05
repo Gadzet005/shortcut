@@ -1,0 +1,5 @@
+routes:
+  get-dashboard:
+    path: /dashboard/get-dashboard
+    method: GET
+    graph: get_dashboard

@@ -14,6 +14,9 @@ import (
 const (
 	httpRequestItemID  = graph.ItemID("http_request")
 	httpResponseItemID = graph.ItemID("http_response")
+
+	contentTypeKey  = "Content-Type"
+	contentTypeJSON = "application/json"
 )
 
 type UseCase interface {
@@ -61,7 +64,7 @@ func (u useCase) RunGraph(
 
 	g, ok := namespace.Graphs[graphID]
 	if !ok {
-		return shortcutapi.HttpResponse{}, errors.Error("graph not found")
+		return shortcutapi.HttpResponse{}, errors.Wrap(graph.ErrNotFound, "graph not found")
 	}
 
 	rawHTTPRequest, err := json.Marshal(input)
@@ -75,6 +78,10 @@ func (u useCase) RunGraph(
 
 	resp, err := g.Run(ctx, u.logger, items)
 	if err != nil {
+		var nodeErr *graph.NodeError
+		if errors.As(err, &nodeErr) {
+			return nodeErrorToHTTPResponse(nodeErr)
+		}
 		return shortcutapi.HttpResponse{}, errors.Wrap(err, "run graph")
 	}
 
@@ -91,11 +98,38 @@ func (u useCase) RunGraph(
 	return parsedHTTPResponse, nil
 }
 
+func nodeErrorToHTTPResponse(e *graph.NodeError) (shortcutapi.HttpResponse, error) {
+	payloadRaw, err := json.Marshal(e.Payload)
+	if err != nil {
+		return shortcutapi.HttpResponse{}, errors.Wrap(err, "marshal payload")
+	}
+	return shortcutapi.HttpResponse{
+		StatusCode: errorCodeToHTTPStatus(e.Code),
+		Headers:    map[string][]string{contentTypeKey: {contentTypeJSON}},
+		Body:       payloadRaw,
+	}, nil
+}
+
+func errorCodeToHTTPStatus(code graph.ErrorCode) int {
+	switch code {
+	case graph.ErrCodeBadRequest:
+		return 400
+	case graph.ErrCodeUnauthorized:
+		return 401
+	case graph.ErrCodeForbidden:
+		return 403
+	case graph.ErrCodeNotFound:
+		return 404
+	default:
+		return 500
+	}
+}
+
 func getGraphID(namespace graph.Namespace, path string, method string) (graph.ID, error) {
 	for _, route := range namespace.HTTPRoutes {
 		if route.Path == path && route.Method == method {
 			return route.GraphID, nil
 		}
 	}
-	return "", errors.Error("graph not found")
+	return "", graph.ErrNotFound
 }

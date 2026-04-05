@@ -1,0 +1,9 @@
+nodes:
+  flaky-node:
+    endpoint-id: retry-test/flaky-retry-1
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+
+output-node: flaky-node

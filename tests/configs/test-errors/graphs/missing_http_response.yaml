@@ -1,0 +1,9 @@
+nodes:
+  missing-http-response:
+    endpoint-id: test/missing-http-response
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+
+output-node: missing-http-response

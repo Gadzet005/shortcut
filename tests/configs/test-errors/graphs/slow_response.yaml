@@ -1,0 +1,9 @@
+nodes:
+  slow-response:
+    endpoint-id: test/slow-response
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+
+output-node: slow-response

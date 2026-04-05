@@ -1,0 +1,9 @@
+routes:
+  recoverable:
+    path: /retry-test/recoverable
+    method: GET
+    graph: recoverable
+  exhausted-retries:
+    path: /retry-test/exhausted-retries
+    method: GET
+    graph: exhausted_retries

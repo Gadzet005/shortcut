@@ -2,17 +2,15 @@ package orders
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"slices"
+	"strconv"
 
 	xslices "github.com/Gadzet005/shortcut/pkg/containers/slices"
 	"github.com/Gadzet005/shortcut/pkg/shortcut"
 	shortcutapi "github.com/Gadzet005/shortcut/pkg/shortcut/api"
 )
-
-type GetTopOrdersRequest struct {
-	Limit int `json:"limit"`
-}
 
 type GetTopOrdersResponse struct {
 	Orders []UserOrder `json:"orders"`
@@ -100,9 +98,9 @@ func GetTopOrders(ctx *shortcut.Context) error {
 		return err
 	}
 
-	var request GetTopOrdersRequest
-	if err := json.Unmarshal([]byte(httpRequest.Body), &request); err != nil {
-		return err
+	limit, haveLimit, err := parseLimit(httpRequest)
+	if err != nil {
+		return shortcut.NewErrorWithCause(400, "failed to parse limit", err)
 	}
 
 	slices.SortFunc(orders, func(a, b Order) int {
@@ -110,8 +108,8 @@ func GetTopOrders(ctx *shortcut.Context) error {
 	})
 
 	responseOrders := orders
-	if len(responseOrders) > request.Limit {
-		responseOrders = responseOrders[:request.Limit]
+	if haveLimit && len(responseOrders) > limit {
+		responseOrders = responseOrders[:limit]
 	}
 
 	userIDs := xslices.Map(responseOrders, func(order Order) string {
@@ -157,10 +155,26 @@ func MergeOrdersAndUsers(ctx *shortcut.Context) error {
 
 	httpResponse := shortcutapi.HttpResponse{
 		StatusCode: http.StatusOK,
+		Headers:    map[string][]string{"Content-Type": {"application/json"}},
 		Body:       bodyRaw,
 	}
 
 	return shortcut.NewResponse().
 		AddJSONItem("http_response", httpResponse).
 		Send(ctx)
+}
+
+func parseLimit(httpRequest shortcutapi.HttpRequest) (int, bool, error) {
+	limitRaw := httpRequest.Query.Get("limit")
+	if limitRaw == "" {
+		return 0, false, nil
+	}
+	parsedLimit, err := strconv.Atoi(limitRaw)
+	if err != nil {
+		return 0, false, err
+	}
+	if parsedLimit <= 0 {
+		return 0, false, errors.New("limit must be positive")
+	}
+	return parsedLimit, true, nil
 }

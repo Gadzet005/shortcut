@@ -1,4 +1,4 @@
-host: localhost:9001
+host: mock-service:9001
 endpoints:
   get-top-orders:
     path: orders/get-top-orders

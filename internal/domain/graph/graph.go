@@ -3,6 +3,7 @@ package graph
 import (
 	"context"
 	"sync"
+	"time"
 
 	"github.com/Gadzet005/shortcut/pkg/algorithms/topsort"
 	"github.com/Gadzet005/shortcut/pkg/containers/slices"
@@ -16,6 +17,7 @@ func NewGraph(
 	nodes map[NodeID]Node,
 	inputNode NodeID,
 	outputNode NodeID,
+	timeout time.Duration,
 ) (graph, error) {
 	if _, ok := nodes[inputNode]; !ok {
 		return graph{}, errors.Errorf("input node %s not found", inputNode)
@@ -27,6 +29,7 @@ func NewGraph(
 		nodes:      nodes,
 		inputNode:  inputNode,
 		outputNode: outputNode,
+		timeout:    timeout,
 	}, nil
 }
 
@@ -34,6 +37,7 @@ type graph struct {
 	nodes      map[NodeID]Node
 	inputNode  NodeID
 	outputNode NodeID
+	timeout    time.Duration
 }
 
 func (g graph) Run(
@@ -41,6 +45,11 @@ func (g graph) Run(
 	logger *zap.Logger,
 	items map[ItemID]Item,
 ) (map[ItemID]Item, error) {
+	if g.timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, g.timeout)
+		defer cancel()
+	}
 	levelIDs, err := topSort(g, g.inputNode)
 	if err != nil {
 		return nil, errors.Wrap(err, "top sort by levels")
@@ -119,7 +128,11 @@ func visitNode(
 		if !ok {
 			return NodeExecutorResponse{}, errors.Error("dependency not found")
 		}
-		items[dep.OverrideItemID] = result
+		if dep.OverrideItemID != "" {
+			items[dep.OverrideItemID] = result
+		} else {
+			items[dep.ItemID] = result
+		}
 	}
 
 	resp, err := node.Executor.Run(ctx, logger, NodeExecutorRequest{Items: items})

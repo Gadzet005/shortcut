@@ -1,0 +1,9 @@
+nodes:
+  delete-all-items:
+    endpoint-id: store/delete-all-items
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+
+output-node: delete-all-items

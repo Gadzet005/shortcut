@@ -1,0 +1,5 @@
+routes:
+  long-chain:
+    path: /pipeline/long-chain
+    method: GET
+    graph: long_chain

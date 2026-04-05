@@ -6,6 +6,21 @@ var (
 	ErrItemNotFound = NewError(http.StatusBadRequest, "required item not found")
 )
 
+func NewError(code int, message string) *HandlerError {
+	return &HandlerError{
+		StatusCode: code,
+		Message:    message,
+	}
+}
+
+func NewErrorWithCause(code int, message string, cause error) *HandlerError {
+	return &HandlerError{
+		StatusCode: code,
+		Message:    message,
+		Err:        cause,
+	}
+}
+
 type HandlerError struct {
 	StatusCode int
 	Message    string
@@ -21,19 +36,4 @@ func (e *HandlerError) Error() string {
 
 func (e *HandlerError) Unwrap() error {
 	return e.Err
-}
-
-func NewError(code int, message string) *HandlerError {
-	return &HandlerError{
-		StatusCode: code,
-		Message:    message,
-	}
-}
-
-func NewErrorWithCause(code int, message string, cause error) *HandlerError {
-	return &HandlerError{
-		StatusCode: code,
-		Message:    message,
-		Err:        cause,
-	}
 }

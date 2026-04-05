@@ -1,0 +1,5 @@
+routes:
+  graph-timeout:
+    path: /timeout-test/graph-timeout
+    method: GET
+    graph: graph_timeout

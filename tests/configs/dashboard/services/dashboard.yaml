@@ -1,0 +1,14 @@
+host: mock-service:9001
+endpoints:
+  fetch-weather:
+    path: dashboard/fetch-weather
+    timeout-ms: 1000
+  fetch-traffic:
+    path: dashboard/fetch-traffic
+    timeout-ms: 1000
+  fetch-events:
+    path: dashboard/fetch-events
+    timeout-ms: 1000
+  aggregate-report:
+    path: dashboard/aggregate-report
+    timeout-ms: 1000

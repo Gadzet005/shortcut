@@ -1,0 +1,14 @@
+host: mock-service:9001
+endpoints:
+  validate-item:
+    path: store/validate-item
+    timeout-ms: 1000
+  save-item:
+    path: store/save-item
+    timeout-ms: 1000
+  get-all-items:
+    path: store/get-all-items
+    timeout-ms: 1000
+  delete-all-items:
+    path: store/delete-all-items
+    timeout-ms: 1000

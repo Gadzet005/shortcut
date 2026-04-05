@@ -1,0 +1,17 @@
+host: mock-service:9001
+endpoints:
+  step1:
+    path: pipeline/step1
+    timeout-ms: 1000
+  step2:
+    path: pipeline/step2
+    timeout-ms: 1000
+  step3:
+    path: pipeline/step3
+    timeout-ms: 1000
+  step4:
+    path: pipeline/step4
+    timeout-ms: 1000
+  step5:
+    path: pipeline/step5
+    timeout-ms: 1000

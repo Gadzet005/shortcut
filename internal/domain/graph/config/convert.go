@@ -1,6 +1,8 @@
 package graphconfig
 
 import (
+	"time"
+
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
 	graphnodes "github.com/Gadzet005/shortcut/internal/domain/graph/nodes"
 	"github.com/Gadzet005/shortcut/pkg/containers/slices"
@@ -56,7 +58,7 @@ func convertNamespace(
 			return graph.Namespace{}, errors.Wrapf(err, "graph %s", graphName)
 		}
 
-		g, err := graph.NewGraph(nodesMap, graph.NodeID(gCfg.InputNode), graph.NodeID(gCfg.OutputNode))
+		g, err := graph.NewGraph(nodesMap, graph.NodeID(gCfg.InputNode), graph.NodeID(gCfg.OutputNode), time.Duration(gCfg.TimeoutMs)*time.Millisecond)
 		if err != nil {
 			return graph.Namespace{}, errors.Wrapf(err, "build graph %s", graphName)
 		}
@@ -125,7 +127,14 @@ func convertNode(
 		return graph.Node{}, errors.Errorf("endpoint %s not found in namespace %s", nCfg.EndpointID, namespaceID)
 	}
 
-	executor := graphnodes.NewDefaultNodeExecutor(client, graphnodes.Endpoint{URL: ep.URL})
+	executor := graphnodes.NewDefaultNodeExecutor(client, graphnodes.Endpoint{
+		URL:               ep.URL,
+		Timeout:           time.Duration(ep.TimeoutMs) * time.Millisecond,
+		RetriesNum:        ep.RetriesNum,
+		InitialInterval:   time.Duration(ep.InitialIntervalMs) * time.Millisecond,
+		BackoffMultiplier: ep.BackoffMultiplier,
+		MaxInterval:       time.Duration(ep.MaxIntervalMs) * time.Millisecond,
+	})
 	return graph.Node{
 		ID:           graph.NodeID(nCfg.ID),
 		Dependencies: deps,

@@ -1,0 +1,9 @@
+nodes:
+  invalid-content-type:
+    endpoint-id: test/invalid-content-type
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+
+output-node: invalid-content-type

@@ -1,0 +1,9 @@
+nodes:
+  echo-error:
+    endpoint-id: test/echo-error
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+
+output-node: echo-error

@@ -1,0 +1,20 @@
+host: mock-service:9001
+endpoints:
+  parse-request:
+    path: checkout/parse-request
+    timeout-ms: 1000
+  validate-user:
+    path: checkout/validate-user
+    timeout-ms: 1000
+  fetch-product:
+    path: checkout/fetch-product
+    timeout-ms: 1000
+  check-inventory:
+    path: checkout/check-inventory
+    timeout-ms: 1000
+  apply-discount:
+    path: checkout/apply-discount
+    timeout-ms: 1000
+  build-summary:
+    path: checkout/build-summary
+    timeout-ms: 1000
