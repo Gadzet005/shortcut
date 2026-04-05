@@ -1,6 +1,8 @@
 package graphconfig
 
 import (
+	"time"
+
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
 	graphnodes "github.com/Gadzet005/shortcut/internal/domain/graph/nodes"
 	"github.com/Gadzet005/shortcut/pkg/containers/slices"
@@ -125,7 +127,10 @@ func convertNode(
 		return graph.Node{}, errors.Errorf("endpoint %s not found in namespace %s", nCfg.EndpointID, namespaceID)
 	}
 
-	executor := graphnodes.NewDefaultNodeExecutor(client, graphnodes.Endpoint{URL: ep.URL})
+	executor := graphnodes.NewDefaultNodeExecutor(client, graphnodes.Endpoint{
+		URL:     ep.URL,
+		Timeout: time.Duration(ep.TimeoutMs) * time.Millisecond,
+	})
 	return graph.Node{
 		ID:           graph.NodeID(nCfg.ID),
 		Dependencies: deps,

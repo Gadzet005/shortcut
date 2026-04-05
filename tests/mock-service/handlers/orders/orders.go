@@ -2,6 +2,7 @@ package orders
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"slices"
 	"strconv"
@@ -97,13 +98,9 @@ func GetTopOrders(ctx *shortcut.Context) error {
 		return err
 	}
 
-	limitRaw := httpRequest.Query.Get("limit")
-	limit, err := strconv.Atoi(limitRaw)
+	limit, haveLimit, err := parseLimit(httpRequest)
 	if err != nil {
 		return shortcut.NewErrorWithCause(400, "failed to parse limit", err)
-	}
-	if limit < 0 {
-		return shortcut.NewError(400, "limit must be positive")
 	}
 
 	slices.SortFunc(orders, func(a, b Order) int {
@@ -111,7 +108,7 @@ func GetTopOrders(ctx *shortcut.Context) error {
 	})
 
 	responseOrders := orders
-	if limit != 0 && len(responseOrders) > limit {
+	if haveLimit && len(responseOrders) > limit {
 		responseOrders = responseOrders[:limit]
 	}
 
@@ -158,10 +155,26 @@ func MergeOrdersAndUsers(ctx *shortcut.Context) error {
 
 	httpResponse := shortcutapi.HttpResponse{
 		StatusCode: http.StatusOK,
+		Headers:    map[string][]string{"Content-Type": {"application/json"}},
 		Body:       bodyRaw,
 	}
 
 	return shortcut.NewResponse().
 		AddJSONItem("http_response", httpResponse).
 		Send(ctx)
+}
+
+func parseLimit(httpRequest shortcutapi.HttpRequest) (int, bool, error) {
+	limitRaw := httpRequest.Query.Get("limit")
+	if limitRaw == "" {
+		return 0, false, nil
+	}
+	parsedLimit, err := strconv.Atoi(limitRaw)
+	if err != nil {
+		return 0, false, err
+	}
+	if parsedLimit <= 0 {
+		return 0, false, errors.New("limit must be positive")
+	}
+	return parsedLimit, true, nil
 }

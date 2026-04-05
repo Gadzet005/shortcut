@@ -1,0 +1,17 @@
+routes:
+  echo-error:
+    path: /test/echo-error
+    method: GET
+    graph: echo_error
+  invalid-content-type:
+    path: /test/invalid-content-type
+    method: GET
+    graph: invalid_content_type
+  missing-http-response:
+    path: /test/missing-http-response
+    method: GET
+    graph: missing_http_response
+  slow-response:
+    path: /test/slow-response
+    method: GET
+    graph: slow_response

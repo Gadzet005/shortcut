@@ -2,6 +2,8 @@ package graphnodes
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
 
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
 	errors "github.com/Gadzet005/shortcut/pkg/errors"
@@ -29,6 +31,12 @@ func (e defaultNodeExecutor) Run(
 	logger *zap.Logger,
 	req graph.NodeExecutorRequest,
 ) (graph.NodeExecutorResponse, error) {
+	if e.endpoint.Timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, e.endpoint.Timeout)
+		defer cancel()
+	}
+
 	formData := make(map[string]string, len(req.Items))
 	for id, item := range req.Items {
 		formData[id.String()] = string(item.Data)
@@ -42,11 +50,15 @@ func (e defaultNodeExecutor) Run(
 	if err != nil {
 		return graph.NodeExecutorResponse{}, errors.Wrap(err, "make request")
 	}
-	if !resp.IsSuccess() {
-		return graph.NodeExecutorResponse{}, errors.Errorf(
-			"request failed with status code %d and body %s",
-			resp.StatusCode(), resp.String(),
-		)
+	if resp.StatusCode() != http.StatusOK {
+		errorResponse := make(map[string]any)
+		if err := json.NewDecoder(resp.RawResponse.Body).Decode(&errorResponse); err != nil {
+			return graph.NodeExecutorResponse{}, errors.Wrap(err, "decode error response")
+		}
+		return graph.NodeExecutorResponse{}, &graph.NodeError{
+			Code:    httpStatusToErrorCode(resp.StatusCode()),
+			Payload: errorResponse,
+		}
 	}
 
 	body := resp.RawResponse.Body
@@ -63,4 +75,19 @@ func (e defaultNodeExecutor) Run(
 	}
 
 	return graph.NodeExecutorResponse{Items: results}, nil
+}
+
+func httpStatusToErrorCode(status int) graph.ErrorCode {
+	switch status {
+	case 400:
+		return graph.ErrCodeBadRequest
+	case 401:
+		return graph.ErrCodeUnauthorized
+	case 403:
+		return graph.ErrCodeForbidden
+	case 404:
+		return graph.ErrCodeNotFound
+	default:
+		return graph.ErrCodeInternal
+	}
 }

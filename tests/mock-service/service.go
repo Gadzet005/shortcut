@@ -4,7 +4,8 @@ import (
 	"github.com/Gadzet005/shortcut/pkg/app/di"
 	"github.com/Gadzet005/shortcut/pkg/app/lifecycle"
 	"github.com/Gadzet005/shortcut/pkg/shortcut"
-	"github.com/Gadzet005/shortcut/tests/mock-service/orders"
+	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/badresponse"
+	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/orders"
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,6 +34,14 @@ func (s *service) Run(ctx lifecycle.Context) error {
 		g.POST("/get-users-by-ids", shortcut.New(orders.GetUsersByIDs, s.Logger()))
 		g.POST("/get-top-orders", shortcut.New(orders.GetTopOrders, s.Logger()))
 		g.POST("/merge-orders-and-users", shortcut.New(orders.MergeOrdersAndUsers, s.Logger()))
+	}
+
+	{
+		g := r.Group("/test")
+		g.POST("/echo-error", shortcut.New(badresponse.EchoError, s.Logger()))
+		g.POST("/invalid-content-type", badresponse.InvalidContentType)
+		g.POST("/missing-http-response", shortcut.New(badresponse.MissingHTTPResponse, s.Logger()))
+		g.POST("/slow-response", badresponse.SlowResponse)
 	}
 
 	return nil

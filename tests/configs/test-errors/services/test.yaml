@@ -1,0 +1,14 @@
+host: mock-service:9001
+endpoints:
+  echo-error:
+    path: test/echo-error
+    timeout-ms: 1000
+  invalid-content-type:
+    path: test/invalid-content-type
+    timeout-ms: 1000
+  missing-http-response:
+    path: test/missing-http-response
+    timeout-ms: 1000
+  slow-response:
+    path: test/slow-response
+    timeout-ms: 10

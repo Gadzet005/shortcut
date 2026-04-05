@@ -2,7 +2,6 @@ package graphlocalrepo
 
 import (
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
-	"github.com/Gadzet005/shortcut/pkg/shortcut"
 )
 
 var _ graph.NamespaceRepo = &localRepo{}
@@ -20,7 +19,7 @@ type localRepo struct {
 func (r *localRepo) GetNamespace(id graph.NamespaceID) (graph.Namespace, error) {
 	namespace, ok := r.namespaces[id]
 	if !ok {
-		return graph.Namespace{}, shortcut.ErrItemNotFound
+		return graph.Namespace{}, graph.ErrNotFound
 	}
 	return namespace, nil
 }

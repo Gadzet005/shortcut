@@ -59,6 +59,25 @@ func TestGetTopOrders(t *testing.T) {
 				require.Equal(t, http.StatusBadRequest, response.StatusCode)
 			},
 		},
+		{
+			name: "returns all orders when limit is not provided",
+			args: args{
+				limit: "",
+			},
+			check: func(t *testing.T, response getTopOrdersResponse) {
+				require.Equal(t, http.StatusOK, response.StatusCode)
+				require.Len(t, response.Orders, 11)
+			},
+		},
+		{
+			name: "returns error when limit is 0",
+			args: args{
+				limit: "0",
+			},
+			check: func(t *testing.T, response getTopOrdersResponse) {
+				require.Equal(t, http.StatusBadRequest, response.StatusCode)
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -88,12 +107,18 @@ func getTopOrders(t *testing.T, limit string) getTopOrdersResponse {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
+	require.Contains(t, resp.Header.Get("Content-Type"), "application/json")
+
 	response := getTopOrdersResponse{
 		StatusCode: resp.StatusCode,
 	}
 
 	if resp.StatusCode == http.StatusOK {
 		require.NoError(t, json.NewDecoder(resp.Body).Decode(&response.Orders))
+	} else {
+		errorResponse := make(map[string]string)
+		require.NoError(t, json.NewDecoder(resp.Body).Decode(&errorResponse))
+		require.NotEmpty(t, errorResponse["error"], "error response should contain error field")
 	}
 
 	return response

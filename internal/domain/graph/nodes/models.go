@@ -1,5 +1,8 @@
 package graphnodes
 
+import "time"
+
 type Endpoint struct {
-	URL string
+	URL     string
+	Timeout time.Duration
 }
