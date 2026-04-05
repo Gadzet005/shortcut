@@ -1,0 +1,46 @@
+nodes:
+  parse-request:
+    endpoint-id: checkout/parse-request
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+  validate-user:
+    endpoint-id: checkout/validate-user
+    dependencies:
+      - node-id: parse-request
+        item-id: user_id
+        overriden-item-id: user_id
+  fetch-product:
+    endpoint-id: checkout/fetch-product
+    dependencies:
+      - node-id: parse-request
+        item-id: product_id
+        overriden-item-id: product_id
+  check-inventory:
+    endpoint-id: checkout/check-inventory
+    dependencies:
+      - node-id: fetch-product
+        item-id: product
+        overriden-item-id: product
+  apply-discount:
+    endpoint-id: checkout/apply-discount
+    dependencies:
+      - node-id: fetch-product
+        item-id: product
+        overriden-item-id: product
+  build-summary:
+    endpoint-id: checkout/build-summary
+    dependencies:
+      - node-id: validate-user
+        item-id: user
+        overriden-item-id: user
+      - node-id: check-inventory
+        item-id: stock_status
+        overriden-item-id: stock_status
+      - node-id: apply-discount
+        item-id: discounted_price
+        overriden-item-id: discounted_price
+
+output-node: build-summary
+failure-strategy: ignore

@@ -1,0 +1,16 @@
+nodes:
+  slow-step1:
+    endpoint-id: test/slow-step1
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+  slow-step2:
+    endpoint-id: test/slow-step2
+    dependencies:
+      - node-id: slow-step1
+        item-id: value
+        overriden-item-id: value
+
+output-node: slow-step2
+timeout-ms: 150

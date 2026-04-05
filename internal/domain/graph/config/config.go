@@ -22,6 +22,7 @@ type GraphConfig struct {
 	InputNode       string
 	OutputNode      string
 	FailureStrategy string
+	TimeoutMs       int
 }
 
 type NodeConfig struct {
@@ -67,6 +68,7 @@ type GraphFileConfig struct {
 	InputNode       string                    `yaml:"input-node"`
 	OutputNode      string                    `yaml:"output-node"`
 	FailureStrategy string                    `yaml:"failure-strategy"`
+	TimeoutMs       int                       `yaml:"timeout-ms"`
 }
 
 type NodeFileConfig struct {

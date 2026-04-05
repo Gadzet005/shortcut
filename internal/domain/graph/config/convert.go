@@ -58,7 +58,7 @@ func convertNamespace(
 			return graph.Namespace{}, errors.Wrapf(err, "graph %s", graphName)
 		}
 
-		g, err := graph.NewGraph(nodesMap, graph.NodeID(gCfg.InputNode), graph.NodeID(gCfg.OutputNode))
+		g, err := graph.NewGraph(nodesMap, graph.NodeID(gCfg.InputNode), graph.NodeID(gCfg.OutputNode), time.Duration(gCfg.TimeoutMs)*time.Millisecond)
 		if err != nil {
 			return graph.Namespace{}, errors.Wrapf(err, "build graph %s", graphName)
 		}

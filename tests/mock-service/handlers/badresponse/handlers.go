@@ -44,3 +44,27 @@ func SlowResponse(c *gin.Context) {
 	time.Sleep(time.Second)
 	c.JSON(http.StatusOK, gin.H{"key": "value"})
 }
+
+// SlowStep1 sleeps for 100ms and returns a multipart item "value".
+// Used together with SlowStep2 to test graph-level timeout: the two-step chain
+// takes ~200ms total, which exceeds the configured graph timeout of 150ms.
+func SlowStep1(ctx *shortcut.Context) error {
+	time.Sleep(100 * time.Millisecond)
+	return shortcut.NewResponse().
+		AddJSONItem("value", 1).
+		Send(ctx)
+}
+
+// SlowStep2 sleeps for 100ms and returns an http_response.
+func SlowStep2(ctx *shortcut.Context) error {
+	time.Sleep(100 * time.Millisecond)
+
+	httpResponse := shortcutapi.HttpResponse{
+		StatusCode: http.StatusOK,
+		Headers:    map[string][]string{"Content-Type": {"application/json"}},
+		Body:       []byte(`{"ok":true}`),
+	}
+	return shortcut.NewResponse().
+		AddJSONItem("http_response", httpResponse).
+		Send(ctx)
+}

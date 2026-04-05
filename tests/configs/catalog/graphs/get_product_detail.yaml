@@ -1,0 +1,34 @@
+nodes:
+  fetch-product:
+    endpoint-id: catalog/fetch-product
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+  fetch-inventory:
+    endpoint-id: catalog/fetch-inventory
+    dependencies:
+      - node-id: fetch-product
+        item-id: product_id
+        overriden-item-id: product_id
+  fetch-pricing:
+    endpoint-id: catalog/fetch-pricing
+    dependencies:
+      - node-id: fetch-product
+        item-id: product_id
+        overriden-item-id: product_id
+  build-detail:
+    endpoint-id: catalog/build-detail
+    dependencies:
+      - node-id: fetch-product
+        item-id: product
+        overriden-item-id: product
+      - node-id: fetch-inventory
+        item-id: inventory
+        overriden-item-id: inventory
+      - node-id: fetch-pricing
+        item-id: pricing
+        overriden-item-id: pricing
+
+output-node: build-detail
+failure-strategy: ignore

@@ -1,0 +1,18 @@
+nodes:
+  validate-item:
+    endpoint-id: store/validate-item
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+  save-item:
+    endpoint-id: store/save-item
+    dependencies:
+      - node-id: validate-item
+        item-id: name
+        overriden-item-id: name
+      - node-id: validate-item
+        item-id: price
+        overriden-item-id: price
+
+output-node: save-item

@@ -1,0 +1,34 @@
+nodes:
+  step1:
+    endpoint-id: pipeline/step1
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+  step2:
+    endpoint-id: pipeline/step2
+    dependencies:
+      - node-id: step1
+        item-id: value
+        overriden-item-id: value
+  step3:
+    endpoint-id: pipeline/step3
+    dependencies:
+      - node-id: step2
+        item-id: value
+        overriden-item-id: value
+  step4:
+    endpoint-id: pipeline/step4
+    dependencies:
+      - node-id: step3
+        item-id: value
+        overriden-item-id: value
+  step5:
+    endpoint-id: pipeline/step5
+    dependencies:
+      - node-id: step4
+        item-id: value
+        overriden-item-id: value
+
+output-node: step5
+failure-strategy: ignore

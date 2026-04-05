@@ -1,0 +1,34 @@
+nodes:
+  fetch-weather:
+    endpoint-id: dashboard/fetch-weather
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+  fetch-traffic:
+    endpoint-id: dashboard/fetch-traffic
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+  fetch-events:
+    endpoint-id: dashboard/fetch-events
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+  aggregate-report:
+    endpoint-id: dashboard/aggregate-report
+    dependencies:
+      - node-id: fetch-weather
+        item-id: weather
+        overriden-item-id: weather
+      - node-id: fetch-traffic
+        item-id: traffic
+        overriden-item-id: traffic
+      - node-id: fetch-events
+        item-id: events
+        overriden-item-id: events
+
+output-node: aggregate-report
+failure-strategy: ignore

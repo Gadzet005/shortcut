@@ -1,0 +1,5 @@
+routes:
+  checkout-summary:
+    path: /checkout/summary
+    method: GET
+    graph: checkout_summary

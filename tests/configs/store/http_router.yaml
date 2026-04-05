@@ -1,0 +1,13 @@
+routes:
+  list-items:
+    path: /store/items
+    method: GET
+    graph: list_items
+  create-item:
+    path: /store/items
+    method: POST
+    graph: create_item
+  clear-items:
+    path: /store/items
+    method: DELETE
+    graph: clear_items

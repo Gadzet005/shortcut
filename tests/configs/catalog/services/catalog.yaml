@@ -1,0 +1,14 @@
+host: mock-service:9001
+endpoints:
+  fetch-product:
+    path: catalog/fetch-product
+    timeout-ms: 1000
+  fetch-inventory:
+    path: catalog/fetch-inventory
+    timeout-ms: 1000
+  fetch-pricing:
+    path: catalog/fetch-pricing
+    timeout-ms: 1000
+  build-detail:
+    path: catalog/build-detail
+    timeout-ms: 1000
