@@ -3,8 +3,10 @@ package rungraph
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
+	"github.com/Gadzet005/shortcut/internal/domain/trace"
 	"github.com/Gadzet005/shortcut/pkg/errors"
 	shortcutapi "github.com/Gadzet005/shortcut/pkg/shortcut/api"
 	"github.com/go-resty/resty/v2"
@@ -33,11 +35,13 @@ func NewUseCase(
 	client *resty.Client,
 	logger *zap.Logger,
 	namespaceRepo graph.NamespaceRepo,
+	traceRepo trace.Repo,
 ) useCase {
 	return useCase{
 		client:        client,
 		namespaceRepo: namespaceRepo,
 		logger:        logger,
+		traceRepo:     traceRepo,
 	}
 }
 
@@ -45,6 +49,7 @@ type useCase struct {
 	client        *resty.Client
 	logger        *zap.Logger
 	namespaceRepo graph.NamespaceRepo
+	traceRepo     trace.Repo
 }
 
 func (u useCase) RunGraph(
@@ -76,13 +81,18 @@ func (u useCase) RunGraph(
 		httpRequestItemID: {Data: rawHTTPRequest},
 	}
 
-	resp, err := g.Run(ctx, u.logger, items)
-	if err != nil {
+	start := time.Now()
+	resp, runErr := g.Run(ctx, u.logger, items)
+	finished := time.Now()
+
+	u.saveTrace(ctx, start, finished, namespaceID, graphID, input, runErr)
+
+	if runErr != nil {
 		var nodeErr *graph.NodeError
-		if errors.As(err, &nodeErr) {
+		if errors.As(runErr, &nodeErr) {
 			return nodeErrorToHTTPResponse(nodeErr)
 		}
-		return shortcutapi.HttpResponse{}, errors.Wrap(err, "run graph")
+		return shortcutapi.HttpResponse{}, errors.Wrap(runErr, "run graph")
 	}
 
 	item, ok := resp[httpResponseItemID]
@@ -96,6 +106,41 @@ func (u useCase) RunGraph(
 	}
 
 	return parsedHTTPResponse, nil
+}
+
+func (u useCase) saveTrace(
+	ctx context.Context,
+	start, finished time.Time,
+	namespaceID graph.NamespaceID,
+	graphID graph.ID,
+	input shortcutapi.HttpRequest,
+	runErr error,
+) {
+	collector, ok := trace.GetCollector(ctx)
+	if !ok || u.traceRepo == nil {
+		return
+	}
+
+	t := trace.Trace{
+		RequestID:   collector.RequestID(),
+		NamespaceID: namespaceID.String(),
+		GraphID:     graphID.String(),
+		Method:      input.Method,
+		Path:        input.Path,
+		StartedAt:   start,
+		FinishedAt:  finished,
+		DurationMs:  finished.Sub(start).Milliseconds(),
+		Status:      trace.TraceStatusOK,
+		NodeTraces:  collector.NodeTraces(),
+	}
+	if runErr != nil {
+		t.Status = trace.TraceStatusError
+		t.Error = runErr.Error()
+	}
+
+	if saveErr := u.traceRepo.Save(ctx, t); saveErr != nil {
+		u.logger.Error("failed to save trace", zap.Error(saveErr))
+	}
 }
 
 func nodeErrorToHTTPResponse(e *graph.NodeError) (shortcutapi.HttpResponse, error) {

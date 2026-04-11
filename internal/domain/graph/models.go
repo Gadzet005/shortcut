@@ -60,6 +60,7 @@ type NodeExecutorRequest struct {
 
 type NodeExecutorResponse struct {
 	Items map[ItemID]Item
+	Meta  map[string]any
 }
 
 type NodeExecutor interface {

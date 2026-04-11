@@ -5,6 +5,7 @@ import (
 
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
 	graphnodes "github.com/Gadzet005/shortcut/internal/domain/graph/nodes"
+	"github.com/Gadzet005/shortcut/internal/domain/trace"
 	"github.com/Gadzet005/shortcut/pkg/containers/slices"
 	"github.com/Gadzet005/shortcut/pkg/errors"
 	"github.com/go-resty/resty/v2"
@@ -77,10 +78,11 @@ func convertGraphNodes(
 ) (map[graph.NodeID]graph.Node, error) {
 	nodesMap := make(map[graph.NodeID]graph.Node)
 
-	nodesMap[graph.NodeID(gCfg.InputNode)] = graph.Node{
-		ID:           graph.NodeID(gCfg.InputNode),
+	inputNodeID := graph.NodeID(gCfg.InputNode)
+	nodesMap[inputNodeID] = graph.Node{
+		ID:           inputNodeID,
 		Dependencies: nil,
-		Executor:     graphnodes.NewTransparentNodeExecutor(),
+		Executor:     trace.NewTracingExecutor(graphnodes.NewTransparentNodeExecutor(), inputNodeID),
 	}
 
 	for nodeName, nCfg := range gCfg.Nodes {
@@ -89,7 +91,9 @@ func convertGraphNodes(
 			return nil, errors.Wrapf(err, "node %s", nodeName)
 		}
 		node.ID = graph.NodeID(nCfg.ID)
-		nodesMap[graph.NodeID(nodeName)] = node
+		nodeID := graph.NodeID(nodeName)
+		node.Executor = trace.NewTracingExecutor(node.Executor, nodeID)
+		nodesMap[nodeID] = node
 	}
 
 	return nodesMap, nil

@@ -4,8 +4,10 @@ import (
 	"net/http"
 
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
+	"github.com/Gadzet005/shortcut/internal/domain/trace"
 	"github.com/Gadzet005/shortcut/pkg/errors"
 	httpcontext "github.com/Gadzet005/shortcut/pkg/http/context"
+	httpmiddleware "github.com/Gadzet005/shortcut/pkg/http/middleware"
 	shortcutapi "github.com/Gadzet005/shortcut/pkg/shortcut/api"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -38,7 +40,14 @@ func (h handlerBase) RunGraph(c *gin.Context) {
 		Body:    data,
 	}
 
-	resp, err := h.runGraphUC.RunGraph(c.Request.Context(), graph.NamespaceID(namespaceID), httpRequest)
+	ctx := c.Request.Context()
+	if h.tracingEnabled {
+		requestID, _ := c.Get(httpmiddleware.RequestIDKey)
+		collector := trace.NewCollector(trace.RequestID(requestID.(string)))
+		ctx = trace.WithCollector(ctx, collector)
+	}
+
+	resp, err := h.runGraphUC.RunGraph(ctx, graph.NamespaceID(namespaceID), httpRequest)
 	switch {
 	case errors.Is(err, graph.ErrNotFound):
 		logger.Warn("graph not found", zap.Error(err))

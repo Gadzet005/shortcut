@@ -1,11 +1,15 @@
 package app
 
 import (
+	"context"
 	"flag"
 
 	graphconfig "github.com/Gadzet005/shortcut/internal/domain/graph/config"
+	"github.com/Gadzet005/shortcut/internal/domain/trace"
 	graphhandler "github.com/Gadzet005/shortcut/internal/handlers/graph"
+	tracehandler "github.com/Gadzet005/shortcut/internal/handlers/trace"
 	graphlocalrepo "github.com/Gadzet005/shortcut/internal/repo/graph/local"
+	tracemongo "github.com/Gadzet005/shortcut/internal/repo/trace/mongo"
 	rungraph "github.com/Gadzet005/shortcut/internal/usecases/run-graph"
 	"github.com/Gadzet005/shortcut/pkg/app/di"
 	"github.com/Gadzet005/shortcut/pkg/app/lifecycle"
@@ -13,6 +17,8 @@ import (
 	httpmiddleware "github.com/Gadzet005/shortcut/pkg/http/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
 func NewService() lifecycle.App {
@@ -54,21 +60,47 @@ func (s service) Run(c lifecycle.Context) error {
 	}
 	localRepo := graphlocalrepo.NewLocalRepo(graphConfig)
 
+	tracingEnabled := s.Config().TracingConfig.Enabled
+	var traceRepo trace.Repo
+
+	if tracingEnabled {
+		mongoCfg := s.Config().MongoConfig
+		mongoClient, err := mongo.Connect(options.Client().ApplyURI(mongoCfg.URI))
+		if err != nil {
+			return errors.WrapFailf(err, "failed to connect to mongodb")
+		}
+		c.AddStopper(func(ctx context.Context) error {
+			return mongoClient.Disconnect(ctx)
+		})
+
+		db := mongoClient.Database(mongoCfg.Database)
+		traceRepo, err = tracemongo.NewMongoRepo(c.Context(), db)
+		if err != nil {
+			return errors.WrapFailf(err, "failed to create trace repo")
+		}
+	}
+
 	r := s.HTTP("shortcut")
 	r.Use(
+		httpmiddleware.RequestID(),
 		httpmiddleware.ZapLogger(s.Logger()),
 		httpmiddleware.Metrics("shortcut"),
 		httpmiddleware.Recover(),
 	)
 
-	runGraphUC := rungraph.NewUseCase(client, s.Logger(), localRepo)
+	runGraphUC := rungraph.NewUseCase(client, s.Logger(), localRepo, traceRepo)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
-	handlerBase := graphhandler.NewHandlerBase(runGraphUC)
+	handlerBase := graphhandler.NewHandlerBase(runGraphUC, tracingEnabled)
 	r.Any("run/:namespace_id/*path", handlerBase.RunGraph)
+
+	if tracingEnabled {
+		traceHandlerBase := tracehandler.NewHandlerBase(traceRepo)
+		r.GET("/trace/:request_id", traceHandlerBase.GetTrace)
+	}
 
 	return nil
 }
