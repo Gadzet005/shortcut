@@ -8,6 +8,7 @@ import (
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/catalog"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/checkout"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/dashboard"
+	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/httpadapter"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/orders"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/pipeline"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/retrytest"
@@ -94,6 +95,12 @@ func (s *service) Run(ctx lifecycle.Context) error {
 		g := r.Group("/timeout-test")
 		g.POST("/slow-step1", shortcut.New(badresponse.SlowStep1, s.Logger()))
 		g.POST("/slow-step2", shortcut.New(badresponse.SlowStep2, s.Logger()))
+	}
+
+	{
+		g := r.Group("/http-adapter")
+		g.GET("/echo", httpadapter.EchoGET)
+		g.POST("/echo", httpadapter.EchoPost)
 	}
 
 	{

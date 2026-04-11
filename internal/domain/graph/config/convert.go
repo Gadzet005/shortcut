@@ -120,8 +120,8 @@ func convertNode(
 			Dependencies: deps,
 			Executor:     graphnodes.NewTransparentNodeExecutor(),
 		}, nil
-	case NodeTypeDefault, NodeType(""):
-		// endpoint node
+	case NodeTypeDefault, NodeType(""), NodeTypeHTTPAdapter:
+		// endpoint node — falls through to endpoint lookup below
 	default:
 		return graph.Node{}, errors.Errorf("unknown node type %q in namespace %s", nCfg.Type, namespaceID)
 	}
@@ -131,14 +131,22 @@ func convertNode(
 		return graph.Node{}, errors.Errorf("endpoint %s not found in namespace %s", nCfg.EndpointID, namespaceID)
 	}
 
-	executor := graphnodes.NewDefaultNodeExecutor(client, graphnodes.Endpoint{
+	endpoint := graphnodes.Endpoint{
 		URL:               ep.URL,
 		Timeout:           time.Duration(ep.TimeoutMs) * time.Millisecond,
 		RetriesNum:        ep.RetriesNum,
 		InitialInterval:   time.Duration(ep.InitialIntervalMs) * time.Millisecond,
 		BackoffMultiplier: ep.BackoffMultiplier,
 		MaxInterval:       time.Duration(ep.MaxIntervalMs) * time.Millisecond,
-	})
+	}
+
+	var executor graph.NodeExecutor
+	if nCfg.Type == NodeTypeHTTPAdapter {
+		executor = graphnodes.NewHTTPAdapterNodeExecutor(client, endpoint)
+	} else {
+		executor = graphnodes.NewDefaultNodeExecutor(client, endpoint)
+	}
+
 	return graph.Node{
 		ID:           graph.NodeID(nCfg.ID),
 		Dependencies: deps,
