@@ -1,27 +1,21 @@
 package trace
 
 import (
-	"context"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestContextCollector(t *testing.T) {
 	c := NewCollector("ctx-test")
-	ctx := WithCollector(context.Background(), c)
+	ctx := WithCollector(t.Context(), c)
 
 	got, ok := GetCollector(ctx)
-	if !ok {
-		t.Fatal("expected collector in context")
-	}
-	if got.RequestID() != "ctx-test" {
-		t.Errorf("expected request ID 'ctx-test', got '%s'", got.RequestID())
-	}
+	require.True(t, ok)
+	require.Equal(t, RequestID("ctx-test"), got.RequestID())
 }
 
 func TestContextCollector_Missing(t *testing.T) {
-	ctx := context.Background()
-	_, ok := GetCollector(ctx)
-	if ok {
-		t.Error("expected no collector in empty context")
-	}
+	_, ok := GetCollector(t.Context())
+	require.False(t, ok)
 }

@@ -11,10 +11,6 @@ import (
 
 var _ trace.Repo = (*mongoRepo)(nil)
 
-type mongoRepo struct {
-	collection *mongo.Collection
-}
-
 func NewMongoRepo(ctx context.Context, db *mongo.Database) (*mongoRepo, error) {
 	collection := db.Collection("traces")
 
@@ -27,6 +23,10 @@ func NewMongoRepo(ctx context.Context, db *mongo.Database) (*mongoRepo, error) {
 	}
 
 	return &mongoRepo{collection: collection}, nil
+}
+
+type mongoRepo struct {
+	collection *mongo.Collection
 }
 
 func (r *mongoRepo) Save(ctx context.Context, t trace.Trace) error {

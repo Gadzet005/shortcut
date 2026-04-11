@@ -14,15 +14,14 @@ func TestGetTopOrders(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name  string
-		args  args
-		check func(t *testing.T, response getTopOrdersResponse)
+		name       string
+		args       args
+		check      func(t *testing.T, response getTopOrdersResponse)
+		checkTrace func(t *testing.T, tr traceResponse)
 	}{
 		{
 			name: "returns top 3 orders with user names",
-			args: args{
-				limit: "3",
-			},
+			args: args{limit: "3"},
 			check: func(t *testing.T, response getTopOrdersResponse) {
 				require.Equal(t, http.StatusOK, response.StatusCode)
 				require.Len(t, response.Orders, 3)
@@ -30,12 +29,26 @@ func TestGetTopOrders(t *testing.T) {
 				require.Equal(t, userOrder{UserName: "Alice Cooper", UserID: "5", OrderID: "5", Amount: 500}, response.Orders[1])
 				require.Equal(t, userOrder{UserName: "Bob Brown", UserID: "4", OrderID: "4", Amount: 400}, response.Orders[2])
 			},
+			checkTrace: func(t *testing.T, tr traceResponse) {
+				require.Equal(t, "ok", tr.Status)
+				require.Equal(t, "orders", tr.NamespaceID)
+				require.Equal(t, "get_top_orders", tr.GraphID)
+				require.Len(t, tr.NodeTraces, 4)
+
+				input := findNodeTrace(t, tr, "input")
+				require.Equal(t, 0, input.StatusCode)
+				require.Empty(t, input.Error)
+
+				for _, name := range []string{"get-top-orders", "get-users-by-ids", "merge-orders-and-users"} {
+					n := findNodeTrace(t, tr, name)
+					require.Equal(t, http.StatusOK, n.StatusCode, "node %s", name)
+					require.Empty(t, n.Error, "node %s", name)
+				}
+			},
 		},
 		{
 			name: "returns all orders when limit exceeds total",
-			args: args{
-				limit: "100",
-			},
+			args: args{limit: "100"},
 			check: func(t *testing.T, response getTopOrdersResponse) {
 				require.Equal(t, http.StatusOK, response.StatusCode)
 				require.Len(t, response.Orders, 11)
@@ -43,27 +56,21 @@ func TestGetTopOrders(t *testing.T) {
 		},
 		{
 			name: "returns error when limit is not a number",
-			args: args{
-				limit: "not-a-number",
-			},
+			args: args{limit: "not-a-number"},
 			check: func(t *testing.T, response getTopOrdersResponse) {
 				require.Equal(t, http.StatusBadRequest, response.StatusCode)
 			},
 		},
 		{
 			name: "returns error when limit is negative",
-			args: args{
-				limit: "-1",
-			},
+			args: args{limit: "-1"},
 			check: func(t *testing.T, response getTopOrdersResponse) {
 				require.Equal(t, http.StatusBadRequest, response.StatusCode)
 			},
 		},
 		{
 			name: "returns all orders when limit is not provided",
-			args: args{
-				limit: "",
-			},
+			args: args{limit: ""},
 			check: func(t *testing.T, response getTopOrdersResponse) {
 				require.Equal(t, http.StatusOK, response.StatusCode)
 				require.Len(t, response.Orders, 11)
@@ -71,9 +78,7 @@ func TestGetTopOrders(t *testing.T) {
 		},
 		{
 			name: "returns error when limit is 0",
-			args: args{
-				limit: "0",
-			},
+			args: args{limit: "0"},
 			check: func(t *testing.T, response getTopOrdersResponse) {
 				require.Equal(t, http.StatusBadRequest, response.StatusCode)
 			},
@@ -84,12 +89,17 @@ func TestGetTopOrders(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			response := getTopOrders(t, testCase.args.limit)
 			testCase.check(t, response)
+			if testCase.checkTrace != nil {
+				tr := getTrace(t, shortcutURL, response.RequestID)
+				testCase.checkTrace(t, tr)
+			}
 		})
 	}
 }
 
 type getTopOrdersResponse struct {
-	StatusCode int         `json:"status_code"`
+	StatusCode int `json:"status_code"`
+	RequestID  string
 	Orders     []userOrder `json:"orders"`
 }
 
@@ -111,6 +121,7 @@ func getTopOrders(t *testing.T, limit string) getTopOrdersResponse {
 
 	response := getTopOrdersResponse{
 		StatusCode: resp.StatusCode,
+		RequestID:  resp.Header.Get("X-Request-Id"),
 	}
 
 	if resp.StatusCode == http.StatusOK {
