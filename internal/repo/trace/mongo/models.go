@@ -21,26 +21,38 @@ type traceDocument struct {
 }
 
 type nodeTraceDocument struct {
-	NodeID     string    `bson:"node_id"`
-	StartedAt  time.Time `bson:"started_at"`
-	FinishedAt time.Time `bson:"finished_at"`
-	DurationMs int64     `bson:"duration_ms"`
-	StatusCode int       `bson:"status_code,omitempty"`
-	RetryCount int       `bson:"retry_count,omitempty"`
-	Error      string    `bson:"error,omitempty"`
+	NodeID       string                   `bson:"node_id"`
+	NodeType     string                   `bson:"node_type,omitempty"`
+	Dependencies []nodeDependencyDocument `bson:"dependencies,omitempty"`
+	StartedAt    time.Time                `bson:"started_at"`
+	FinishedAt   time.Time                `bson:"finished_at"`
+	DurationMs   int64                    `bson:"duration_ms"`
+	StatusCode   int                      `bson:"status_code,omitempty"`
+	RetryCount   int                      `bson:"retry_count,omitempty"`
+	Error        string                   `bson:"error,omitempty"`
+}
+
+type nodeDependencyDocument struct {
+	NodeID string `bson:"node_id"`
 }
 
 func toDocument(t trace.Trace) traceDocument {
 	nodeTraces := make([]nodeTraceDocument, len(t.NodeTraces))
 	for i, nt := range t.NodeTraces {
+		deps := make([]nodeDependencyDocument, len(nt.Dependencies))
+		for j, d := range nt.Dependencies {
+			deps[j] = nodeDependencyDocument{NodeID: d.NodeID}
+		}
 		nodeTraces[i] = nodeTraceDocument{
-			NodeID:     nt.NodeID,
-			StartedAt:  nt.StartedAt,
-			FinishedAt: nt.FinishedAt,
-			DurationMs: nt.DurationMs,
-			StatusCode: nt.StatusCode,
-			RetryCount: nt.RetryCount,
-			Error:      nt.Error,
+			NodeID:       nt.NodeID,
+			NodeType:     nt.NodeType,
+			Dependencies: deps,
+			StartedAt:    nt.StartedAt,
+			FinishedAt:   nt.FinishedAt,
+			DurationMs:   nt.DurationMs,
+			StatusCode:   nt.StatusCode,
+			RetryCount:   nt.RetryCount,
+			Error:        nt.Error,
 		}
 	}
 	return traceDocument{
@@ -61,14 +73,20 @@ func toDocument(t trace.Trace) traceDocument {
 func fromDocument(d traceDocument) trace.Trace {
 	nodeTraces := make([]trace.NodeTrace, len(d.NodeTraces))
 	for i, nt := range d.NodeTraces {
+		deps := make([]trace.NodeDependency, len(nt.Dependencies))
+		for j, dep := range nt.Dependencies {
+			deps[j] = trace.NodeDependency{NodeID: dep.NodeID}
+		}
 		nodeTraces[i] = trace.NodeTrace{
-			NodeID:     nt.NodeID,
-			StartedAt:  nt.StartedAt,
-			FinishedAt: nt.FinishedAt,
-			DurationMs: nt.DurationMs,
-			StatusCode: nt.StatusCode,
-			RetryCount: nt.RetryCount,
-			Error:      nt.Error,
+			NodeID:       nt.NodeID,
+			NodeType:     nt.NodeType,
+			Dependencies: deps,
+			StartedAt:    nt.StartedAt,
+			FinishedAt:   nt.FinishedAt,
+			DurationMs:   nt.DurationMs,
+			StatusCode:   nt.StatusCode,
+			RetryCount:   nt.RetryCount,
+			Error:        nt.Error,
 		}
 	}
 	return trace.Trace{

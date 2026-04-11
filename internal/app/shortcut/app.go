@@ -94,6 +94,8 @@ func (s service) Run(c lifecycle.Context) error {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
+	r.Static("/ui", "./web/dist")
+
 	handlerBase := graphhandler.NewHandlerBase(runGraphUC, tracingEnabled)
 	r.Any("run/:namespace_id/*path", handlerBase.RunGraph)
 
