@@ -5,6 +5,7 @@ type NodeType string
 const (
 	NodeTypeDefault     NodeType = "default"
 	NodeTypeTransparent NodeType = "transparent"
+	NodeTypeHTTPAdapter NodeType = "http-adapter"
 )
 
 type Config struct {

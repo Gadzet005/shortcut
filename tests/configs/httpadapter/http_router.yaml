@@ -1,0 +1,9 @@
+routes:
+  echo-get:
+    path: /echo
+    method: GET
+    graph: echo
+  echo-post:
+    path: /echo
+    method: POST
+    graph: echo

@@ -1,0 +1,11 @@
+nodes:
+  call-echo:
+    type: http-adapter
+    endpoint-id: mock/echo
+    dependencies:
+      - node-id: input
+        item-id: http_request
+
+output-node: call-echo
+failure-strategy: ignore
+timeout-ms: 3000
