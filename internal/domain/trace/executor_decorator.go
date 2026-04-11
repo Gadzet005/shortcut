@@ -11,13 +11,25 @@ import (
 
 var _ graph.NodeExecutor = tracingExecutor{}
 
-func NewTracingExecutor(inner graph.NodeExecutor, nodeID graph.NodeID) graph.NodeExecutor {
-	return tracingExecutor{inner: inner, nodeID: nodeID}
+func NewTracingExecutor(
+	inner graph.NodeExecutor,
+	nodeID graph.NodeID,
+	nodeType string,
+	dependencies []NodeDependency,
+) graph.NodeExecutor {
+	return tracingExecutor{
+		inner:        inner,
+		nodeID:       nodeID,
+		nodeType:     nodeType,
+		dependencies: dependencies,
+	}
 }
 
 type tracingExecutor struct {
-	inner  graph.NodeExecutor
-	nodeID graph.NodeID
+	inner        graph.NodeExecutor
+	nodeID       graph.NodeID
+	nodeType     string
+	dependencies []NodeDependency
 }
 
 func (e tracingExecutor) Run(
@@ -35,10 +47,12 @@ func (e tracingExecutor) Run(
 	finished := time.Now()
 
 	nt := NodeTrace{
-		NodeID:     e.nodeID.String(),
-		StartedAt:  start,
-		FinishedAt: finished,
-		DurationMs: finished.Sub(start).Milliseconds(),
+		NodeID:       e.nodeID.String(),
+		NodeType:     e.nodeType,
+		Dependencies: e.dependencies,
+		StartedAt:    start,
+		FinishedAt:   finished,
+		DurationMs:   finished.Sub(start).Milliseconds(),
 	}
 
 	if resp.Meta != nil {

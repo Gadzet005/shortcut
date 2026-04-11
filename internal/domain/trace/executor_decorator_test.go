@@ -20,7 +20,7 @@ func TestTracingExecutor_NoCollector(t *testing.T) {
 		},
 		nil,
 	)
-	exec := NewTracingExecutor(inner, "node-1")
+	exec := NewTracingExecutor(inner, "node-1", "default", nil)
 
 	resp, err := exec.Run(t.Context(), zap.NewNop(), graph.NodeExecutorRequest{})
 	require.NoError(t, err)
@@ -36,7 +36,7 @@ func TestTracingExecutor_WithCollector(t *testing.T) {
 		},
 		nil,
 	)
-	exec := NewTracingExecutor(inner, "node-1")
+	exec := NewTracingExecutor(inner, "node-1", "default", nil)
 
 	collector := NewCollector("req-1")
 	ctx := WithCollector(t.Context(), collector)
@@ -61,7 +61,7 @@ func TestTracingExecutor_WithError(t *testing.T) {
 		graph.NodeExecutorResponse{},
 		&graph.NodeError{Code: graph.ErrCodeBadRequest, Payload: map[string]any{"msg": "bad"}},
 	)
-	exec := NewTracingExecutor(inner, "node-err")
+	exec := NewTracingExecutor(inner, "node-err", "default", nil)
 
 	collector := NewCollector("req-2")
 	ctx := WithCollector(t.Context(), collector)
@@ -85,7 +85,7 @@ func TestTracingExecutor_WrappedError(t *testing.T) {
 		graph.NodeExecutorResponse{},
 		errors.Wrap(nodeErr, "wrapped"),
 	)
-	exec := NewTracingExecutor(inner, "node-wrapped")
+	exec := NewTracingExecutor(inner, "node-wrapped", "default", nil)
 
 	collector := NewCollector("req-3")
 	ctx := WithCollector(t.Context(), collector)
@@ -106,7 +106,7 @@ func TestTracingExecutor_MetaOverridesErrorCode(t *testing.T) {
 		},
 		&graph.NodeError{Code: graph.ErrCodeInternal},
 	)
-	exec := NewTracingExecutor(inner, "node-meta")
+	exec := NewTracingExecutor(inner, "node-meta", "default", nil)
 
 	collector := NewCollector("req-4")
 	ctx := WithCollector(context.Background(), collector)

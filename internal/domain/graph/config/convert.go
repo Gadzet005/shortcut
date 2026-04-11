@@ -82,7 +82,7 @@ func convertGraphNodes(
 	nodesMap[inputNodeID] = graph.Node{
 		ID:           inputNodeID,
 		Dependencies: nil,
-		Executor:     trace.NewTracingExecutor(graphnodes.NewTransparentNodeExecutor(), inputNodeID),
+		Executor:     trace.NewTracingExecutor(graphnodes.NewTransparentNodeExecutor(), inputNodeID, string(NodeTypeTransparent), nil),
 	}
 
 	for nodeName, nCfg := range gCfg.Nodes {
@@ -92,7 +92,18 @@ func convertGraphNodes(
 		}
 		node.ID = graph.NodeID(nCfg.ID)
 		nodeID := graph.NodeID(nodeName)
-		node.Executor = trace.NewTracingExecutor(node.Executor, nodeID)
+
+		traceDeps := make([]trace.NodeDependency, len(nCfg.Dependencies))
+		for i, d := range nCfg.Dependencies {
+			traceDeps[i] = trace.NodeDependency{NodeID: d.NodeID}
+		}
+
+		nodeType := string(nCfg.Type)
+		if nodeType == "" {
+			nodeType = string(NodeTypeDefault)
+		}
+
+		node.Executor = trace.NewTracingExecutor(node.Executor, nodeID, nodeType, traceDeps)
 		nodesMap[nodeID] = node
 	}
 

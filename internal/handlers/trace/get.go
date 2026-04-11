@@ -37,14 +37,20 @@ func (h handlerBase) GetTrace(c *gin.Context) {
 func toResponse(t trace.Trace) traceResponse {
 	nodeTraces := make([]nodeTraceResponse, len(t.NodeTraces))
 	for i, nt := range t.NodeTraces {
+		deps := make([]nodeDependencyResponse, len(nt.Dependencies))
+		for j, d := range nt.Dependencies {
+			deps[j] = nodeDependencyResponse{NodeID: d.NodeID}
+		}
 		nodeTraces[i] = nodeTraceResponse{
-			NodeID:     nt.NodeID,
-			StartedAt:  nt.StartedAt.Format(time.RFC3339Nano),
-			FinishedAt: nt.FinishedAt.Format(time.RFC3339Nano),
-			DurationMs: nt.DurationMs,
-			StatusCode: nt.StatusCode,
-			RetryCount: nt.RetryCount,
-			Error:      nt.Error,
+			NodeID:       nt.NodeID,
+			NodeType:     nt.NodeType,
+			Dependencies: deps,
+			StartedAt:    nt.StartedAt.Format(time.RFC3339Nano),
+			FinishedAt:   nt.FinishedAt.Format(time.RFC3339Nano),
+			DurationMs:   nt.DurationMs,
+			StatusCode:   nt.StatusCode,
+			RetryCount:   nt.RetryCount,
+			Error:        nt.Error,
 		}
 	}
 	return traceResponse{

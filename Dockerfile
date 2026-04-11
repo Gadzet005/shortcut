@@ -1,3 +1,10 @@
+FROM node:22-alpine AS frontend-builder
+WORKDIR /app
+COPY web/package.json web/package-lock.json ./
+RUN npm ci
+COPY web/ .
+RUN npm run build
+
 FROM golang:1.25 AS builder
 WORKDIR /app
 COPY go.mod go.sum ./
@@ -10,6 +17,7 @@ WORKDIR /app
 COPY --from=builder /app/shortcut ./shortcut
 COPY --from=builder /app/configs ./configs
 COPY --from=builder /app/tests/configs ./tests/configs
+COPY --from=frontend-builder /app/dist ./web/dist
 
 EXPOSE 8080
 ENTRYPOINT ["./shortcut"]

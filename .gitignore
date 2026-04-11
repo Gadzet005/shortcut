@@ -36,3 +36,6 @@ test-infra/app.log
 *.log
 
 **/mocks/*.go
+
+web/node_modules/
+web/dist/

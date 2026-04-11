@@ -39,11 +39,17 @@ func (t TraceStatus) String() string {
 }
 
 type NodeTrace struct {
-	NodeID     string
-	StartedAt  time.Time
-	FinishedAt time.Time
-	DurationMs int64
-	StatusCode int // HTTP status code from endpoint node (0 for transparent/subgraph)
-	RetryCount int
-	Error      string
+	NodeID       string
+	NodeType     string           // "default", "transparent", "http-adapter"
+	Dependencies []NodeDependency // dependencies of this node in the graph
+	StartedAt    time.Time
+	FinishedAt   time.Time
+	DurationMs   int64
+	StatusCode   int // HTTP status code from endpoint node (0 for transparent/subgraph)
+	RetryCount   int
+	Error        string
+}
+
+type NodeDependency struct {
+	NodeID string
 }
