@@ -10,3 +10,10 @@ metrics:
 
 logs:
   path: logs/shortcut.log
+
+tracing:
+  enabled: false
+
+mongo:
+  uri: "mongodb://localhost:27017"
+  database: "shortcut"

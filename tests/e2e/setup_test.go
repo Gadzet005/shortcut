@@ -28,6 +28,23 @@ func run(m *testing.M) int {
 	}
 	defer func() { _ = net.Remove(ctx) }()
 
+	mongo, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:    "mongo:8",
+			Networks: []string{net.Name},
+			NetworkAliases: map[string][]string{
+				net.Name: {"mongo"},
+			},
+			WaitingFor: wait.ForLog("Waiting for connections"),
+		},
+		Started: true,
+	})
+	if err != nil {
+		fmt.Printf("failed to start mongo: %v\n", err)
+		return 1
+	}
+	defer func() { _ = mongo.Terminate(ctx) }()
+
 	mockService, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
 			FromDockerfile: testcontainers.FromDockerfile{
@@ -61,6 +78,7 @@ func run(m *testing.M) int {
 			},
 			Networks:     []string{net.Name},
 			ExposedPorts: []string{"8080/tcp"},
+			Env:          map[string]string{"ENV": "testing"},
 			WaitingFor: wait.ForHTTP("/health").
 				WithPort("8080/tcp").
 				WithStartupTimeout(3 * time.Minute),

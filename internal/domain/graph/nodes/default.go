@@ -58,6 +58,10 @@ func (e defaultNodeExecutor) Run(
 
 		resp, err := e.doRequest(ctx, formData)
 		if err == nil {
+			resp.Meta = map[string]any{
+				"status_code": http.StatusOK,
+				"retry_count": attempt,
+			}
 			return resp, nil
 		}
 

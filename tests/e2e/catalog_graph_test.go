@@ -9,17 +9,18 @@ import (
 )
 
 // Diamond graph: input → fetch-product → fetch-inventory ─┐
-//                                      └─► fetch-pricing  ─┴─► build-detail
-
+//
+//	└─► fetch-pricing  ─┴─► build-detail
 func TestGetProductDetail(t *testing.T) {
 	type args struct {
 		productID string
 	}
 
 	testCases := []struct {
-		name  string
-		args  args
-		check func(t *testing.T, resp getProductDetailResponse)
+		name       string
+		args       args
+		check      func(t *testing.T, resp getProductDetailResponse)
+		checkTrace func(t *testing.T, tr traceResponse)
 	}{
 		{
 			name: "returns full product detail for valid product",
@@ -34,6 +35,22 @@ func TestGetProductDetail(t *testing.T) {
 				require.Equal(t, 9.99, resp.Detail.Pricing.Price)
 				require.Equal(t, "USD", resp.Detail.Pricing.Currency)
 			},
+			checkTrace: func(t *testing.T, tr traceResponse) {
+				require.Equal(t, "ok", tr.Status)
+				require.Equal(t, "catalog", tr.NamespaceID)
+				require.Equal(t, "get_product_detail", tr.GraphID)
+				require.Len(t, tr.NodeTraces, 5)
+
+				input := findNodeTrace(t, tr, "input")
+				require.Equal(t, 0, input.StatusCode)
+				require.Empty(t, input.Error)
+
+				for _, name := range []string{"fetch-product", "fetch-inventory", "fetch-pricing", "build-detail"} {
+					n := findNodeTrace(t, tr, name)
+					require.Equal(t, http.StatusOK, n.StatusCode, "node %s", name)
+					require.Empty(t, n.Error, "node %s", name)
+				}
+			},
 		},
 		{
 			name: "returns correct detail for another product",
@@ -47,10 +64,31 @@ func TestGetProductDetail(t *testing.T) {
 			},
 		},
 		{
-			name: "returns 404 for unknown product",
+			// Graph fails at the first HTTP node (fetch-product returns 404).
+			// Only input + fetch-product are traced — downstream nodes never execute.
+			name: "returns 404 for unknown product — graph fails at first node",
 			args: args{productID: "999"},
 			check: func(t *testing.T, resp getProductDetailResponse) {
 				require.Equal(t, http.StatusNotFound, resp.StatusCode)
+			},
+			checkTrace: func(t *testing.T, tr traceResponse) {
+				require.Equal(t, "error", tr.Status)
+				require.Len(t, tr.NodeTraces, 2) // only input + fetch-product ran
+
+				input := findNodeTrace(t, tr, "input")
+				require.Equal(t, 0, input.StatusCode)
+				require.Empty(t, input.Error)
+
+				fetchProduct := findNodeTrace(t, tr, "fetch-product")
+				require.Equal(t, http.StatusNotFound, fetchProduct.StatusCode)
+				require.NotEmpty(t, fetchProduct.Error)
+
+				// These nodes must NOT be in the trace (never executed).
+				for _, name := range []string{"fetch-inventory", "fetch-pricing", "build-detail"} {
+					for _, nt := range tr.NodeTraces {
+						require.NotEqual(t, name, nt.NodeID, "node %s should not have run", name)
+					}
+				}
 			},
 		},
 		{
@@ -66,6 +104,10 @@ func TestGetProductDetail(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			resp := getProductDetail(t, tc.args.productID)
 			tc.check(t, resp)
+			if tc.checkTrace != nil {
+				tr := getTrace(t, shortcutURL, resp.RequestID)
+				tc.checkTrace(t, tr)
+			}
 		})
 	}
 }
@@ -96,6 +138,7 @@ type catalogProductDetail struct {
 
 type getProductDetailResponse struct {
 	StatusCode int
+	RequestID  string
 	Detail     catalogProductDetail
 }
 
@@ -111,7 +154,10 @@ func getProductDetail(t *testing.T, productID string) getProductDetailResponse {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
-	result := getProductDetailResponse{StatusCode: resp.StatusCode}
+	result := getProductDetailResponse{
+		StatusCode: resp.StatusCode,
+		RequestID:  resp.Header.Get("X-Request-Id"),
+	}
 
 	if resp.StatusCode == http.StatusOK {
 		require.Contains(t, resp.Header.Get("Content-Type"), "application/json")

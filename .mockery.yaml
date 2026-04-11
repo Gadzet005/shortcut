@@ -1,14 +1,17 @@
 all: false
-dir: '{{.InterfaceDir}}/mocks'
-filename: '{{.InterfaceName | snakecase}}.go'
+dir: "{{.InterfaceDir}}/mocks"
+filename: "{{.InterfaceName | snakecase}}.go"
 force-file-write: true
 formatter: goimports
 include-auto-generated: false
 log-level: info
-structname: '{{.InterfaceName}}'
-pkgname: 'mock{{.SrcPackageName}}'
+structname: "{{.InterfaceName}}"
+pkgname: "mock{{.SrcPackageName}}"
 recursive: false
 require-template-schema-exists: true
 template: testify
-template-schema: '{{.Template}}.schema.json'
+template-schema: "{{.Template}}.schema.json"
 packages:
+  github.com/Gadzet005/shortcut/internal/domain/graph:
+    interfaces:
+      NodeExecutor:
