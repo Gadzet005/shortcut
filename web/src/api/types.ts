@@ -21,6 +21,7 @@ export interface NodeTraceResponse {
   duration_ms: number;
   status_code?: number;
   retry_count?: number;
+  cached?: boolean;
   error?: string;
 }
 

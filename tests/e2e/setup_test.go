@@ -45,6 +45,23 @@ func run(m *testing.M) int {
 	}
 	defer func() { _ = mongo.Terminate(ctx) }()
 
+	valkeyContainer, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			Image:    "valkey/valkey:8-alpine",
+			Networks: []string{net.Name},
+			NetworkAliases: map[string][]string{
+				net.Name: {"valkey"},
+			},
+			WaitingFor: wait.ForLog("Ready to accept connections"),
+		},
+		Started: true,
+	})
+	if err != nil {
+		fmt.Printf("failed to start valkey: %v\n", err)
+		return 1
+	}
+	defer func() { _ = valkeyContainer.Terminate(ctx) }()
+
 	mockService, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
 			FromDockerfile: testcontainers.FromDockerfile{

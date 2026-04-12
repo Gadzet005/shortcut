@@ -1,5 +1,2 @@
 http-server:
   port: 8080
-
-tracing:
-  enabled: true

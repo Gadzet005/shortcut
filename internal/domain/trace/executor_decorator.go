@@ -62,6 +62,9 @@ func (e tracingExecutor) Run(
 		if rc, ok := resp.Meta["retry_count"].(int); ok {
 			nt.RetryCount = rc
 		}
+		if cached, ok := resp.Meta["cached"].(bool); ok {
+			nt.Cached = cached
+		}
 	}
 
 	if err != nil {

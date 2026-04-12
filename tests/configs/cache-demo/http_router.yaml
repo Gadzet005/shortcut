@@ -1,0 +1,5 @@
+routes:
+  product_detail:
+    path: /cache-demo/product
+    method: GET
+    graph: product-detail

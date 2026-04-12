@@ -35,6 +35,7 @@ type nodeTraceResponse struct {
 	DurationMs   int64                    `json:"duration_ms"`
 	StatusCode   int                      `json:"status_code,omitempty"`
 	RetryCount   int                      `json:"retry_count,omitempty"`
+	Cached       bool                     `json:"cached,omitempty"`
 	Error        string                   `json:"error,omitempty"`
 }
 

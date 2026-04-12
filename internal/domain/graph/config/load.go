@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Gadzet005/shortcut/pkg/app/config"
 	"github.com/Gadzet005/shortcut/pkg/errors"
@@ -178,12 +179,19 @@ func loadGraphsFromDir(graphsDirPath string) (map[string]GraphConfig, error) {
 
 		nodes := make(map[string]NodeConfig)
 		for nodeName, nc := range cfg.Nodes {
-			nodes[nodeName] = NodeConfig{
+			nodeCfg := NodeConfig{
 				ID:           nodeName,
 				Type:         nc.Type,
 				EndpointID:   nc.EndpointID,
 				Dependencies: nc.Dependencies,
 			}
+			if nc.Cache != nil && nc.Cache.Enabled {
+				nodeCfg.Cache = &CacheNodeConfig{
+					Enabled: true,
+					TTL:     time.Duration(nc.Cache.TTLMS) * time.Millisecond,
+				}
+			}
+			nodes[nodeName] = nodeCfg
 		}
 
 		inputNode := defaultInputNode

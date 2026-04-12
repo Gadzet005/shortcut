@@ -41,11 +41,9 @@ func (h handlerBase) RunGraph(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	if h.tracingEnabled {
-		requestID, _ := c.Get(httpmiddleware.RequestIDKey)
-		collector := trace.NewCollector(trace.RequestID(requestID.(string)))
-		ctx = trace.WithCollector(ctx, collector)
-	}
+	requestID, _ := c.Get(httpmiddleware.RequestIDKey)
+	collector := trace.NewCollector(trace.RequestID(requestID.(string)))
+	ctx = trace.WithCollector(ctx, collector)
 
 	resp, err := h.runGraphUC.RunGraph(ctx, graph.NamespaceID(namespaceID), httpRequest)
 	switch {

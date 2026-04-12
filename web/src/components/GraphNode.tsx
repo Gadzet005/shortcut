@@ -5,6 +5,7 @@ const statusColors: Record<string, string> = {
   ok: "#22c55e",
   error: "#ef4444",
   retried: "#eab308",
+  cached: "#8b5cf6",
 };
 
 export function GraphNode({ data }: NodeProps) {
@@ -29,6 +30,9 @@ export function GraphNode({ data }: NodeProps) {
       <div style={{ fontSize: 11, opacity: 0.85 }}>
         {nodeData.nodeType} &middot; {nodeData.durationMs}ms
       </div>
+      {nodeData.cached && (
+        <div style={{ fontSize: 10, marginTop: 2 }}>cached</div>
+      )}
       {nodeData.retryCount > 0 && (
         <div style={{ fontSize: 10, marginTop: 2 }}>
           retries: {nodeData.retryCount}

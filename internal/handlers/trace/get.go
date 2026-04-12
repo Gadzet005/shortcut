@@ -50,6 +50,7 @@ func toResponse(t trace.Trace) traceResponse {
 			DurationMs:   nt.DurationMs,
 			StatusCode:   nt.StatusCode,
 			RetryCount:   nt.RetryCount,
+			Cached:       nt.Cached,
 			Error:        nt.Error,
 		}
 	}

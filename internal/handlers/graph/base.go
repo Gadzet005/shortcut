@@ -6,15 +6,12 @@ import (
 
 func NewHandlerBase(
 	runGraphUC rungraph.UseCase,
-	tracingEnabled bool,
 ) handlerBase {
 	return handlerBase{
-		runGraphUC:     runGraphUC,
-		tracingEnabled: tracingEnabled,
+		runGraphUC: runGraphUC,
 	}
 }
 
 type handlerBase struct {
-	runGraphUC     rungraph.UseCase
-	tracingEnabled bool
+	runGraphUC rungraph.UseCase
 }

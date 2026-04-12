@@ -1,0 +1,6 @@
+host: mock-service:9001
+endpoints:
+  get:
+    path: counter/get
+    timeout-ms: 1000
+    retries-num: 1
