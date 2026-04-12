@@ -44,7 +44,17 @@ func (g graph) Run(
 	ctx context.Context,
 	logger *zap.Logger,
 	items map[ItemID]Item,
+	overrides map[NodeID]string,
 ) (map[ItemID]Item, error) {
+	for nodeID := range overrides {
+		if _, ok := g.nodes[nodeID]; !ok {
+			return nil, &NodeError{
+				Code:    ErrCodeBadRequest,
+				Payload: map[string]any{"error": "node " + nodeID.String() + " not found"},
+			}
+		}
+	}
+
 	if g.timeout > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, g.timeout)
@@ -65,7 +75,7 @@ func (g graph) Run(
 		for _, nodeID := range levelNodeIDs {
 			level = append(level, g.nodes[nodeID])
 		}
-		err := visitNodes(ctx, logger, level, results)
+		err := visitNodes(ctx, logger, level, results, overrides)
 		if err != nil {
 			return nil, err
 		}
@@ -80,6 +90,7 @@ func visitNodes(
 	logger *zap.Logger,
 	nodes []Node,
 	results graphResults,
+	overrides map[NodeID]string,
 ) error {
 	tmpResults := make([]map[ItemID]Item, len(nodes))
 	nodeErrors := make([]error, len(nodes))
@@ -92,7 +103,7 @@ func visitNodes(
 
 			logger = logger.With(zap.String("node_id", node.ID.String()))
 
-			result, err := visitNode(ctx, logger, node, results)
+			result, err := visitNode(ctx, logger, node, results, overrides)
 			if err != nil {
 				nodeErrors[i] = err
 			}
@@ -121,6 +132,7 @@ func visitNode(
 	logger *zap.Logger,
 	node Node,
 	results graphResults,
+	overrides map[NodeID]string,
 ) (NodeExecutorResponse, error) {
 	items := make(map[ItemID]Item, len(node.Dependencies))
 	for _, dep := range node.Dependencies {
@@ -135,7 +147,12 @@ func visitNode(
 		}
 	}
 
-	resp, err := node.Executor.Run(ctx, logger, NodeExecutorRequest{Items: items})
+	req := NodeExecutorRequest{Items: items}
+	if override, ok := overrides[node.ID]; ok {
+		req.EndpointOverride = &override
+	}
+
+	resp, err := node.Executor.Run(ctx, logger, req)
 	if err != nil {
 		return NodeExecutorResponse{}, errors.Wrapf(err, "run node %s", node.ID)
 	}

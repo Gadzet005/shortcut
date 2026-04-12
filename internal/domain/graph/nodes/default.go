@@ -36,19 +36,21 @@ func (e defaultNodeExecutor) Run(
 		formData[id.String()] = string(item.Data)
 	}
 
-	return withRetry(ctx, logger, e.endpoint, func(ctx context.Context) (graph.NodeExecutorResponse, error) {
-		return e.doRequest(ctx, formData)
+	endpoint := applyEndpointOverride(e.endpoint, req.EndpointOverride)
+	return withRetry(ctx, logger, endpoint, func(ctx context.Context) (graph.NodeExecutorResponse, error) {
+		return e.doRequest(ctx, endpoint, formData)
 	})
 }
 
 func (e defaultNodeExecutor) doRequest(
 	ctx context.Context,
+	endpoint Endpoint,
 	formData map[string]string,
 ) (graph.NodeExecutorResponse, error) {
 	reqCtx := ctx
-	if e.endpoint.Timeout > 0 {
+	if endpoint.Timeout > 0 {
 		var cancel context.CancelFunc
-		reqCtx, cancel = context.WithTimeout(ctx, e.endpoint.Timeout)
+		reqCtx, cancel = context.WithTimeout(ctx, endpoint.Timeout)
 		defer cancel()
 	}
 
@@ -56,7 +58,7 @@ func (e defaultNodeExecutor) doRequest(
 		SetContext(reqCtx).
 		SetFormData(formData).
 		SetDoNotParseResponse(true).
-		Post(e.endpoint.URL)
+		Post(endpoint.URL)
 	if err != nil {
 		return graph.NodeExecutorResponse{}, errors.Wrap(err, "make request")
 	}

@@ -3,6 +3,9 @@ package rungraph
 import (
 	"context"
 	"encoding/json"
+	"maps"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
@@ -72,7 +75,23 @@ func (u useCase) RunGraph(
 		return shortcutapi.HttpResponse{}, errors.Wrap(graph.ErrNotFound, "graph not found")
 	}
 
-	rawHTTPRequest, err := json.Marshal(input)
+	overrides, parseErr := parseNodeOverrides(input.Query["node-rwr"])
+	if parseErr != nil {
+		return nodeErrorToHTTPResponse(&graph.NodeError{
+			Code:    graph.ErrCodeBadRequest,
+			Payload: map[string]any{"error": parseErr.Error()},
+		})
+	}
+
+	cleanedInput := input
+	if len(input.Query["node-rwr"]) > 0 {
+		cleanedQuery := make(url.Values, len(input.Query))
+		maps.Copy(cleanedQuery, input.Query)
+		delete(cleanedQuery, "node-rwr")
+		cleanedInput.Query = cleanedQuery
+	}
+
+	rawHTTPRequest, err := json.Marshal(cleanedInput)
 	if err != nil {
 		return shortcutapi.HttpResponse{}, errors.Wrap(err, "marshal http request")
 	}
@@ -82,7 +101,7 @@ func (u useCase) RunGraph(
 	}
 
 	start := time.Now()
-	resp, runErr := g.Run(ctx, u.logger, items)
+	resp, runErr := g.Run(ctx, u.logger, items, overrides)
 	finished := time.Now()
 
 	u.saveTrace(ctx, start, finished, namespaceID, graphID, input, runErr)
@@ -168,6 +187,22 @@ func errorCodeToHTTPStatus(code graph.ErrorCode) int {
 	default:
 		return 500
 	}
+}
+
+// parseNodeOverrides parses values of the "node-rwr" query param (format: "NODE_NAME:host:port").
+func parseNodeOverrides(values []string) (map[graph.NodeID]string, error) {
+	if len(values) == 0 {
+		return nil, nil
+	}
+	result := make(map[graph.NodeID]string, len(values))
+	for _, v := range values {
+		parts := strings.SplitN(v, ":", 3)
+		if len(parts) != 3 || parts[0] == "" || parts[1] == "" || parts[2] == "" {
+			return nil, errors.Errorf("invalid node-rwr value %q, expected NODE_NAME:host:port", v)
+		}
+		result[graph.NodeID(parts[0])] = parts[1] + ":" + parts[2]
+	}
+	return result, nil
 }
 
 func getGraphID(namespace graph.Namespace, path string, method string) (graph.ID, error) {

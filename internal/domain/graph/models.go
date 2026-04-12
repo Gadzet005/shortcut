@@ -11,6 +11,7 @@ type Graph interface {
 		ctx context.Context,
 		logger *zap.Logger,
 		items map[ItemID]Item,
+		overrides map[NodeID]string,
 	) (map[ItemID]Item, error)
 }
 
@@ -55,7 +56,8 @@ type Node struct {
 }
 
 type NodeExecutorRequest struct {
-	Items map[ItemID]Item
+	Items            map[ItemID]Item
+	EndpointOverride *string // "host:port" — overrides the node's endpoint host for this request
 }
 
 type NodeExecutorResponse struct {
