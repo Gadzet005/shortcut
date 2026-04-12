@@ -1,6 +1,9 @@
 package graphconfig
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"time"
 
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
@@ -13,12 +16,12 @@ import (
 
 type warnUserFunc func(s string)
 
-func Convert(cfg Config, warnUser warnUserFunc, client *resty.Client) (map[graph.NamespaceID]graph.Namespace, error) {
+func Convert(cfg Config, warnUser warnUserFunc, client *resty.Client, cacheRepo graphnodes.CacheRepo) (map[graph.NamespaceID]graph.Namespace, error) {
 	namespaces := make(map[graph.NamespaceID]graph.Namespace)
 
 	for namespaceIDStr, nsCfg := range cfg.Namespaces {
 		namespaceID := graph.NamespaceID(namespaceIDStr)
-		ns, err := convertNamespace(nsCfg, namespaceID, warnUser, client)
+		ns, err := convertNamespace(nsCfg, namespaceID, warnUser, client, cacheRepo)
 		if err != nil {
 			return nil, errors.Wrapf(err, "convert namespace %s", namespaceIDStr)
 		}
@@ -33,6 +36,7 @@ func convertNamespace(
 	namespaceID graph.NamespaceID,
 	warnUser warnUserFunc,
 	client *resty.Client,
+	cacheRepo graphnodes.CacheRepo,
 ) (graph.Namespace, error) {
 	nsOut := graph.Namespace{
 		ID:         namespaceID,
@@ -54,7 +58,8 @@ func convertNamespace(
 			warnUser("Failure strategy not specified for graph " + graphName + ". Ignore strategy will be used by default.")
 		}
 
-		nodesMap, err := convertGraphNodes(gCfg, ns.Services, namespaceID, client)
+		graphHash := computeGraphHash(gCfg, ns.Services)
+		nodesMap, err := convertGraphNodes(gCfg, ns.Services, namespaceID, client, graphHash, cacheRepo)
 		if err != nil {
 			return graph.Namespace{}, errors.Wrapf(err, "graph %s", graphName)
 		}
@@ -70,11 +75,23 @@ func convertNamespace(
 	return nsOut, nil
 }
 
+func computeGraphHash(gCfg GraphConfig, services ServicesConfig) string {
+	type hashInput struct {
+		Graph    GraphConfig    `json:"graph"`
+		Services ServicesConfig `json:"services"`
+	}
+	b, _ := json.Marshal(hashInput{Graph: gCfg, Services: services})
+	sum := sha256.Sum256(b)
+	return hex.EncodeToString(sum[:])
+}
+
 func convertGraphNodes(
 	gCfg GraphConfig,
 	services ServicesConfig,
 	namespaceID graph.NamespaceID,
 	client *resty.Client,
+	graphHash string,
+	cacheRepo graphnodes.CacheRepo,
 ) (map[graph.NodeID]graph.Node, error) {
 	nodesMap := make(map[graph.NodeID]graph.Node)
 
@@ -103,6 +120,9 @@ func convertGraphNodes(
 			nodeType = string(NodeTypeDefault)
 		}
 
+		if nCfg.Cache != nil && nCfg.Cache.Enabled && cacheRepo != nil {
+			node.Executor = graphnodes.NewCachingExecutor(node.Executor, nodeID, graphHash, nCfg.Cache.TTL, cacheRepo)
+		}
 		node.Executor = trace.NewTracingExecutor(node.Executor, nodeID, nodeType, traceDeps)
 		nodesMap[nodeID] = node
 	}

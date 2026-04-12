@@ -58,6 +58,25 @@ export function NodeDetailPanel({ node, onClose }: Props) {
       {(node.retry_count ?? 0) > 0 && (
         <Field label="Retries" value={String(node.retry_count)} />
       )}
+      {node.cached && (
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ fontSize: 12, color: "#6b7280" }}>Cache</div>
+          <span
+            style={{
+              display: "inline-block",
+              padding: "2px 8px",
+              borderRadius: 10,
+              fontSize: 12,
+              fontWeight: 600,
+              background: "#ede9fe",
+              color: "#7c3aed",
+              border: "1px solid #c4b5fd",
+            }}
+          >
+            served from cache
+          </span>
+        </div>
+      )}
       {hasError && <Field label="Error" value={node.error!} error />}
 
       {node.dependencies && node.dependencies.length > 0 && (

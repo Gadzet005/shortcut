@@ -1,5 +1,7 @@
 package graphconfig
 
+import "time"
+
 type NodeType string
 
 const (
@@ -31,6 +33,12 @@ type NodeConfig struct {
 	Type         NodeType
 	EndpointID   string
 	Dependencies []DependencyConfig
+	Cache        *CacheNodeConfig
+}
+
+type CacheNodeConfig struct {
+	Enabled bool
+	TTL     time.Duration
 }
 
 type ServicesConfig struct {
@@ -79,9 +87,15 @@ type GraphFileConfig struct {
 }
 
 type NodeFileConfig struct {
-	Type         NodeType           `yaml:"type"`
-	EndpointID   string             `yaml:"endpoint-id"`
-	Dependencies []DependencyConfig `yaml:"dependencies"`
+	Type         NodeType              `yaml:"type"`
+	EndpointID   string                `yaml:"endpoint-id"`
+	Dependencies []DependencyConfig    `yaml:"dependencies"`
+	Cache        *CacheNodeFileConfig  `yaml:"cache"`
+}
+
+type CacheNodeFileConfig struct {
+	Enabled bool `yaml:"enabled"`
+	TTLMS   int  `yaml:"ttl-ms"`
 }
 
 type DependencyConfig struct {

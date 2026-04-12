@@ -7,6 +7,7 @@ import (
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/badresponse"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/catalog"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/checkout"
+	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/counter"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/dashboard"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/httpadapter"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/noderwr"
@@ -115,6 +116,11 @@ func (s *service) Run(ctx lifecycle.Context) error {
 		g.POST("/save-item", shortcut.New(store.SaveItem, s.Logger()))
 		g.POST("/get-all-items", shortcut.New(store.GetAllItems, s.Logger()))
 		g.POST("/delete-all-items", shortcut.New(store.DeleteAllItems, s.Logger()))
+	}
+
+	{
+		g := r.Group("/counter")
+		g.POST("/get", shortcut.New(counter.Get, s.Logger()))
 	}
 
 	return nil

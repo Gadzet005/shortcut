@@ -5,9 +5,11 @@ import (
 	"flag"
 
 	graphconfig "github.com/Gadzet005/shortcut/internal/domain/graph/config"
+	graphnodes "github.com/Gadzet005/shortcut/internal/domain/graph/nodes"
 	"github.com/Gadzet005/shortcut/internal/domain/trace"
 	graphhandler "github.com/Gadzet005/shortcut/internal/handlers/graph"
 	tracehandler "github.com/Gadzet005/shortcut/internal/handlers/trace"
+	cachevalkey "github.com/Gadzet005/shortcut/internal/repo/cache/valkey"
 	graphlocalrepo "github.com/Gadzet005/shortcut/internal/repo/graph/local"
 	tracemongo "github.com/Gadzet005/shortcut/internal/repo/trace/mongo"
 	rungraph "github.com/Gadzet005/shortcut/internal/usecases/run-graph"
@@ -17,6 +19,7 @@ import (
 	httpmiddleware "github.com/Gadzet005/shortcut/pkg/http/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
+	"github.com/valkey-io/valkey-go"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
@@ -51,33 +54,47 @@ func (s service) Run(c lifecycle.Context) error {
 	if err != nil {
 		return errors.WrapFailf(err, "failed to load graph config")
 	}
+
 	client := resty.New()
+
+	var cacheRepo graphnodes.CacheRepo
+	vkClient, err := valkey.NewClient(valkey.ClientOption{
+		InitAddress: []string{s.Config().CacheConfig.Addr},
+		Password:    s.Config().CacheConfig.Password,
+		SelectDB:    s.Config().CacheConfig.DB,
+	})
+	if err != nil {
+		return errors.WrapFailf(err, "failed to create valkey client")
+	}
+	c.AddStopper(func(ctx context.Context) error {
+		vkClient.Close()
+		return nil
+	})
+	cacheRepo = cachevalkey.NewRepo(vkClient)
+
 	graphConfig, err := graphconfig.Convert(cfg, func(msg string) {
 		s.Logger().Warn(msg)
-	}, client)
+	}, client, cacheRepo)
 	if err != nil {
 		return errors.WrapFailf(err, "failed to convert graph config")
 	}
 	localRepo := graphlocalrepo.NewLocalRepo(graphConfig)
 
-	tracingEnabled := s.Config().TracingConfig.Enabled
 	var traceRepo trace.Repo
 
-	if tracingEnabled {
-		mongoCfg := s.Config().MongoConfig
-		mongoClient, err := mongo.Connect(options.Client().ApplyURI(mongoCfg.URI))
-		if err != nil {
-			return errors.WrapFailf(err, "failed to connect to mongodb")
-		}
-		c.AddStopper(func(ctx context.Context) error {
-			return mongoClient.Disconnect(ctx)
-		})
+	mongoCfg := s.Config().MongoConfig
+	mongoClient, err := mongo.Connect(options.Client().ApplyURI(mongoCfg.URI))
+	if err != nil {
+		return errors.WrapFailf(err, "failed to connect to mongodb")
+	}
+	c.AddStopper(func(ctx context.Context) error {
+		return mongoClient.Disconnect(ctx)
+	})
 
-		db := mongoClient.Database(mongoCfg.Database)
-		traceRepo, err = tracemongo.NewMongoRepo(c.Context(), db)
-		if err != nil {
-			return errors.WrapFailf(err, "failed to create trace repo")
-		}
+	db := mongoClient.Database(mongoCfg.Database)
+	traceRepo, err = tracemongo.NewMongoRepo(c.Context(), db)
+	if err != nil {
+		return errors.WrapFailf(err, "failed to create trace repo")
 	}
 
 	r := s.HTTP("shortcut")
@@ -96,13 +113,11 @@ func (s service) Run(c lifecycle.Context) error {
 
 	r.Static("/ui", "./web/dist")
 
-	handlerBase := graphhandler.NewHandlerBase(runGraphUC, tracingEnabled)
+	handlerBase := graphhandler.NewHandlerBase(runGraphUC)
 	r.Any("run/:namespace_id/*path", handlerBase.RunGraph)
 
-	if tracingEnabled {
-		traceHandlerBase := tracehandler.NewHandlerBase(traceRepo)
-		r.GET("/trace/:request_id", traceHandlerBase.GetTrace)
-	}
+	traceHandlerBase := tracehandler.NewHandlerBase(traceRepo)
+	r.GET("/trace/:request_id", traceHandlerBase.GetTrace)
 
 	return nil
 }

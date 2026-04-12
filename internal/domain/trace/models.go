@@ -47,6 +47,7 @@ type NodeTrace struct {
 	DurationMs   int64
 	StatusCode   int // HTTP status code from endpoint node (0 for transparent/subgraph)
 	RetryCount   int
+	Cached       bool // true if the result was served from cache
 	Error        string
 }
 

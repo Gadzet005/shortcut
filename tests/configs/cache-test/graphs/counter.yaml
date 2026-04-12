@@ -1,0 +1,13 @@
+nodes:
+  counter:
+    endpoint-id: counter/get
+    cache:
+      enabled: true
+      ttl-ms: 1000
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+
+output-node: counter
+failure-strategy: ignore

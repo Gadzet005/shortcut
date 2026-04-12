@@ -1,6 +1,6 @@
-tracing:
-  enabled: true
-
 mongo:
   uri: "mongodb://mongo:27017"
   database: "shortcut"
+
+cache:
+  addr: "valkey:6379"

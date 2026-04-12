@@ -1,0 +1,5 @@
+routes:
+  get_counter:
+    path: /cache-test/counter
+    method: GET
+    graph: counter

@@ -10,10 +10,12 @@ const statusColors: Record<string, string> = {
   ok: "#22c55e",
   error: "#ef4444",
   retried: "#eab308",
+  cached: "#8b5cf6",
 };
 
 function getNodeStatus(nt: NodeTraceResponse): string {
   if (nt.error) return "error";
+  if (nt.cached) return "cached";
   if ((nt.retry_count ?? 0) > 0) return "retried";
   return "ok";
 }
@@ -35,6 +37,7 @@ export function TimelineView({ trace, onNodeClick, selectedNodeId }: Props) {
         const leftPct = ((start - traceStart) / totalDuration) * 100;
         const widthPct = Math.max(((end - start) / totalDuration) * 100, 0.5);
         const isSelected = nt.node_id === selectedNodeId;
+        const showLabel = widthPct >= 5;
 
         return (
           <div
@@ -90,7 +93,7 @@ export function TimelineView({ trace, onNodeClick, selectedNodeId }: Props) {
                   overflow: "hidden",
                 }}
               >
-                {nt.duration_ms}ms
+                {showLabel ? `${nt.duration_ms}ms` : null}
               </div>
             </div>
           </div>

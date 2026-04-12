@@ -24,6 +24,16 @@ services:
       timeout: 3s
       retries: 10
 
+  valkey:
+    image: valkey/valkey:8-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   shortcut:
     build:
       context: .
@@ -34,6 +44,8 @@ services:
       mongo:
         condition: service_healthy
       mock-service:
+        condition: service_healthy
+      valkey:
         condition: service_healthy
 
 volumes:

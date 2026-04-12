@@ -8,8 +8,9 @@ export interface GraphNodeData extends Record<string, unknown> {
   durationMs: number;
   statusCode: number;
   retryCount: number;
+  cached: boolean;
   error: string;
-  status: "ok" | "error" | "retried";
+  status: "ok" | "error" | "retried" | "cached";
 }
 
 const NODE_WIDTH = 180;
@@ -48,6 +49,7 @@ export function buildLayout(nodeTraces: NodeTraceResponse[]): {
   const nodes: Node<GraphNodeData>[] = nodeTraces.map((nt) => {
     const pos = g.node(nt.node_id);
     const hasError = !!nt.error;
+    const wasCached = nt.cached ?? false;
     const wasRetried = (nt.retry_count ?? 0) > 0;
 
     return {
@@ -62,8 +64,9 @@ export function buildLayout(nodeTraces: NodeTraceResponse[]): {
         durationMs: nt.duration_ms,
         statusCode: nt.status_code ?? 0,
         retryCount: nt.retry_count ?? 0,
+        cached: wasCached,
         error: nt.error ?? "",
-        status: hasError ? "error" : wasRetried ? "retried" : "ok",
+        status: hasError ? "error" : wasCached ? "cached" : wasRetried ? "retried" : "ok",
       },
       type: "graphNode",
     };

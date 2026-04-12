@@ -29,6 +29,7 @@ type nodeTraceDocument struct {
 	DurationMs   int64                    `bson:"duration_ms"`
 	StatusCode   int                      `bson:"status_code,omitempty"`
 	RetryCount   int                      `bson:"retry_count,omitempty"`
+	Cached       bool                     `bson:"cached,omitempty"`
 	Error        string                   `bson:"error,omitempty"`
 }
 
@@ -52,6 +53,7 @@ func toDocument(t trace.Trace) traceDocument {
 			DurationMs:   nt.DurationMs,
 			StatusCode:   nt.StatusCode,
 			RetryCount:   nt.RetryCount,
+			Cached:       nt.Cached,
 			Error:        nt.Error,
 		}
 	}
@@ -86,6 +88,7 @@ func fromDocument(d traceDocument) trace.Trace {
 			DurationMs:   nt.DurationMs,
 			StatusCode:   nt.StatusCode,
 			RetryCount:   nt.RetryCount,
+			Cached:       nt.Cached,
 			Error:        nt.Error,
 		}
 	}
