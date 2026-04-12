@@ -25,7 +25,7 @@ func (e subgraphNodeExecutor) Run(
 	logger *zap.Logger,
 	req graph.NodeExecutorRequest,
 ) (graph.NodeExecutorResponse, error) {
-	results, err := e.graph.Run(ctx, logger, req.Items)
+	results, err := e.graph.Run(ctx, logger, req.Items, nil)
 	if err != nil {
 		return graph.NodeExecutorResponse{}, errors.Wrap(err, "run graph")
 	}

@@ -1,0 +1,9 @@
+routes:
+  echo:
+    path: /echo
+    method: GET
+    graph: echo
+  redirect:
+    path: /redirect
+    method: GET
+    graph: redirect

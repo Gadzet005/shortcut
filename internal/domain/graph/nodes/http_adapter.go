@@ -47,19 +47,21 @@ func (e httpAdapterNodeExecutor) Run(
 		return graph.NodeExecutorResponse{}, errors.Wrap(err, "unmarshal http_request")
 	}
 
-	return withRetry(ctx, logger, e.endpoint, func(ctx context.Context) (graph.NodeExecutorResponse, error) {
-		return e.doRequest(ctx, httpReq)
+	endpoint := applyEndpointOverride(e.endpoint, req.EndpointOverride)
+	return withRetry(ctx, logger, endpoint, func(ctx context.Context) (graph.NodeExecutorResponse, error) {
+		return e.doRequest(ctx, endpoint, httpReq)
 	})
 }
 
 func (e httpAdapterNodeExecutor) doRequest(
 	ctx context.Context,
+	endpoint Endpoint,
 	httpReq shortcutapi.HttpRequest,
 ) (graph.NodeExecutorResponse, error) {
 	reqCtx := ctx
-	if e.endpoint.Timeout > 0 {
+	if endpoint.Timeout > 0 {
 		var cancel context.CancelFunc
-		reqCtx, cancel = context.WithTimeout(ctx, e.endpoint.Timeout)
+		reqCtx, cancel = context.WithTimeout(ctx, endpoint.Timeout)
 		defer cancel()
 	}
 
@@ -73,7 +75,7 @@ func (e httpAdapterNodeExecutor) doRequest(
 		r = r.SetBody(httpReq.Body)
 	}
 
-	resp, err := r.Execute(httpReq.Method, e.endpoint.URL)
+	resp, err := r.Execute(httpReq.Method, endpoint.URL)
 	if err != nil {
 		return graph.NodeExecutorResponse{}, errors.Wrap(err, "make request")
 	}
