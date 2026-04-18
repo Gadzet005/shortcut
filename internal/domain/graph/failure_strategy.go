@@ -6,6 +6,8 @@ const (
 	AbsentFailureStrategy FailureStrategy = "absent"
 	IgnoreFailureStrategy FailureStrategy = "ignore"
 	RevertFailureStrategy FailureStrategy = "revert"
+	SaveFailureStrategy   FailureStrategy = "save"
+	CustomFailureStrategy FailureStrategy = "custom"
 )
 
 func ParseFailureStrategy(fs string) (FailureStrategy, bool) {
@@ -13,7 +15,9 @@ func ParseFailureStrategy(fs string) (FailureStrategy, bool) {
 
 	switch retFs {
 	case IgnoreFailureStrategy,
-		RevertFailureStrategy:
+		RevertFailureStrategy,
+		SaveFailureStrategy,
+		CustomFailureStrategy:
 		return FailureStrategy(fs), true
 	default:
 		return IgnoreFailureStrategy, false

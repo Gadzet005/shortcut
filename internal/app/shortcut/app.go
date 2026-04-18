@@ -10,6 +10,7 @@ import (
 	tracehandler "github.com/Gadzet005/shortcut/internal/handlers/trace"
 	graphlocalrepo "github.com/Gadzet005/shortcut/internal/repo/graph/local"
 	tracemongo "github.com/Gadzet005/shortcut/internal/repo/trace/mongo"
+	failurepostgres "github.com/Gadzet005/shortcut/internal/repo/failure/postgres"
 	rungraph "github.com/Gadzet005/shortcut/internal/usecases/run-graph"
 	"github.com/Gadzet005/shortcut/pkg/app/di"
 	"github.com/Gadzet005/shortcut/pkg/app/lifecycle"
@@ -17,6 +18,8 @@ import (
 	httpmiddleware "github.com/Gadzet005/shortcut/pkg/http/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
@@ -80,6 +83,17 @@ func (s service) Run(c lifecycle.Context) error {
 		}
 	}
 
+	postgresCfg := s.Config().PostgresConfig
+
+	postgresDB, err := sqlx.Connect("postgres", postgresCfg.URI)
+	if err != nil {
+		return errors.WrapFail(err, "failed to create postgres repo")
+	}
+
+	defer postgresDB.Close()
+
+	failuresRepo, err := failurepostgres.NewPostgresRepo(postgresDB)
+
 	r := s.HTTP("shortcut")
 	r.Use(
 		httpmiddleware.RequestID(),
@@ -89,6 +103,7 @@ func (s service) Run(c lifecycle.Context) error {
 	)
 
 	runGraphUC := rungraph.NewUseCase(client, s.Logger(), localRepo, traceRepo)
+	revertRequestUC := revertrequest.NewUseCase(client, s.Logger(), localRepo, traceRepo, failuresRepo)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
@@ -96,8 +111,9 @@ func (s service) Run(c lifecycle.Context) error {
 
 	r.Static("/ui", "./web/dist")
 
-	handlerBase := graphhandler.NewHandlerBase(runGraphUC, tracingEnabled)
+	handlerBase := graphhandler.NewHandlerBase(runGraphUC, revertRequestUC, tracingEnabled)
 	r.Any("run/:namespace_id/*path", handlerBase.RunGraph)
+	r.Any("run/:request_id/:revert_strategy", handlerBase.)
 
 	if tracingEnabled {
 		traceHandlerBase := tracehandler.NewHandlerBase(traceRepo)

@@ -7,6 +7,7 @@ import (
 
 	"github.com/Gadzet005/shortcut/pkg/algorithms/topsort"
 	"github.com/Gadzet005/shortcut/pkg/containers/slices"
+	"github.com/Gadzet005/shortcut/pkg/containers/sets"
 	errors "github.com/Gadzet005/shortcut/pkg/errors"
 	"go.uber.org/zap"
 )
@@ -18,6 +19,8 @@ func NewGraph(
 	inputNode NodeID,
 	outputNode NodeID,
 	timeout time.Duration,
+	failureStrategy FailureStrategy,
+	failureSteps []StrategyStep,
 ) (graph, error) {
 	if _, ok := nodes[inputNode]; !ok {
 		return graph{}, errors.Errorf("input node %s not found", inputNode)
@@ -34,10 +37,17 @@ func NewGraph(
 }
 
 type graph struct {
-	nodes      map[NodeID]Node
-	inputNode  NodeID
-	outputNode NodeID
-	timeout    time.Duration
+	nodes      		map[NodeID]Node
+	inputNode  		NodeID
+	outputNode 		NodeID
+	timeout    		time.Duration
+	failureStrategy FailureStrategy
+	failureSteps 	[]StrategyStep
+	visitedNodes 	sets.Set[NodeID]
+}
+
+func (g graph) SetNodeStatuses(visitedNodes sets.Set[NodeID]) {
+	g.visitedNodes = visitedNodes
 }
 
 func (g graph) Run(
@@ -68,6 +78,40 @@ func (g graph) Run(
 		err := visitNodes(ctx, logger, level, results)
 		if err != nil {
 			return nil, err
+		}
+	}
+
+	return results.GetAll(g.outputNode), nil
+}
+
+func (g graph) TryRevert(
+	ctx context.Context,
+	logger *zap.Logger,
+	requestID string,
+) (bool, error) {
+	if g.timeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, g.timeout)
+		defer cancel()
+	}
+	levelIDs, err := topSort(g, g.inputNode)
+	if err != nil {
+		return false, errors.Wrap(err, "top sort by levels")
+	}
+
+	results := newGraphResults()
+
+	for _, levelNodeIDs := range levelIDs {
+		level := make([]Node, 0, len(levelNodeIDs))
+		for _, nodeID := range levelNodeIDs {
+			if !g.visitedNodes.Contains(nodeID) {
+				level = append(level, g.nodes[nodeID])
+			}
+		}
+		err := visitNodes(ctx, logger, level, results)
+		// это надо лучше обрабатывать, фейлы учитывать
+		if err != nil {
+			return false, err
 		}
 	}
 

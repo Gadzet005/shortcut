@@ -9,6 +9,7 @@ type Config struct {
 	di.MetricsConfig `yaml:"metrics"`
 	TracingConfig    `yaml:"tracing"`
 	MongoConfig      `yaml:"mongo"`
+	PostgresConfig   `yaml:"postgres"`
 }
 
 type TracingConfig struct {
@@ -18,4 +19,8 @@ type TracingConfig struct {
 type MongoConfig struct {
 	URI      string `yaml:"uri"`
 	Database string `yaml:"database"`
+}
+
+type PostgresConfig struct {
+	URI      string `yaml:"uri"`
 }

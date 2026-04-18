@@ -12,6 +12,11 @@ type Graph interface {
 		logger *zap.Logger,
 		items map[ItemID]Item,
 	) (map[ItemID]Item, error)
+	TryRevert(
+		ctx context.Context,
+		logger *zap.Logger,
+		requestID string,
+	) (bool, error)
 }
 
 type ID string

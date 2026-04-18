@@ -23,6 +23,7 @@ type GraphConfig struct {
 	InputNode       string
 	OutputNode      string
 	FailureStrategy string
+	CustomStrategy  []StrategyStepConfig
 	TimeoutMs       int
 }
 
@@ -75,6 +76,7 @@ type GraphFileConfig struct {
 	InputNode       string                    `yaml:"input-node"`
 	OutputNode      string                    `yaml:"output-node"`
 	FailureStrategy string                    `yaml:"failure-strategy"`
+	CustomStrategy  []StrategyStepConfig      `yaml:"custom-strategy"`
 	TimeoutMs       int                       `yaml:"timeout-ms"`
 }
 
@@ -88,4 +90,12 @@ type DependencyConfig struct {
 	NodeID          string `yaml:"node-id"`
 	ItemID          string `yaml:"item-id"`
 	OverridenItemID string `yaml:"overriden-item-id"`
+}
+
+type StrategyStepConfig struct {
+	WaitBeforeSeconds   int		`yaml:"wait-before-seconds"`
+	Action 			    string  `yaml:"action"`
+	Condition 			string  `yaml:"condition"`
+	WaitBetweenSeconds  int     `yaml:"wait-between-seconds"`
+	NumAttempts 		int		`yaml:"num-attempts"`
 }

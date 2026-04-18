@@ -1,6 +1,7 @@
 package graphconfig
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
@@ -49,9 +50,30 @@ func convertNamespace(
 	}
 
 	for graphName, gCfg := range ns.Graphs {
-		_, ok := graph.ParseFailureStrategy(gCfg.FailureStrategy)
+		fs, ok := graph.ParseFailureStrategy(gCfg.FailureStrategy)
 		if !ok {
 			warnUser("Failure strategy not specified for graph " + graphName + ". Ignore strategy will be used by default.")
+		}
+
+		strategySteps := make([]graph.StrategyStep, len(gCfg.CustomStrategy))
+		for i, step := range gCfg.CustomStrategy {
+			sa, ok := graph.ParseStrategyAction(step.Action)
+			if !ok {
+				warnUser("Failure strategy action not specified for graph " + graphName + ", step " + fmt.Sprintf("%d", i) +". Skip action will be used by default.")
+			}
+
+			sc, ok := graph.ParseStrategyCondition(step.Condition)
+			if !ok {
+				warnUser("Failure strategy condition not specified for graph " + graphName + ", step " + fmt.Sprintf("%d", i) +". Skip action will be used by default.")
+			}
+
+			strategySteps[i] = graph.StrategyStep{
+				WaitBeforeSeconds: step.WaitBeforeSeconds,
+				Action: sa,
+				Condition: sc,
+				WaitBetweenSeconds: step.WaitBetweenSeconds,
+				NumAttempts: step.NumAttempts,
+			}
 		}
 
 		nodesMap, err := convertGraphNodes(gCfg, ns.Services, namespaceID, client)
@@ -59,7 +81,7 @@ func convertNamespace(
 			return graph.Namespace{}, errors.Wrapf(err, "graph %s", graphName)
 		}
 
-		g, err := graph.NewGraph(nodesMap, graph.NodeID(gCfg.InputNode), graph.NodeID(gCfg.OutputNode), time.Duration(gCfg.TimeoutMs)*time.Millisecond)
+		g, err := graph.NewGraph(nodesMap, graph.NodeID(gCfg.InputNode), graph.NodeID(gCfg.OutputNode), time.Duration(gCfg.TimeoutMs)*time.Millisecond, fs, strategySteps)
 		if err != nil {
 			return graph.Namespace{}, errors.Wrapf(err, "build graph %s", graphName)
 		}

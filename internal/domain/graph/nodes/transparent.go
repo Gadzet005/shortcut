@@ -22,3 +22,11 @@ func (e transparentNodeExecutor) Run(
 ) (graph.NodeExecutorResponse, error) {
 	return graph.NodeExecutorResponse{Items: req.Items}, nil
 }
+
+func (e transparentNodeExecutor) TryRevert(
+	_ context.Context,
+	_ *zap.Logger,
+	requestID string,
+) (bool, error) {
+	return true, nil
+}

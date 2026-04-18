@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
 	errors "github.com/Gadzet005/shortcut/pkg/errors"
@@ -16,19 +17,22 @@ import (
 const (
 	httpAdapterRequestItemID  graph.ItemID = "http_request"
 	httpAdapterResponseItemID graph.ItemID = "http_response"
+	defaultRevertHandlerPath  string = "/revert"
 )
 
 var _ graph.NodeExecutor = httpAdapterNodeExecutor{}
 
-func NewHTTPAdapterNodeExecutor(client *resty.Client, endpoint Endpoint) graph.NodeExecutor {
+func NewHTTPAdapterNodeExecutor(client *resty.Client, endpoint, revertEndpoint Endpoint) graph.NodeExecutor {
 	return httpAdapterNodeExecutor{
 		endpoint: endpoint,
+		revertEndpoint: revertEndpoint,
 		client:   client,
 	}
 }
 
 type httpAdapterNodeExecutor struct {
 	endpoint Endpoint
+	revertEndpoint Endpoint
 	client   *resty.Client
 }
 
@@ -50,6 +54,39 @@ func (e httpAdapterNodeExecutor) Run(
 	return withRetry(ctx, logger, e.endpoint, func(ctx context.Context) (graph.NodeExecutorResponse, error) {
 		return e.doRequest(ctx, httpReq)
 	})
+}
+
+func (e httpAdapterNodeExecutor) TryRevert(
+	ctx context.Context,
+	logger *zap.Logger,
+	requestID string,
+) (bool, error) {
+	httpReq := shortcutapi.HttpRequest{
+		Method: "POST",
+		Path: defaultRevertHandlerPath,
+		Query: url.Values{
+			"request_id": {requestID},
+		},
+	}
+
+	response, err := withRetry(ctx, logger, e.revertEndpoint, func(ctx context.Context) (graph.NodeExecutorResponse, error) {
+		return e.doRequest(ctx, httpReq)
+	})
+	if err != nil {
+		return false,  errors.Wrap(err, "do http with retry")
+	}
+
+	result, ok := response.Items[defaultRevertResultItemID]
+	if !ok {
+		return false, errors.Error("result item not found")
+	}
+
+	var booleanResult bool
+	if err := json.Unmarshal(result.Data, &booleanResult); err != nil {
+		return false, errors.Wrap(err, "unmarshal revert result")
+	}
+
+	return booleanResult, nil
 }
 
 func (e httpAdapterNodeExecutor) doRequest(

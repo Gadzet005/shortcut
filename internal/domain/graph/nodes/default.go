@@ -12,17 +12,23 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	defaultRevertResultItemID graph.ItemID = "result"
+)
+
 var _ graph.NodeExecutor = defaultNodeExecutor{}
 
-func NewDefaultNodeExecutor(client *resty.Client, endpoint Endpoint) graph.NodeExecutor {
+func NewDefaultNodeExecutor(client *resty.Client, endpoint, revertEndpoint Endpoint) graph.NodeExecutor {
 	return defaultNodeExecutor{
 		endpoint: endpoint,
+		revertEndpoint: revertEndpoint,
 		client:   client,
 	}
 }
 
 type defaultNodeExecutor struct {
 	endpoint Endpoint
+	revertEndpoint Endpoint
 	client   *resty.Client
 }
 
@@ -39,6 +45,35 @@ func (e defaultNodeExecutor) Run(
 	return withRetry(ctx, logger, e.endpoint, func(ctx context.Context) (graph.NodeExecutorResponse, error) {
 		return e.doRequest(ctx, formData)
 	})
+}
+
+func (e defaultNodeExecutor) TryRevert(
+	ctx context.Context,
+	logger *zap.Logger,
+	requestID string,
+) (bool, error) {
+	formData := map[string]string{
+		"request_id": requestID,
+	}
+
+	response, err := withRetry(ctx, logger, e.revertEndpoint, func(ctx context.Context) (graph.NodeExecutorResponse, error) {
+		return e.doRequest(ctx, formData)
+	})
+	if err != nil {
+		return false,  errors.Wrap(err, "do http with retry")
+	}
+
+	result, ok := response.Items[defaultRevertResultItemID]
+	if !ok {
+		return false, errors.Error("result item not found")
+	}
+
+	var booleanResult bool
+	if err := json.Unmarshal(result.Data, &booleanResult); err != nil {
+		return false, errors.Wrap(err, "unmarshal revert result")
+	}
+
+	return booleanResult, nil
 }
 
 func (e defaultNodeExecutor) doRequest(

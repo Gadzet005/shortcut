@@ -7,4 +7,7 @@ import (
 
 func main() {
 	lifecycle.Run(app.NewService())
+
+	// worker that clears mongo and 
+	// workers that updates reverts
 }
