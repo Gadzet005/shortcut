@@ -15,3 +15,7 @@ packages:
   github.com/Gadzet005/shortcut/internal/domain/graph:
     interfaces:
       NodeExecutor:
+      Graph:
+  github.com/Gadzet005/shortcut/internal/domain/graph/nodes:
+    interfaces:
+      CacheRepo:

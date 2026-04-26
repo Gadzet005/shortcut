@@ -187,8 +187,7 @@ func checkCycle(g graph, inputNode NodeID) error {
 			adj[dep.NodeID.String()] = append(n, node.ID.String())
 		}
 	}
-	levels, ok := topsort.Sort(adj)
-	_ = levels
+	_, ok := topsort.Sort(adj)
 	if !ok {
 		return errors.Errorf("graph has a cycle")
 	}
