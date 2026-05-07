@@ -208,6 +208,7 @@ func loadGraphsFromDir(graphsDirPath string) (map[string]GraphConfig, error) {
 			InputNode:       inputNode,
 			OutputNode:      outputNode,
 			FailureStrategy: cfg.FailureStrategy,
+			FailureSteps:    cfg.FailureSteps,
 			TimeoutMs:       cfg.TimeoutMs,
 		}
 	}

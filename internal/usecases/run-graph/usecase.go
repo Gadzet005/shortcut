@@ -8,7 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Gadzet005/shortcut/internal/domain/failure"
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
+	"github.com/Gadzet005/shortcut/internal/domain/graph/strategy"
 	"github.com/Gadzet005/shortcut/internal/domain/trace"
 	"github.com/Gadzet005/shortcut/pkg/errors"
 	shortcutapi "github.com/Gadzet005/shortcut/pkg/shortcut/api"
@@ -39,20 +41,23 @@ func NewUseCase(
 	logger *zap.Logger,
 	namespaceRepo graph.NamespaceRepo,
 	traceRepo trace.Repo,
+	strategyFactory strategy.Factory,
 ) useCase {
 	return useCase{
-		client:        client,
-		namespaceRepo: namespaceRepo,
-		logger:        logger,
-		traceRepo:     traceRepo,
+		client:          client,
+		namespaceRepo:   namespaceRepo,
+		logger:          logger,
+		traceRepo:       traceRepo,
+		strategyFactory: strategyFactory,
 	}
 }
 
 type useCase struct {
-	client        *resty.Client
-	logger        *zap.Logger
-	namespaceRepo graph.NamespaceRepo
-	traceRepo     trace.Repo
+	client          *resty.Client
+	logger          *zap.Logger
+	namespaceRepo   graph.NamespaceRepo
+	traceRepo       trace.Repo
+	strategyFactory strategy.Factory
 }
 
 func (u useCase) RunGraph(
@@ -107,6 +112,7 @@ func (u useCase) RunGraph(
 	u.saveTrace(ctx, start, finished, namespaceID, graphID, input, runErr)
 
 	if runErr != nil {
+		u.applyFailureStrategy(ctx, namespace, graphID, start, finished, input, rawHTTPRequest, runErr)
 		var nodeErr *graph.NodeError
 		if errors.As(runErr, &nodeErr) {
 			return nodeErrorToHTTPResponse(nodeErr)
@@ -159,6 +165,60 @@ func (u useCase) saveTrace(
 
 	if saveErr := u.traceRepo.Save(ctx, t); saveErr != nil {
 		u.logger.Error("failed to save trace", zap.Error(saveErr))
+	}
+}
+
+func (u useCase) applyFailureStrategy(
+	ctx context.Context,
+	namespace graph.Namespace,
+	graphID graph.ID,
+	start, finished time.Time,
+	input shortcutapi.HttpRequest,
+	rawRequest []byte,
+	runErr error,
+) {
+	if u.strategyFactory == nil {
+		return
+	}
+	info, ok := namespace.GraphInfo[graphID]
+	if !ok {
+		return
+	}
+	if info.FailureStrategy == "" || info.FailureStrategy == graph.AbsentFailureStrategy {
+		return
+	}
+
+	collector, _ := trace.GetCollector(ctx)
+	var requestID string
+	var nodeTraces []trace.NodeTrace
+	if collector != nil {
+		requestID = collector.RequestID().String()
+		nodeTraces = collector.NodeTraces()
+	}
+
+	f := failure.Failure{
+		RequestID:      requestID,
+		NamespaceID:    namespace.ID.String(),
+		GraphID:        graphID.String(),
+		Method:         input.Method,
+		Path:           input.Path,
+		StartedAt:      start,
+		FinishedAt:     finished,
+		DurationMs:     finished.Sub(start).Milliseconds(),
+		Status:         failure.StatusPending,
+		Error:          runErr.Error(),
+		NodeTraces:     nodeTraces,
+		ReadyToRetryAt: time.Now(),
+		NumRetry:       0,
+		RequestBody:    rawRequest,
+	}
+
+	handler := u.strategyFactory.New(info.FailureStrategy, info.FailureSteps)
+	if err := handler.Handle(ctx, f); err != nil {
+		u.logger.Error("failure strategy execution failed",
+			zap.String("request_id", requestID),
+			zap.String("strategy", info.FailureStrategy.String()),
+			zap.Error(err))
 	}
 }
 

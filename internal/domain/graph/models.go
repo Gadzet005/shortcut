@@ -77,6 +77,12 @@ type Namespace struct {
 	ID         NamespaceID
 	Graphs     map[ID]Graph
 	HTTPRoutes map[string]HTTPRoute
+	GraphInfo  map[ID]GraphInfo
+}
+
+type GraphInfo struct {
+	FailureStrategy FailureStrategy
+	FailureSteps    []FailureStep
 }
 
 type HTTPRoute struct {

@@ -46,3 +46,8 @@ func (r *mongoRepo) GetByRequestID(ctx context.Context, requestID trace.RequestI
 	}
 	return fromDocument(doc), nil
 }
+
+func (r *mongoRepo) DeleteByRequestID(ctx context.Context, requestID trace.RequestID) error {
+	_, err := r.collection.DeleteOne(ctx, bson.M{"request_id": requestID.String()})
+	return err
+}

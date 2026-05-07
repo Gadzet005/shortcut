@@ -4,21 +4,27 @@ import (
 	"context"
 	"flag"
 
+	"github.com/Gadzet005/shortcut/internal/domain/graph/strategy"
 	graphconfig "github.com/Gadzet005/shortcut/internal/domain/graph/config"
 	graphnodes "github.com/Gadzet005/shortcut/internal/domain/graph/nodes"
 	"github.com/Gadzet005/shortcut/internal/domain/trace"
+	failurehandler "github.com/Gadzet005/shortcut/internal/handlers/failure"
 	graphhandler "github.com/Gadzet005/shortcut/internal/handlers/graph"
 	tracehandler "github.com/Gadzet005/shortcut/internal/handlers/trace"
 	cachevalkey "github.com/Gadzet005/shortcut/internal/repo/cache/valkey"
+	failurepostgres "github.com/Gadzet005/shortcut/internal/repo/failure/postgres"
 	graphlocalrepo "github.com/Gadzet005/shortcut/internal/repo/graph/local"
 	tracemongo "github.com/Gadzet005/shortcut/internal/repo/trace/mongo"
+	failurerecovery "github.com/Gadzet005/shortcut/internal/usecases/failure-recovery"
 	rungraph "github.com/Gadzet005/shortcut/internal/usecases/run-graph"
+	strategyworker "github.com/Gadzet005/shortcut/internal/worker/strategy"
 	"github.com/Gadzet005/shortcut/pkg/app/di"
 	"github.com/Gadzet005/shortcut/pkg/app/lifecycle"
 	"github.com/Gadzet005/shortcut/pkg/errors"
 	httpmiddleware "github.com/Gadzet005/shortcut/pkg/http/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/go-resty/resty/v2"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/valkey-io/valkey-go"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
@@ -97,6 +103,16 @@ func (s service) Run(c lifecycle.Context) error {
 		return errors.WrapFailf(err, "failed to create trace repo")
 	}
 
+	pool, err := pgxpool.New(c.Context(), s.Config().PostgresConfig.URL)
+	if err != nil {
+		return errors.WrapFailf(err, "failed to connect to postgres")
+	}
+	c.AddStopper(func(ctx context.Context) error {
+		pool.Close()
+		return nil
+	})
+	failureRepo := failurepostgres.NewRepo(pool)
+
 	r := s.HTTP("shortcut")
 	r.Use(
 		httpmiddleware.RequestID(),
@@ -105,7 +121,23 @@ func (s service) Run(c lifecycle.Context) error {
 		httpmiddleware.Recover(),
 	)
 
-	runGraphUC := rungraph.NewUseCase(client, s.Logger(), localRepo, traceRepo)
+	recovery := failurerecovery.New(nil, s.Logger())
+	strategyFactory := strategy.NewFactory(failureRepo, recovery, s.Logger())
+
+	runGraphUC := rungraph.NewUseCase(client, s.Logger(), localRepo, traceRepo, strategyFactory)
+	recovery.SetRunGraphUseCase(runGraphUC)
+
+	resolver := failurerecovery.NewGraphInfoResolver(localRepo)
+	worker := strategyworker.New(failureRepo, traceRepo, recovery, resolver, s.Logger(), strategyworker.Config{
+		Interval:          s.Config().FailureWorker.Interval,
+		BatchSize:         s.Config().FailureWorker.BatchSize,
+		VisibilityTimeout: s.Config().FailureWorker.VisibilityTimeout,
+	})
+	workerCtx, workerCancel := context.WithCancel(c.Context())
+	c.RunJob(
+		func(ctx context.Context) { worker.Run(workerCtx) },
+		func(ctx context.Context) error { workerCancel(); return nil },
+	)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
@@ -113,11 +145,16 @@ func (s service) Run(c lifecycle.Context) error {
 
 	r.Static("/ui", "./web/dist")
 
-	handlerBase := graphhandler.NewHandlerBase(runGraphUC)
-	r.Any("run/:namespace_id/*path", handlerBase.RunGraph)
+	graphHandlerBase := graphhandler.NewHandlerBase(runGraphUC)
+	r.Any("run/:namespace_id/*path", graphHandlerBase.RunGraph)
 
 	traceHandlerBase := tracehandler.NewHandlerBase(traceRepo)
 	r.GET("/trace/:request_id", traceHandlerBase.GetTrace)
+
+	failureHandlerBase := failurehandler.NewHandlerBase(failureRepo, recovery, strategyFactory)
+	r.GET("/errors/:namespace_id/:graph_id", failureHandlerBase.List)
+	r.DELETE("/errors/:namespace_id/:graph_id/:request_id", failureHandlerBase.Delete)
+	r.POST("/process/:request_id/:strategy", failureHandlerBase.Process)
 
 	return nil
 }

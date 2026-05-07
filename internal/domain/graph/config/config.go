@@ -25,7 +25,16 @@ type GraphConfig struct {
 	InputNode       string
 	OutputNode      string
 	FailureStrategy string
+	FailureSteps    []FailureStepConfig
 	TimeoutMs       int
+}
+
+type FailureStepConfig struct {
+	Action               string `yaml:"action"`
+	Condition            string `yaml:"condition"`
+	WaitBeforeMs         int    `yaml:"wait-before-ms"`
+	WaitBetweenRetriesMs int    `yaml:"wait-between-retries-ms"`
+	NumAttempts          int    `yaml:"num-attempts"`
 }
 
 type NodeConfig struct {
@@ -83,6 +92,7 @@ type GraphFileConfig struct {
 	InputNode       string                    `yaml:"input-node"`
 	OutputNode      string                    `yaml:"output-node"`
 	FailureStrategy string                    `yaml:"failure-strategy"`
+	FailureSteps    []FailureStepConfig       `yaml:"failure-steps"`
 	TimeoutMs       int                       `yaml:"timeout-ms"`
 }
 
