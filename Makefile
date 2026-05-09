@@ -1,4 +1,4 @@
-.PHONY: build run test test-coverage lint fmt vet clean install-tools mock
+.PHONY: build run test test/unit test/e2e test-coverage lint fmt vet clean install-tools mock
 
 APP_NAME=shortcut
 BUILD_DIR=bin
@@ -22,6 +22,9 @@ run/mock:
 
 test: install mock
 	go test -v ./...
+
+test/unit: install mock
+	go test -race -count=1 $$(go list ./... | grep -v /tests/e2e)
 
 test/e2e: install mock
 	go test -v -count=1 ./tests/e2e/...

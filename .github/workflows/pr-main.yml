@@ -18,7 +18,7 @@ jobs:
           cache: true
 
       - name: Run unit tests
-        run: go test -race -count=1 $(go list ./... | grep -v /tests/e2e)
+        run: make test/unit
 
   e2e-tests:
     name: E2E tests
