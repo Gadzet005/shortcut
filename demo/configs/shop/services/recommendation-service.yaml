@@ -1,0 +1,5 @@
+host: recommendation-service:9103
+endpoints:
+  get-recommendations:
+    path: get-recommendations
+    timeout-ms: 1000

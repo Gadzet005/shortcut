@@ -1,0 +1,11 @@
+host: product-service:9102
+endpoints:
+  get-product:
+    path: get-product
+    timeout-ms: 1000
+  list-products:
+    path: list-products
+    timeout-ms: 1000
+  validate-product:
+    path: validate-product
+    timeout-ms: 1000

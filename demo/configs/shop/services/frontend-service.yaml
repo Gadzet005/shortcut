@@ -1,0 +1,8 @@
+host: frontend-service:9104
+endpoints:
+  render-product-list:
+    path: render-product-list
+    timeout-ms: 1000
+  render-product-page:
+    path: render-product-page
+    timeout-ms: 1000
