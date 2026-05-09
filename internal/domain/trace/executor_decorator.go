@@ -79,6 +79,14 @@ func (e tracingExecutor) Run(
 	return resp, err
 }
 
+func (e tracingExecutor) TryRevert(
+	ctx context.Context,
+	logger *zap.Logger,
+	requestID string,
+) (bool, error) {
+	return e.inner.TryRevert(ctx, logger, requestID)
+}
+
 func errorCodeToHTTPStatus(code graph.ErrorCode) int {
 	switch code {
 	case graph.ErrCodeBadRequest:

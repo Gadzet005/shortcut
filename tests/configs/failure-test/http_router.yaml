@@ -1,0 +1,13 @@
+routes:
+  revert-demo:
+    path: /failure-test/revert-demo
+    method: GET
+    graph: revert_demo
+  finish-demo:
+    path: /failure-test/finish-demo
+    method: GET
+    graph: finish_demo
+  stats:
+    path: /failure-test/stats
+    method: GET
+    graph: stats

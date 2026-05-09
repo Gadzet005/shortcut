@@ -13,6 +13,19 @@ type Graph interface {
 		items map[ItemID]Item,
 		overrides map[NodeID]string,
 	) (map[ItemID]Item, error)
+	TryRevert(
+		ctx context.Context,
+		logger *zap.Logger,
+		requestID string,
+		visitedNodes []NodeID,
+	) (bool, error)
+	TryFinish(
+		ctx context.Context,
+		logger *zap.Logger,
+		items map[ItemID]Item,
+		overrides map[NodeID]string,
+		visitedNodes []NodeID,
+	) (map[ItemID]Item, error)
 }
 
 type ID string
@@ -71,6 +84,11 @@ type NodeExecutor interface {
 		logger *zap.Logger,
 		req NodeExecutorRequest,
 	) (NodeExecutorResponse, error)
+	TryRevert(
+		ctx context.Context,
+		logger *zap.Logger,
+		requestID string,
+	) (bool, error)
 }
 
 type Namespace struct {

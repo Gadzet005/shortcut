@@ -31,3 +31,11 @@ func (e subgraphNodeExecutor) Run(
 	}
 	return graph.NodeExecutorResponse{Items: results}, nil
 }
+
+func (e subgraphNodeExecutor) TryRevert(
+	_ context.Context,
+	_ *zap.Logger,
+	_ string,
+) (bool, error) {
+	return true, nil
+}

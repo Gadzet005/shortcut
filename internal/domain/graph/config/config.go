@@ -56,6 +56,7 @@ type ServicesConfig struct {
 
 type EndpointDef struct {
 	URL               string
+	RevertURL         string
 	TimeoutMs         int
 	RetriesNum        int
 	InitialIntervalMs int
@@ -80,6 +81,7 @@ type ServiceConfig struct {
 
 type EndpointConfig struct {
 	Path              string  `yaml:"path"`
+	RevertPath        string  `yaml:"revert-path"`
 	TimeoutMs         int     `yaml:"timeout-ms"`
 	RetriesNum        int     `yaml:"retries-num"`
 	InitialIntervalMs int     `yaml:"initial-interval-ms"`

@@ -195,6 +195,7 @@ func convertNode(
 
 	endpoint := graphnodes.Endpoint{
 		URL:               ep.URL,
+		RevertURL:         ep.RevertURL,
 		Timeout:           time.Duration(ep.TimeoutMs) * time.Millisecond,
 		RetriesNum:        ep.RetriesNum,
 		InitialInterval:   time.Duration(ep.InitialIntervalMs) * time.Millisecond,

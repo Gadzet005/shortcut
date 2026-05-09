@@ -1,0 +1,9 @@
+nodes:
+  stats:
+    endpoint-id: failurerec/stats
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+
+output-node: stats
