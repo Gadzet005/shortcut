@@ -1,4 +1,4 @@
-.PHONY: build run test test-coverage lint fmt vet clean install-tools mock
+.PHONY: build run test test/unit test/e2e test-coverage lint fmt vet clean install-tools mock
 
 APP_NAME=shortcut
 BUILD_DIR=bin
@@ -20,13 +20,16 @@ run:
 run/mock:
 	CONFIGS_DIR=./tests/mock-service/configs go run ./tests/mock-service
 
-test:
+test: install mock
 	go test -v ./...
 
-test/e2e:
+test/unit: install mock
+	go test -race -count=1 $$(go list ./... | grep -v /tests/e2e)
+
+test/e2e: install mock
 	go test -v -count=1 ./tests/e2e/...
 
-test-coverage:
+test-coverage: install mock
 	go test -v -race -short -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./...
 	go tool cover -html=$(COVERAGE_FILE) -o $(COVERAGE_HTML)
 

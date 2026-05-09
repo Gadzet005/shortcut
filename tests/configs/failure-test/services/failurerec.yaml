@@ -1,0 +1,19 @@
+host: mock-service:9001
+endpoints:
+  step-a:
+    path: failure-rec/step-a
+    revert-path: failure-rec/revert-step-a
+    timeout-ms: 1000
+    retries-num: 0
+  step-b:
+    path: failure-rec/step-b
+    timeout-ms: 1000
+    retries-num: 0
+  flaky-final:
+    path: failure-rec/flaky-final
+    timeout-ms: 1000
+    retries-num: 0
+  stats:
+    path: failure-rec/stats
+    timeout-ms: 1000
+    retries-num: 0

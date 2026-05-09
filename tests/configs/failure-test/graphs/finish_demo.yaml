@@ -1,0 +1,11 @@
+failure-strategy: finish
+
+nodes:
+  flaky-final:
+    endpoint-id: failurerec/flaky-final
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+
+output-node: flaky-final

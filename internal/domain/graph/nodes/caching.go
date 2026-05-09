@@ -76,6 +76,14 @@ func (e *CachingExecutor) Run(
 	return resp, nil
 }
 
+func (e *CachingExecutor) TryRevert(
+	ctx context.Context,
+	logger *zap.Logger,
+	requestID string,
+) (bool, error) {
+	return e.inner.TryRevert(ctx, logger, requestID)
+}
+
 func (e *CachingExecutor) buildKey(items map[graph.ItemID]graph.Item) string {
 	itemsHash := hashItems(items)
 	return fmt.Sprintf("shortcut:node:%s:%s:%s", e.graphHash, e.nodeID, itemsHash)

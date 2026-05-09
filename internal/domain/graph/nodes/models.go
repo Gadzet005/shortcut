@@ -7,6 +7,7 @@ import (
 
 type Endpoint struct {
 	URL               string
+	RevertURL         string
 	Timeout           time.Duration
 	RetriesNum        int
 	InitialInterval   time.Duration

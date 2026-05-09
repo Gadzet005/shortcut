@@ -53,6 +53,14 @@ func (e httpAdapterNodeExecutor) Run(
 	})
 }
 
+func (e httpAdapterNodeExecutor) TryRevert(
+	ctx context.Context,
+	logger *zap.Logger,
+	requestID string,
+) (bool, error) {
+	return tryRevertHTTP(ctx, logger, e.client, e.endpoint, requestID)
+}
+
 func (e httpAdapterNodeExecutor) doRequest(
 	ctx context.Context,
 	endpoint Endpoint,

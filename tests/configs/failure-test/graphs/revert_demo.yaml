@@ -1,0 +1,17 @@
+failure-strategy: revert
+
+nodes:
+  step-a:
+    endpoint-id: failurerec/step-a
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+
+  step-b:
+    endpoint-id: failurerec/step-b
+    dependencies:
+      - node-id: step-a
+        item-id: session_id
+
+output-node: step-b

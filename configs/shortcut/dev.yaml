@@ -3,3 +3,6 @@ mongo:
 
 cache:
   addr: "valkey:6379"
+
+postgres:
+  url: "postgres://shortcut:shortcut@postgres:5432/shortcut?sslmode=disable"

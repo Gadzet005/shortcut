@@ -25,7 +25,16 @@ type GraphConfig struct {
 	InputNode       string
 	OutputNode      string
 	FailureStrategy string
+	FailureSteps    []FailureStepConfig
 	TimeoutMs       int
+}
+
+type FailureStepConfig struct {
+	Action               string `yaml:"action"`
+	Condition            string `yaml:"condition"`
+	WaitBeforeMs         int    `yaml:"wait-before-ms"`
+	WaitBetweenRetriesMs int    `yaml:"wait-between-retries-ms"`
+	NumAttempts          int    `yaml:"num-attempts"`
 }
 
 type NodeConfig struct {
@@ -47,6 +56,7 @@ type ServicesConfig struct {
 
 type EndpointDef struct {
 	URL               string
+	RevertURL         string
 	TimeoutMs         int
 	RetriesNum        int
 	InitialIntervalMs int
@@ -71,6 +81,7 @@ type ServiceConfig struct {
 
 type EndpointConfig struct {
 	Path              string  `yaml:"path"`
+	RevertPath        string  `yaml:"revert-path"`
 	TimeoutMs         int     `yaml:"timeout-ms"`
 	RetriesNum        int     `yaml:"retries-num"`
 	InitialIntervalMs int     `yaml:"initial-interval-ms"`
@@ -83,6 +94,7 @@ type GraphFileConfig struct {
 	InputNode       string                    `yaml:"input-node"`
 	OutputNode      string                    `yaml:"output-node"`
 	FailureStrategy string                    `yaml:"failure-strategy"`
+	FailureSteps    []FailureStepConfig       `yaml:"failure-steps"`
 	TimeoutMs       int                       `yaml:"timeout-ms"`
 }
 

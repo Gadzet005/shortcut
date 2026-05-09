@@ -9,6 +9,7 @@ import (
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/checkout"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/counter"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/dashboard"
+	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/failurerec"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/httpadapter"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/noderwr"
 	"github.com/Gadzet005/shortcut/tests/mock-service/handlers/orders"
@@ -121,6 +122,15 @@ func (s *service) Run(ctx lifecycle.Context) error {
 	{
 		g := r.Group("/counter")
 		g.POST("/get", shortcut.New(counter.Get, s.Logger()))
+	}
+
+	{
+		g := r.Group("/failure-rec")
+		g.POST("/step-a", shortcut.New(failurerec.StepA, s.Logger()))
+		g.POST("/step-b", shortcut.New(failurerec.StepB, s.Logger()))
+		g.POST("/revert-step-a", failurerec.RevertStepA)
+		g.POST("/flaky-final", shortcut.New(failurerec.FlakyFinal, s.Logger()))
+		g.POST("/stats", shortcut.New(failurerec.GetStats, s.Logger()))
 	}
 
 	return nil

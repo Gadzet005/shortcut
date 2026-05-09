@@ -17,3 +17,11 @@ mongo:
 
 cache:
   addr: "localhost:6379"
+
+postgres:
+  url: "postgres://shortcut:shortcut@localhost:5432/shortcut?sslmode=disable"
+
+failure-worker:
+  interval: 5s
+  batch-size: 32
+  visibility-timeout: 30s

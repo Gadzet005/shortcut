@@ -118,6 +118,10 @@ func loadServicesFromDir(servicesDirPath string) (ServicesConfig, error) {
 				return ServicesConfig{}, errors.Errorf("duplicate service endpoint %s", key)
 			}
 			fullURL := strings.TrimSuffix(baseURL, "/") + "/" + strings.TrimPrefix(endpoint.Path, "/")
+			var revertURL string
+			if endpoint.RevertPath != "" {
+				revertURL = strings.TrimSuffix(baseURL, "/") + "/" + strings.TrimPrefix(endpoint.RevertPath, "/")
+			}
 
 			retries := endpoint.RetriesNum
 			if retries == 0 {
@@ -138,6 +142,7 @@ func loadServicesFromDir(servicesDirPath string) (ServicesConfig, error) {
 
 			out.Endpoints[key] = EndpointDef{
 				URL:               fullURL,
+				RevertURL:         revertURL,
 				TimeoutMs:         endpoint.TimeoutMs,
 				RetriesNum:        retries,
 				InitialIntervalMs: initialInterval,
@@ -208,6 +213,7 @@ func loadGraphsFromDir(graphsDirPath string) (map[string]GraphConfig, error) {
 			InputNode:       inputNode,
 			OutputNode:      outputNode,
 			FailureStrategy: cfg.FailureStrategy,
+			FailureSteps:    cfg.FailureSteps,
 			TimeoutMs:       cfg.TimeoutMs,
 		}
 	}

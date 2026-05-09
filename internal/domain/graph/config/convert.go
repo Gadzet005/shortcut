@@ -42,6 +42,7 @@ func convertNamespace(
 		ID:         namespaceID,
 		Graphs:     make(map[graph.ID]graph.Graph),
 		HTTPRoutes: make(map[string]graph.HTTPRoute),
+		GraphInfo:  make(map[graph.ID]graph.GraphInfo),
 	}
 
 	for routeName, r := range ns.HTTPRoutes {
@@ -53,9 +54,14 @@ func convertNamespace(
 	}
 
 	for graphName, gCfg := range ns.Graphs {
-		_, ok := graph.ParseFailureStrategy(gCfg.FailureStrategy)
+		strategy, ok := graph.ParseFailureStrategy(gCfg.FailureStrategy)
 		if !ok {
-			warnUser("Failure strategy not specified for graph " + graphName + ". Ignore strategy will be used by default.")
+			warnUser("Failure strategy not specified for graph " + graphName + ". Absent strategy will be used by default.")
+		}
+
+		steps, err := convertFailureSteps(gCfg.FailureSteps)
+		if err != nil {
+			return graph.Namespace{}, errors.Wrapf(err, "graph %s failure steps", graphName)
 		}
 
 		graphHash := computeGraphHash(gCfg, ns.Services)
@@ -70,9 +76,34 @@ func convertNamespace(
 		}
 
 		nsOut.Graphs[graph.ID(graphName)] = g
+		nsOut.GraphInfo[graph.ID(graphName)] = graph.GraphInfo{
+			FailureStrategy: strategy,
+			FailureSteps:    steps,
+		}
 	}
 
 	return nsOut, nil
+}
+
+func convertFailureSteps(cfg []FailureStepConfig) ([]graph.FailureStep, error) {
+	if len(cfg) == 0 {
+		return nil, nil
+	}
+	steps := make([]graph.FailureStep, len(cfg))
+	for i, s := range cfg {
+		action, ok := graph.ParseStrategyAction(s.Action)
+		if !ok {
+			return nil, errors.Errorf("unknown strategy action %q at step %d", s.Action, i)
+		}
+		steps[i] = graph.FailureStep{
+			Action:             action,
+			Condition:          graph.StrategyCondition(s.Condition),
+			WaitBefore:         time.Duration(s.WaitBeforeMs) * time.Millisecond,
+			WaitBetweenRetries: time.Duration(s.WaitBetweenRetriesMs) * time.Millisecond,
+			NumAttempts:        s.NumAttempts,
+		}
+	}
+	return steps, nil
 }
 
 func computeGraphHash(gCfg GraphConfig, services ServicesConfig) string {
@@ -164,6 +195,7 @@ func convertNode(
 
 	endpoint := graphnodes.Endpoint{
 		URL:               ep.URL,
+		RevertURL:         ep.RevertURL,
 		Timeout:           time.Duration(ep.TimeoutMs) * time.Millisecond,
 		RetriesNum:        ep.RetriesNum,
 		InitialInterval:   time.Duration(ep.InitialIntervalMs) * time.Millisecond,
