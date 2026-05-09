@@ -20,13 +20,13 @@ run:
 run/mock:
 	CONFIGS_DIR=./tests/mock-service/configs go run ./tests/mock-service
 
-test:
+test: install mock
 	go test -v ./...
 
-test/e2e:
+test/e2e: install mock
 	go test -v -count=1 ./tests/e2e/...
 
-test-coverage:
+test-coverage: install mock
 	go test -v -race -short -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./...
 	go tool cover -html=$(COVERAGE_FILE) -o $(COVERAGE_HTML)
 
