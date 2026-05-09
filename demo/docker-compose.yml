@@ -50,6 +50,18 @@ services:
       valkey:
         condition: service_healthy
 
+  user-service:
+    build:
+      context: ..
+      dockerfile: demo/services/user-service/Dockerfile
+    environment:
+      ENV: dev
+    ports:
+      - "9101:9101"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   mongo-data:
   postgres-data:

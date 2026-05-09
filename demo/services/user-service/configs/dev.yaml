@@ -1,0 +1,2 @@
+postgres:
+  url: "postgres://shortcut:shortcut@postgres:5432/shortcut?sslmode=disable"
