@@ -15,6 +15,7 @@ type Config struct {
 	CacheConfig      `yaml:"cache"`
 	PostgresConfig   `yaml:"postgres"`
 	FailureWorker    FailureWorkerConfig `yaml:"failure-worker"`
+	Trace            TraceConfig         `yaml:"trace"`
 }
 
 type MongoConfig struct {
@@ -36,4 +37,8 @@ type FailureWorkerConfig struct {
 	Interval          time.Duration `yaml:"interval"`
 	BatchSize         int           `yaml:"batch-size"`
 	VisibilityTimeout time.Duration `yaml:"visibility-timeout"`
+}
+
+type TraceConfig struct {
+	TTL time.Duration `yaml:"ttl"`
 }

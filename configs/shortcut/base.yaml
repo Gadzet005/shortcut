@@ -15,6 +15,9 @@ mongo:
   uri: "mongodb://localhost:27017"
   database: "shortcut"
 
+trace:
+  ttl: 168h
+
 cache:
   addr: "localhost:6379"
 

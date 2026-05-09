@@ -98,7 +98,7 @@ func (s service) Run(c lifecycle.Context) error {
 	})
 
 	db := mongoClient.Database(mongoCfg.Database)
-	traceRepo, err = tracemongo.NewMongoRepo(c.Context(), db)
+	traceRepo, err = tracemongo.NewMongoRepo(c.Context(), db, s.Config().Trace.TTL)
 	if err != nil {
 		return errors.WrapFailf(err, "failed to create trace repo")
 	}
