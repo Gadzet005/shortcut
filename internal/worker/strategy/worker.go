@@ -58,12 +58,19 @@ func New(
 }
 
 func (w *Worker) Run(ctx context.Context) {
+	w.logger.Info("strategy worker started",
+		zap.Duration("interval", w.cfg.Interval),
+		zap.Int("batch_size", w.cfg.BatchSize),
+		zap.Duration("visibility_timeout", w.cfg.VisibilityTimeout),
+	)
+
 	ticker := time.NewTicker(w.cfg.Interval)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
+			w.logger.Info("strategy worker stopping")
 			return
 		case <-ticker.C:
 			w.tick(ctx)
@@ -80,6 +87,8 @@ func (w *Worker) tick(ctx context.Context) {
 	if len(batch) == 0 {
 		return
 	}
+
+	w.logger.Debug("claimed batch", zap.Int("size", len(batch)))
 
 	var wg sync.WaitGroup
 	for _, f := range batch {
@@ -110,7 +119,21 @@ func (w *Worker) processOne(ctx context.Context, f failure.Failure) {
 	}
 	step := steps[stepIdx]
 
+	w.logger.Info("processing failure",
+		zap.String("request_id", f.RequestID),
+		zap.String("namespace_id", f.NamespaceID),
+		zap.String("graph_id", f.GraphID),
+		zap.Int("step_idx", stepIdx),
+		zap.String("step_action", string(step.Action)),
+		zap.String("step_condition", string(step.Condition)),
+		zap.Int64("num_retry", f.NumRetry),
+	)
+
 	if !w.conditionMet(step.Condition, f) {
+		w.logger.Info("step condition not met, skipping",
+			zap.String("request_id", f.RequestID),
+			zap.String("step_condition", string(step.Condition)),
+		)
 		w.advance(ctx, f, len(steps), 0)
 		return
 	}
@@ -141,6 +164,7 @@ func (w *Worker) conditionMet(cond graph.StrategyCondition, f failure.Failure) b
 func (w *Worker) runAction(ctx context.Context, step graph.FailureStep, f failure.Failure) (bool, bool) {
 	switch step.Action {
 	case graph.SkipStrategyAction:
+		w.logger.Info("skip action applied", zap.String("request_id", f.RequestID))
 		return true, false
 
 	case graph.RevertStrategyAction:
@@ -149,6 +173,7 @@ func (w *Worker) runAction(ctx context.Context, step graph.FailureStep, f failur
 			w.logger.Error("revert action failed", zap.String("request_id", f.RequestID), zap.Error(err))
 			return false, false
 		}
+		w.logger.Info("revert action finished", zap.String("request_id", f.RequestID), zap.Bool("ok", ok))
 		return ok, true
 
 	case graph.FinishStrategyAction:
@@ -157,10 +182,13 @@ func (w *Worker) runAction(ctx context.Context, step graph.FailureStep, f failur
 			w.logger.Error("finish action failed", zap.String("request_id", f.RequestID), zap.Error(err))
 			return false, false
 		}
+		w.logger.Info("finish action finished", zap.String("request_id", f.RequestID), zap.Bool("ok", ok))
 		return ok, ok
 
 	case graph.RetryStrategyAction:
-		return w.runRetry(ctx, step, f), false
+		ok := w.runRetry(ctx, step, f)
+		w.logger.Info("retry action finished", zap.String("request_id", f.RequestID), zap.Bool("ok", ok))
+		return ok, false
 
 	default:
 		w.logger.Warn("unknown strategy action", zap.String("action", string(step.Action)))
@@ -213,6 +241,11 @@ func (w *Worker) advance(ctx context.Context, f failure.Failure, totalSteps int,
 	}
 
 	if status == failure.StatusDone {
+		w.logger.Info("failure done",
+			zap.String("request_id", f.RequestID),
+			zap.Int64("num_retry", nextRetry),
+			zap.String("reason", "all steps consumed"),
+		)
 		w.deleteCompleted(ctx, f)
 	}
 }
@@ -229,6 +262,11 @@ func (w *Worker) finalize(ctx context.Context, f failure.Failure, success bool) 
 		w.logger.Error("finalize update failed", zap.String("request_id", f.RequestID), zap.Error(err))
 		return
 	}
+	w.logger.Info("failure done",
+		zap.String("request_id", f.RequestID),
+		zap.Int64("num_retry", f.NumRetry+1),
+		zap.String("reason", "terminal action succeeded"),
+	)
 	w.deleteCompleted(ctx, f)
 }
 
@@ -251,6 +289,11 @@ func (w *Worker) markDone(ctx context.Context, f failure.Failure) {
 		w.logger.Error("mark done failed", zap.String("request_id", f.RequestID), zap.Error(err))
 		return
 	}
+	w.logger.Info("failure done",
+		zap.String("request_id", f.RequestID),
+		zap.Int64("num_retry", f.NumRetry),
+		zap.String("reason", "no steps remaining"),
+	)
 	w.deleteCompleted(ctx, f)
 }
 

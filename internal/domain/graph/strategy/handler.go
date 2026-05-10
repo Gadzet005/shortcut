@@ -41,8 +41,8 @@ func (f factory) New(strategy graph.FailureStrategy, steps []graph.FailureStep) 
 	case graph.CustomFailureStrategy:
 		return customHandler{repo: f.repo, steps: steps, logger: f.logger}
 	case graph.IgnoreFailureStrategy:
-		return ignoreHandler{}
+		return ignoreHandler{logger: f.logger}
 	default:
-		return absentHandler{}
+		return absentHandler{logger: f.logger}
 	}
 }

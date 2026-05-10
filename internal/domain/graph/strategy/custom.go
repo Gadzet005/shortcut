@@ -16,6 +16,13 @@ type customHandler struct {
 }
 
 func (h customHandler) Handle(ctx context.Context, f failure.Failure) error {
+	h.logger.Info("custom strategy started",
+		zap.String("request_id", f.RequestID),
+		zap.String("namespace_id", f.NamespaceID),
+		zap.String("graph_id", f.GraphID),
+		zap.Int("steps", len(h.steps)),
+	)
+
 	f.NumRetry = 0
 	f.Status = failure.StatusPending
 
@@ -29,5 +36,10 @@ func (h customHandler) Handle(ctx context.Context, f failure.Failure) error {
 		h.logger.Error("save custom failure record failed", zap.String("request_id", f.RequestID), zap.Error(err))
 		return err
 	}
+
+	h.logger.Info("custom strategy finished",
+		zap.String("request_id", f.RequestID),
+		zap.Duration("first_delay", firstDelay),
+	)
 	return nil
 }
