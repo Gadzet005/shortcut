@@ -1,0 +1,15 @@
+nodes:
+  get-user:
+    endpoint-id: user-service/get-user
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+  render:
+    endpoint-id: frontend-service/render-user
+    dependencies:
+      - node-id: get-user
+        item-id: user
+
+output-node: render
+failure-strategy: ignore

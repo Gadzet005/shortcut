@@ -1,0 +1,21 @@
+nodes:
+  get-cart:
+    endpoint-id: user-service/get-cart
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+  list-products:
+    endpoint-id: product-service/list-products
+    dependencies:
+      - node-id: get-cart
+        item-id: cart_product_ids
+        overriden-item-id: recommendations
+  render:
+    endpoint-id: frontend-service/render-cart
+    dependencies:
+      - node-id: list-products
+        item-id: products
+
+output-node: render
+failure-strategy: ignore

@@ -1,0 +1,28 @@
+nodes:
+  get-user:
+    endpoint-id: user-service/get-user
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+  get-recommendations:
+    endpoint-id: recommendation-service/get-recommendations
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+      - node-id: get-user
+        item-id: user
+  list-products:
+    endpoint-id: product-service/list-products
+    dependencies:
+      - node-id: get-recommendations
+        item-id: recommendations
+  render:
+    endpoint-id: frontend-service/render-product-list
+    dependencies:
+      - node-id: list-products
+        item-id: products
+
+output-node: render
+failure-strategy: ignore

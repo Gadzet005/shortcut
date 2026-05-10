@@ -1,0 +1,279 @@
+products:
+  - id: p1
+    name: "Механическая клавиатура"
+    description: "Hot-swap клавиатура с RGB-подсветкой, коричневыми свитчами и PBT-кейкапами"
+    price: 7490
+    image_url: "https://loremflickr.com/640/640/mechanical,keyboard?lock=101"
+    category: peripherals
+  - id: p2
+    name: "Беспроводная мышь"
+    description: "Эргономичная мышь на 6 кнопок, оптический сенсор 18000 DPI"
+    price: 2790
+    image_url: "https://loremflickr.com/640/640/computer,mouse?lock=102"
+    category: peripherals
+  - id: p6
+    name: "Большой коврик для стола"
+    description: "900x400 мм, прошитые края, водоотталкивающее покрытие"
+    price: 2290
+    image_url: "https://loremflickr.com/640/640/desk,workspace?lock=106"
+    category: peripherals
+  - id: p7
+    name: "USB-C хаб 7-в-1"
+    description: "HDMI 4K, гигабитный ethernet, passthrough 100 Вт, два USB-A 3.0"
+    price: 4290
+    image_url: "https://loremflickr.com/640/640/usb,hub?lock=107"
+    category: peripherals
+  - id: p27
+    name: "Механический нампад"
+    description: "Беспроводной макропад, 17 hot-swap клавиш и OLED-экран"
+    price: 4690
+    image_url: "https://loremflickr.com/640/640/numpad,keyboard?lock=127"
+    category: peripherals
+  - id: p28
+    name: "Трекбол-мышь"
+    description: "Симметричный трекбол, 8 кнопок, сенсор 4000 DPI"
+    price: 6490
+    image_url: "https://loremflickr.com/640/640/trackball,mouse?lock=128"
+    category: peripherals
+
+  - id: p3
+    name: "Монитор 27\" 4K"
+    description: "IPS-матрица, 144 Гц, USB-C 90 Вт, заводская калибровка"
+    price: 32990
+    image_url: "https://loremflickr.com/640/640/monitor,display?lock=103"
+    category: displays
+  - id: p8
+    name: "Изогнутый монитор 34\""
+    description: "IPS, 3440x1440, 165 Гц, KVM-переключатель, регулировка по высоте"
+    price: 51990
+    image_url: "https://loremflickr.com/640/640/ultrawide,monitor?lock=108"
+    category: displays
+  - id: p9
+    name: "Переносной OLED-дисплей 15.6\""
+    description: "Питание по USB-C, вес 700 г, в комплекте кожаный чехол-подставка"
+    price: 27990
+    image_url: "https://loremflickr.com/640/640/portable,display?lock=109"
+    category: displays
+  - id: p29
+    name: "Профессиональный монитор 32\""
+    description: "Mini-LED, 4K, охват 99% DCI-P3, аппаратная калибровка"
+    price: 119990
+    image_url: "https://loremflickr.com/640/640/studio,monitor?lock=129"
+    category: displays
+
+  - id: p4
+    name: "Наушники с шумоподавлением"
+    description: "Гибридное ANC, 35 часов автономности, USB-C, складной кейс"
+    price: 18990
+    image_url: "https://loremflickr.com/640/640/headphones?lock=104"
+    category: audio
+  - id: p10
+    name: "Беспроводные TWS-наушники"
+    description: "Активное шумоподавление, IPX4, 24 часа с кейсом, multipoint"
+    price: 8490
+    image_url: "https://loremflickr.com/640/640/earbuds?lock=110"
+    category: audio
+  - id: p11
+    name: "Bluetooth-колонка"
+    description: "Стерео 20 Вт, IP67, 18 часов воспроизведения, режим party-link"
+    price: 6190
+    image_url: "https://loremflickr.com/640/640/bluetooth,speaker?lock=111"
+    category: audio
+  - id: p12
+    name: "Студийный USB-микрофон"
+    description: "Конденсаторный, кардиоидная диаграмма, в комплекте паук и поп-фильтр"
+    price: 11290
+    image_url: "https://loremflickr.com/640/640/microphone,studio?lock=112"
+    category: audio
+  - id: p30
+    name: "ЦАП с усилителем для наушников"
+    description: "ESS Sabre DAC, балансный выход 4.4 мм, тянет 600 Ом"
+    price: 21490
+    image_url: "https://loremflickr.com/640/640/amplifier,audio?lock=130"
+    category: audio
+
+  - id: p5
+    name: "Ультрабук 14\""
+    description: "Магниевый корпус, 32 ГБ ОЗУ, 1 ТБ NVMe, до 18 часов работы"
+    price: 119990
+    image_url: "https://loremflickr.com/640/640/laptop,ultrabook?lock=105"
+    category: computers
+  - id: p13
+    name: "Мини-ПК"
+    description: "Ryzen 7, 32 ГБ ОЗУ, 1 ТБ SSD, два порта 2.5 GbE, размером с ладонь"
+    price: 64990
+    image_url: "https://loremflickr.com/640/640/computer,mini?lock=113"
+    category: computers
+  - id: p14
+    name: "Игровой десктоп"
+    description: "Топовые CPU и GPU, БП 1000 Вт, СЖО 360 мм, корпус с RGB-подсветкой"
+    price: 179990
+    image_url: "https://loremflickr.com/640/640/gaming,desktop?lock=114"
+    category: computers
+  - id: p31
+    name: "Рабочая станция-ноутбук 16\""
+    description: "32-ядерный CPU, 64 ГБ ОЗУ, GPU класса RTX, 4K mini-LED"
+    price: 264990
+    image_url: "https://loremflickr.com/640/640/laptop,workstation?lock=131"
+    category: computers
+
+  - id: p15
+    name: "Смартфон Pro"
+    description: "OLED 6.7\" 120 Гц, 256 ГБ, тройная камера, титановая рамка"
+    price: 84990
+    image_url: "https://loremflickr.com/640/640/smartphone?lock=115"
+    category: phones
+  - id: p16
+    name: "Планшет 11\""
+    description: "OLED, 256 ГБ, магнитная клавиатура и стилус с низкой задержкой"
+    price: 61990
+    image_url: "https://loremflickr.com/640/640/tablet?lock=116"
+    category: phones
+  - id: p17
+    name: "Умные часы"
+    description: "AMOLED, GPS, ЭКГ, SpO2, 7 дней автономности, сапфировое стекло"
+    price: 23490
+    image_url: "https://loremflickr.com/640/640/smartwatch?lock=117"
+    category: phones
+  - id: p32
+    name: "Электронная книга 7\""
+    description: "300 ppi без бликов, тёплая подсветка, защита IPX8"
+    price: 16990
+    image_url: "https://loremflickr.com/640/640/ereader,book?lock=132"
+    category: phones
+  - id: p33
+    name: "Компактный смартфон 5.7\""
+    description: "Карманный флагман, двойная камера, 90 Гц OLED"
+    price: 55990
+    image_url: "https://loremflickr.com/640/640/phone,compact?lock=133"
+    category: phones
+
+  - id: p18
+    name: "Робот-пылесос"
+    description: "LiDAR-навигация, режим влажной уборки, аккумулятор 5200 мА ч, база самоочистки"
+    price: 30990
+    image_url: "https://loremflickr.com/640/640/robot,vacuum?lock=118"
+    category: home
+  - id: p19
+    name: "Кофемашина с эспрессо"
+    description: "От зерна до чашки, 19 бар, автоматический капучинатор"
+    price: 43490
+    image_url: "https://loremflickr.com/640/640/espresso,coffee?lock=119"
+    category: home
+  - id: p20
+    name: "Очиститель воздуха"
+    description: "HEPA H13, до 60 кв. м, управление со смартфона, тихий ночной режим"
+    price: 18990
+    image_url: "https://loremflickr.com/640/640/airpurifier?lock=120"
+    category: home
+  - id: p34
+    name: "Умный чайник 1.7 л"
+    description: "Регулировка температуры, расписание в приложении, двойные стенки"
+    price: 8490
+    image_url: "https://loremflickr.com/640/640/kettle?lock=134"
+    category: home
+  - id: p35
+    name: "Мощный блендер"
+    description: "Мотор 1500 Вт, чаша 2 л без BPA, программа для горячего супа"
+    price: 20990
+    image_url: "https://loremflickr.com/640/640/blender?lock=135"
+    category: home
+  - id: p36
+    name: "Умная настольная лампа"
+    description: "Регулируемая цветовая температура, датчик присутствия, USB-C для зарядки"
+    price: 7490
+    image_url: "https://loremflickr.com/640/640/desk,lamp?lock=136"
+    category: home
+
+  - id: p21
+    name: "Беговые кроссовки"
+    description: "Амортизирующая пена, дышащий меш, унисекс-размеры"
+    price: 10290
+    image_url: "https://loremflickr.com/640/640/sneakers,running?lock=121"
+    category: apparel
+  - id: p22
+    name: "Худи оверсайз"
+    description: "Плотный хлопок-микс, свободный крой, карман-кенгуру"
+    price: 5590
+    image_url: "https://loremflickr.com/640/640/hoodie?lock=122"
+    category: apparel
+  - id: p23
+    name: "Туристический рюкзак 30 л"
+    description: "USB-выход для зарядки, водоотталкивающий нейлон 1680D"
+    price: 7490
+    image_url: "https://loremflickr.com/640/640/backpack?lock=123"
+    category: apparel
+  - id: p37
+    name: "Лёгкий пуховик"
+    description: "Переработанный гусиный пух, компактный, водоотталкивающее покрытие DWR"
+    price: 13990
+    image_url: "https://loremflickr.com/640/640/jacket,puffer?lock=137"
+    category: apparel
+  - id: p38
+    name: "Футболка из мериносовой шерсти"
+    description: "150 г/кв. м, без запаха, отлично сидит, машинная стирка"
+    price: 4690
+    image_url: "https://loremflickr.com/640/640/shirt,fashion?lock=1138"
+    category: apparel
+
+  - id: p24
+    name: "Беспроводная зарядка"
+    description: "15 Вт Qi, USB-C, тонкий алюминиевый корпус, нескользящая силиконовая поверхность"
+    price: 2790
+    image_url: "https://loremflickr.com/640/640/wireless,charger?lock=124"
+    category: accessories
+  - id: p25
+    name: "Внешний аккумулятор 20000 мА ч"
+    description: "100 Вт USB-C PD, два порта, быстрая зарядка, OLED-дисплей"
+    price: 4690
+    image_url: "https://loremflickr.com/640/640/powerbank,battery?lock=125"
+    category: accessories
+  - id: p26
+    name: "Кабель USB-C 2 м"
+    description: "В оплётке, 240 Вт EPR, 40 Гбит/с, поддержка DP Alt-mode 8K"
+    price: 1790
+    image_url: "https://loremflickr.com/640/640/cable,charger?lock=1126"
+    category: accessories
+  - id: p39
+    name: "Подставка для ноутбука"
+    description: "Алюминиевая, регулируемая, под ноутбуки до 17\""
+    price: 3690
+    image_url: "https://loremflickr.com/640/640/laptop,stand?lock=139"
+    category: accessories
+  - id: p40
+    name: "Чехол для смартфона"
+    description: "Бампер с MagSafe и встроенной подставкой"
+    price: 2290
+    image_url: "https://loremflickr.com/640/640/iphone,accessory?lock=1140"
+    category: accessories
+  - id: p41
+    name: "Веб-камера 4K"
+    description: "Сенсор Sony IMX, два микрофона, шторка приватности, USB-C"
+    price: 11290
+    image_url: "https://loremflickr.com/640/640/webcam,camera?lock=141"
+    category: accessories
+
+  - id: p42
+    name: "Геймпад Pro"
+    description: "Холловские стики, программируемые задние курки, низкая задержка"
+    price: 7490
+    image_url: "https://loremflickr.com/640/640/gamepad,controller?lock=142"
+    category: gaming
+  - id: p43
+    name: "Игровая гарнитура"
+    description: "Беспроводная 2.4 ГГц + Bluetooth, изодинамические излучатели, до 50 часов"
+    price: 18990
+    image_url: "https://loremflickr.com/640/640/gaming,headset?lock=143"
+    category: gaming
+  - id: p44
+    name: "Портативная консоль"
+    description: "OLED 7\" 90 Гц, холловские стики, док-станция с HDMI 2.1"
+    price: 55990
+    image_url: "https://loremflickr.com/640/640/nintendoswitch,videogame?lock=1144"
+    category: gaming
+  - id: p45
+    name: "VR-шлем"
+    description: "4K на каждый глаз, inside-out трекинг, шесть степеней свободы"
+    price: 51990
+    image_url: "https://loremflickr.com/640/640/oculus,virtualreality?lock=1145"
+    category: gaming

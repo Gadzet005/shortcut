@@ -1,0 +1,23 @@
+nodes:
+  validate-user:
+    endpoint-id: user-service/get-user
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+  validate-product:
+    endpoint-id: product-service/validate-product
+    dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
+  remove-cart-item:
+    endpoint-id: user-service/remove-cart-item
+    dependencies:
+      - node-id: validate-user
+        item-id: user
+      - node-id: validate-product
+        item-id: product
+
+output-node: remove-cart-item
+failure-strategy: revert

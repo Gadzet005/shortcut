@@ -1,0 +1,16 @@
+host: user-service:9101
+endpoints:
+  get-user:
+    path: get-user
+    timeout-ms: 1000
+  get-cart:
+    path: get-cart
+    timeout-ms: 1000
+  add-cart-item:
+    path: add-cart-item
+    revert-path: revert-add-cart-item
+    timeout-ms: 1000
+  remove-cart-item:
+    path: remove-cart-item
+    revert-path: revert-remove-cart-item
+    timeout-ms: 1000

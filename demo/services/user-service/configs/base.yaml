@@ -1,0 +1,10 @@
+app:
+  shutdown-timeout: 10s
+
+http:
+  port: 9101
+
+logs: {}
+
+postgres:
+  url: "postgres://shortcut:shortcut@localhost:5432/shortcut?sslmode=disable"
