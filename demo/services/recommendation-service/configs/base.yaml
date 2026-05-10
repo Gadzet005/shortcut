@@ -1,0 +1,7 @@
+app:
+  shutdown-timeout: 10s
+
+http:
+  port: 9103
+
+logs: {}

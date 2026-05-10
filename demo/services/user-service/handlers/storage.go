@@ -19,18 +19,18 @@ CREATE TABLE IF NOT EXISTS demo_users (
     email text NOT NULL DEFAULT ''
 );
 
+ALTER TABLE demo_users ADD COLUMN IF NOT EXISTS phone      text NOT NULL DEFAULT '';
+ALTER TABLE demo_users ADD COLUMN IF NOT EXISTS address    text NOT NULL DEFAULT '';
+ALTER TABLE demo_users ADD COLUMN IF NOT EXISTS avatar_url text NOT NULL DEFAULT '';
+ALTER TABLE demo_users ADD COLUMN IF NOT EXISTS bio        text NOT NULL DEFAULT '';
+ALTER TABLE demo_users ADD COLUMN IF NOT EXISTS joined_at  text NOT NULL DEFAULT '';
+
 CREATE TABLE IF NOT EXISTS demo_cart_items (
     user_id    text    NOT NULL,
     product_id text    NOT NULL,
     qty        integer NOT NULL DEFAULT 0,
     PRIMARY KEY (user_id, product_id)
 );
-
-INSERT INTO demo_users (id, name, email) VALUES
-    ('1', 'Alice',   'alice@example.com'),
-    ('2', 'Bob',     'bob@example.com'),
-    ('3', 'Charlie', 'charlie@example.com')
-ON CONFLICT (id) DO NOTHING;
 `
 
 func InitSchema(ctx context.Context, p *pgxpool.Pool) error {

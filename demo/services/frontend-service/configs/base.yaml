@@ -1,0 +1,10 @@
+app:
+  shutdown-timeout: 10s
+
+http:
+  port: 9104
+
+logs: {}
+
+shortcut:
+  base-url: "http://localhost:8080"

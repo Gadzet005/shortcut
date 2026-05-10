@@ -56,11 +56,55 @@ services:
       dockerfile: demo/services/user-service/Dockerfile
     environment:
       ENV: dev
+      MOCK_DATA_DIR: /app/mock-data
+    volumes:
+      - ./mock-data:/app/mock-data:ro
     ports:
       - "9101:9101"
     depends_on:
       postgres:
         condition: service_healthy
+
+  product-service:
+    build:
+      context: ..
+      dockerfile: demo/services/product-service/Dockerfile
+    environment:
+      ENV: dev
+      MOCK_DATA_DIR: /app/mock-data
+    volumes:
+      - ./mock-data:/app/mock-data:ro
+    ports:
+      - "9102:9102"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  recommendation-service:
+    build:
+      context: ..
+      dockerfile: demo/services/recommendation-service/Dockerfile
+    environment:
+      ENV: dev
+      MOCK_DATA_DIR: /app/mock-data
+    volumes:
+      - ./mock-data:/app/mock-data:ro
+    ports:
+      - "9103:9103"
+
+  frontend-service:
+    build:
+      context: ..
+      dockerfile: demo/services/frontend-service/Dockerfile
+    environment:
+      ENV: dev
+      MOCK_DATA_DIR: /app/mock-data
+    volumes:
+      - ./mock-data:/app/mock-data:ro
+    ports:
+      - "9104:9104"
+    depends_on:
+      - shortcut
 
 volumes:
   mongo-data:

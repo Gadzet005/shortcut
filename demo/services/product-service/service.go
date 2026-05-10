@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/Gadzet005/shortcut/demo/services/user-service/handlers"
+	"github.com/Gadzet005/shortcut/demo/services/product-service/handlers"
 	"github.com/Gadzet005/shortcut/pkg/app/di"
 	"github.com/Gadzet005/shortcut/pkg/app/lifecycle"
 	"github.com/Gadzet005/shortcut/pkg/errors"
@@ -25,7 +25,7 @@ type service struct {
 }
 
 func (s *service) Name() string {
-	return "user-service"
+	return "product-service"
 }
 
 func (s *service) Run(ctx lifecycle.Context) error {
@@ -43,23 +43,20 @@ func (s *service) Run(ctx lifecycle.Context) error {
 	}
 	handlers.SetPool(pool)
 
-	users, err := handlers.LoadUsers(filepath.Join(mockDataDir(), "users.yaml"))
+	products, err := handlers.LoadProducts(filepath.Join(mockDataDir(), "products.yaml"))
 	if err != nil {
-		return errors.WrapFail(err, "load mock users")
+		return errors.WrapFail(err, "load mock products")
 	}
-	if err := handlers.SeedUsers(ctx.Context(), pool, users); err != nil {
-		return errors.WrapFail(err, "seed users")
+	if err := handlers.SeedProducts(ctx.Context(), pool, products); err != nil {
+		return errors.WrapFail(err, "seed products")
 	}
 
-	r := s.HTTP("user-service")
+	r := s.HTTP("product-service")
 	r.GET("/health", func(c *gin.Context) { c.JSON(200, gin.H{"status": "ok"}) })
 
-	r.POST("/get-user", shortcut.New(handlers.GetUser, s.Logger()))
-	r.POST("/get-cart", shortcut.New(handlers.GetCart, s.Logger()))
-	r.POST("/add-cart-item", shortcut.New(handlers.AddCartItem, s.Logger()))
-	r.POST("/remove-cart-item", shortcut.New(handlers.RemoveCartItem, s.Logger()))
-	r.POST("/revert-add-cart-item", handlers.RevertCartItem)
-	r.POST("/revert-remove-cart-item", handlers.RevertCartItem)
+	r.POST("/get-product", shortcut.New(handlers.GetProduct, s.Logger()))
+	r.POST("/list-products", shortcut.New(handlers.ListProducts, s.Logger()))
+	r.POST("/validate-product", shortcut.New(handlers.GetProduct, s.Logger()))
 
 	return nil
 }

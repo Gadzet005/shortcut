@@ -10,9 +10,14 @@ import (
 )
 
 type User struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Email string `json:"email"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Email     string `json:"email"`
+	Phone     string `json:"phone"`
+	Address   string `json:"address"`
+	AvatarURL string `json:"avatarUrl"`
+	Bio       string `json:"bio"`
+	JoinedAt  string `json:"joinedAt"`
 }
 
 func GetUser(ctx *shortcut.Context) error {
@@ -28,8 +33,10 @@ func GetUser(ctx *shortcut.Context) error {
 
 	var user User
 	err := pool.QueryRow(context.Background(),
-		`SELECT id, name, email FROM demo_users WHERE id = $1`, userID).
-		Scan(&user.ID, &user.Name, &user.Email)
+		`SELECT id, name, email, phone, address, avatar_url, bio, joined_at
+		 FROM demo_users WHERE id = $1`, userID).
+		Scan(&user.ID, &user.Name, &user.Email, &user.Phone, &user.Address,
+			&user.AvatarURL, &user.Bio, &user.JoinedAt)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return shortcut.NewError(404, "user not found")

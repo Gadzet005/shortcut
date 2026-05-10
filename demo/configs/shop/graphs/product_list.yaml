@@ -8,6 +8,9 @@ nodes:
   get-recommendations:
     endpoint-id: recommendation-service/get-recommendations
     dependencies:
+      - node-id: input
+        item-id: http_request
+        overriden-item-id: request
       - node-id: get-user
         item-id: user
   list-products:

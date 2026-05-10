@@ -19,3 +19,7 @@ routes:
     path: /cart
     method: GET
     graph: get_cart
+  user-profile:
+    path: /user
+    method: GET
+    graph: user_profile

@@ -11,6 +11,11 @@ nodes:
       - node-id: get-cart
         item-id: cart_product_ids
         overriden-item-id: recommendations
+  render:
+    endpoint-id: frontend-service/render-cart
+    dependencies:
+      - node-id: list-products
+        item-id: products
 
-output-node: list-products
+output-node: render
 failure-strategy: ignore

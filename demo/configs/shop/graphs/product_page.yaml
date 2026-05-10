@@ -21,13 +21,19 @@ nodes:
         overriden-item-id: request
       - node-id: get-user
         item-id: user
+  list-recommended-products:
+    endpoint-id: product-service/list-products
+    dependencies:
+      - node-id: get-recommendations
+        item-id: recommendations
   render:
     endpoint-id: frontend-service/render-product-page
     dependencies:
       - node-id: get-product
         item-id: product
-      - node-id: get-recommendations
-        item-id: recommendations
+      - node-id: list-recommended-products
+        item-id: products
+        overriden-item-id: recommendations
 
 output-node: render
 failure-strategy: ignore
