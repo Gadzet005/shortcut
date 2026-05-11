@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "shortcut.fullname" . }}-shortcut
+  labels:
+    app.kubernetes.io/name: {{ include "shortcut.name" . }}-shortcut
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.shortcut.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "shortcut.name" . }}-shortcut
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ include "shortcut.name" . }}-shortcut
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: shortcut
+          image: "{{ .Values.shortcut.image.repository }}:{{ .Values.shortcut.image.tag }}"
+          imagePullPolicy: {{ .Values.shortcut.image.pullPolicy }}
+          ports:
+            - containerPort: 8080
+              name: http
+          env:
+            - name: DB_POSTGRES_HOST
+              value: {{ .Values.shortcut.config.database.postgres.host }}
+            - name: DB_POSTGRES_PORT
+              value: {{ .Values.shortcut.config.database.postgres.port | quote }}
+            - name: DB_POSTGRES_NAME
+              value: {{ .Values.shortcut.config.database.postgres.name }}
+            - name: DB_MONGO_HOST
+              value: {{ .Values.shortcut.config.database.mongodb.host }}
+            - name: VALKEY_HOST
+              value: {{ .Values.shortcut.config.database.valkey.host }}
+            - name: LOG_LEVEL
+              value: {{ .Values.shortcut.config.logging.level }}
+          volumeMounts:
+            - name: config
+              mountPath: /app/config
+            - name: extra-configs
+              mountPath: /app/extra-configs
+          resources:
+            {{- toYaml .Values.shortcut.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 5
+        
+        {{- if .Values.shortcut.sidecars.promtail.enabled }}
+        - name: promtail
+          image: {{ .Values.shortcut.sidecars.promtail.image }}
+          volumeMounts:
+            - name: logs
+              mountPath: /var/log
+            - name: promtail-config
+              mountPath: /etc/promtail
+            - name: docker-containers
+              mountPath: /var/lib/docker/containers
+              readOnly: true
+          args:
+            - "-config.file=/etc/promtail/promtail-config.yaml"
+        {{- end }}
+      
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "shortcut.fullname" . }}-shortcut-config
+        - name: extra-configs
+          configMap:
+            name: {{ include "shortcut.fullname" . }}-shortcut-extra-configs
+        {{- if .Values.shortcut.sidecars.promtail.enabled }}
+        - name: logs
+          emptyDir: {}
+        - name: promtail-config
+          configMap:
+            name: {{ include "shortcut.fullname" . }}-promtail-config
+        - name: docker-containers
+          hostPath:
+            path: /var/lib/docker/containers
+        {{- end }}

@@ -1,0 +1,171 @@
+replicaCount: 1
+
+shortcut:
+  enabled: true
+  replicaCount: 3
+  image:
+    repository: your-registry/shortcut
+    tag: latest
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    port: 8080
+  
+  config:
+    app:
+      name: shortcut
+      env: production
+    
+    database:
+      postgres:
+        host: postgres
+        port: 5432
+        name: shortcut
+      mongodb:
+        host: mongo
+        port: 27017
+      valkey:
+        host: valkey
+        port: 6379
+    
+    logging:
+      level: info
+      format: json
+  
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "256Mi"
+      cpu: "250m"
+  
+  extraConfigs:
+    appsettings.json: |
+      {
+        "CustomSetting": "value"
+      }
+  
+  sidecars:
+    promtail:
+      enabled: true
+      image: grafana/promtail:3.4.2
+      config:
+        clients:
+          - url: http://loki:3100/loki/api/v1/push
+        scrape_configs:
+          - job_name: kubernetes-pods
+            kubernetes_sd_configs:
+              - role: pod
+            pipeline_stages:
+              - docker: {}
+            relabel_configs:
+              - source_labels: [__meta_kubernetes_pod_label_app]
+                target_label: app
+
+postgres:
+  enabled: true
+  image: postgres:17-alpine
+  replicaCount: 1
+  
+  auth:
+    username: shortcut
+    password: shortcut
+    database: shortcut
+  
+  persistence:
+    enabled: true
+    size: 10Gi
+  
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+  
+  initScripts:
+    init.sql: |
+      -- Ваши миграции здесь
+      CREATE TABLE IF NOT EXISTS users (...);
+
+mongo:
+  enabled: true
+  image: mongo:8
+  replicaCount: 1
+  
+  auth:
+    enabled: false
+  
+  persistence:
+    enabled: true
+    size: 10Gi
+  
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+
+valkey:
+  enabled: true
+  image: valkey/valkey:8-alpine
+  replicaCount: 1
+  
+  persistence:
+    enabled: true
+    size: 1Gi
+  
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+
+prometheus:
+  enabled: true
+  server:
+    persistentVolume:
+      enabled: true
+      size: 1Gi
+
+grafana:
+  enabled: true
+  adminPassword: admin
+  persistence:
+    enabled: true
+    size: 1Gi
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://prometheus-server:9090
+        - name: Loki
+          type: loki
+          url: http://loki:3100
+
+loki:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 1Gi
+  config:
+    table_manager:
+      retention_deletes_enabled: true
+      retention_period: 168h
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+  hosts:
+    - host: shortcut.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+          service: shortcut
+          port: 8080
+  tls:
+    - secretName: shortcut-tls
+      hosts:
+        - shortcut.example.com
