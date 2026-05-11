@@ -64,7 +64,10 @@ func convertNamespace(
 			return graph.Namespace{}, errors.Wrapf(err, "graph %s failure steps", graphName)
 		}
 
-		graphHash := computeGraphHash(gCfg, ns.Services)
+		graphHash, err := computeGraphHash(gCfg, ns.Services)
+		if err != nil {
+			return graph.Namespace{}, errors.Wrapf(err, "graph %s hash", graphName)
+		}
 		nodesMap, err := convertGraphNodes(gCfg, ns.Services, namespaceID, client, graphHash, cacheRepo)
 		if err != nil {
 			return graph.Namespace{}, errors.Wrapf(err, "graph %s", graphName)
@@ -106,14 +109,17 @@ func convertFailureSteps(cfg []FailureStepConfig) ([]graph.FailureStep, error) {
 	return steps, nil
 }
 
-func computeGraphHash(gCfg GraphConfig, services ServicesConfig) string {
+func computeGraphHash(gCfg GraphConfig, services ServicesConfig) (string, error) {
 	type hashInput struct {
 		Graph    GraphConfig    `json:"graph"`
 		Services ServicesConfig `json:"services"`
 	}
-	b, _ := json.Marshal(hashInput{Graph: gCfg, Services: services})
+	b, err := json.Marshal(hashInput{Graph: gCfg, Services: services})
+	if err != nil {
+		return "", errors.Wrap(err, "marshal hash input")
+	}
 	sum := sha256.Sum256(b)
-	return hex.EncodeToString(sum[:])
+	return hex.EncodeToString(sum[:]), nil
 }
 
 func convertGraphNodes(
