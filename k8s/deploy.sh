@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
+set -eo pipefail
 
 namespace="shortcut"
 release="shortcut"
@@ -51,7 +51,23 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-helm dependency update "${chart_dir}"
+rm -rf "${chart_dir}/charts" "${chart_dir}/Chart.lock"
+
+helm dependency build "${chart_dir}"
+
+# unpack .tgz 
+if [[ -d "${chart_dir}/charts" ]]; then
+  echo "Extracting chart archives..."
+  for tgz in "${chart_dir}"/charts/*.tgz; do
+    if [[ -f "$tgz" ]]; then
+      echo "Extracting: $(basename "$tgz")"
+      tar -xzf "$tgz" -C "${chart_dir}/charts/"
+      # Удаляем архив после распаковки
+      rm -f "$tgz"
+    fi
+  done
+  echo "All charts extracted successfully"
+fi
 
 kubectl create namespace "${namespace}" --dry-run=client -o yaml | kubectl apply -f -
 
@@ -61,12 +77,24 @@ helm_args=(
   --values "${chart_dir}/values.yaml"
 )
 
-for vf in "${extra_values[@]}"; do
-  helm_args+=(--values "${vf}")
-done
+# Add extra values files if provided
+if [[ ${#extra_values[@]} -gt 0 ]]; then
+  for vf in "${extra_values[@]}"; do
+    helm_args+=(--values "${vf}")
+  done
+fi
 
-helm_args+=("${wait_flags[@]}")
+# Add wait flags if not disabled
+if [[ ${#wait_flags[@]} -gt 0 ]]; then
+  helm_args+=("${wait_flags[@]}")
+fi
+
 helm_args+=(--timeout "${timeout}")
-helm_args+=("${dry_run[@]}")
 
+# Add dry-run if specified
+if [[ ${#dry_run[@]} -gt 0 ]]; then
+  helm_args+=("${dry_run[@]}")
+fi
+
+# Execute helm command
 helm "${helm_args[@]}"
