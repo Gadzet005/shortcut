@@ -1,51 +1,23 @@
+{{- if .Values.shortcut.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "shortcut.fullname" . }}-shortcut-config
+  name: {{ include "shortcut.fullname" . }}-config
+  labels:
+    {{- include "shortcut.labels" . | nindent 4 }}
 data:
-  appsettings.json: |
-    {
-      "ConnectionStrings": {
-        "Postgres": "host={{ .Values.shortcut.config.database.postgres.host }};port={{ .Values.shortcut.config.database.postgres.port }};database={{ .Values.shortcut.config.database.postgres.name }};username={{ .Values.postgres.auth.username }};password={{ .Values.postgres.auth.password }}",
-        "MongoDB": "mongodb://{{ .Values.shortcut.config.database.mongodb.host }}:{{ .Values.shortcut.config.database.mongodb.port }}",
-        "Valkey": "{{ .Values.shortcut.config.database.valkey.host }}:{{ .Values.shortcut.config.database.valkey.port }}"
-      },
-      "Logging": {
-        "LogLevel": {
-          "Default": "{{ .Values.shortcut.config.logging.level }}"
-        }
-      }
-    }
-
+  base.yaml: |
+{{ toYaml .Values.shortcut.config.base | indent 4 }}
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "shortcut.fullname" . }}-shortcut-extra-configs
-data:
-  {{- range $key, $value := .Values.shortcut.extraConfigs }}
-  {{ $key }}: {{ $value | quote }}
-  {{- end }}
-
-{{- if .Values.shortcut.sidecars.promtail.enabled }}
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ include "shortcut.fullname" . }}-promtail-config
-data:
-  promtail-config.yaml: |
-    clients:
-      - url: http://loki:3100/loki/api/v1/push
-    scrape_configs:
-      - job_name: kubernetes-pods
-        kubernetes_sd_configs:
-          - role: pod
-        relabel_configs:
-          - action: replace
-            source_labels: [__meta_kubernetes_pod_label_app]
-            target_label: app
-          - action: replace
-            source_labels: [__meta_kubernetes_pod_name]
-            target_label: pod
+  name: {{ include "shortcut.fullname" . }}-graphs
+  labels:
+    {{- include "shortcut.labels" . | nindent 4 }}
+data: {{- if not .Values.shortcut.graphConfigs }} {}{{- end }}
+{{- range $name, $content := .Values.shortcut.graphConfigs }}
+  {{ $name }}: |
+{{ $content | indent 4 }}
+{{- end }}
 {{- end }}

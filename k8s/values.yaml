@@ -1,105 +1,115 @@
-replicaCount: 1
+nameOverride: ""
+fullnameOverride: ""
 
 shortcut:
   enabled: true
   replicaCount: 3
+  env: prod
+
   image:
     repository: your-registry/shortcut
     tag: latest
     pullPolicy: IfNotPresent
-  
+
+  imagePullSecrets: []
+
   service:
     type: ClusterIP
-    port: 8080
-  
-  config:
-    app:
-      name: shortcut
-      env: production
-    
-    database:
-      postgres:
-        host: postgres
-        port: 5432
-        name: shortcut
-      mongodb:
-        host: mongo
-        port: 27017
-      valkey:
-        host: valkey
-        port: 6379
-    
-    logging:
-      level: info
-      format: json
-  
+    httpPort: 8080
+    metricsPort: 2112
+
   resources:
     requests:
       memory: "256Mi"
       cpu: "250m"
     limits:
-      memory: "256Mi"
-      cpu: "250m"
-  
-  extraConfigs:
-    appsettings.json: |
-      {
-        "CustomSetting": "value"
-      }
-  
-  sidecars:
-    promtail:
-      enabled: true
-      image: grafana/promtail:3.4.2
-      config:
-        clients:
-          - url: http://loki:3100/loki/api/v1/push
-        scrape_configs:
-          - job_name: kubernetes-pods
-            kubernetes_sd_configs:
-              - role: pod
-            pipeline_stages:
-              - docker: {}
-            relabel_configs:
-              - source_labels: [__meta_kubernetes_pod_label_app]
-                target_label: app
+      memory: "512Mi"
+      cpu: "500m"
 
-postgres:
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  externalDatabases:
+    postgres:
+      host: ""
+      port: 5432
+      database: shortcut
+      username: shortcut
+      password: ""
+    mongo:
+      host: ""
+      port: 27017
+      database: shortcut
+      username: ""
+      password: ""
+    valkey:
+      host: ""
+      port: 6379
+      password: ""
+      db: 0
+
+  config:
+    base:
+      app:
+        shutdown-timeout: 10s
+      http:
+        port: 8080
+      metrics:
+        http:
+          port: 2112
+      logs:
+        path: logs/shortcut.log
+      mongo:
+        database: shortcut
+      trace:
+        ttl: 168h
+      failure-worker:
+        interval: 5s
+        batch-size: 32
+        visibility-timeout: 30s
+
+  graphConfigsPath: /app/graphs
+  graphConfigs: {}
+
+  serviceMonitor:
+    enabled: true
+    interval: 15s
+    scrapeTimeout: 10s
+    labels: {}
+
+postgresql:
   enabled: true
-  image: postgres:17-alpine
-  replicaCount: 1
-  
+  image:
+    registry: ""
+    repository: postgres
+    tag: "17-bookworm"
+    pullPolicy: IfNotPresent
   auth:
     username: shortcut
     password: shortcut
     database: shortcut
-  
   persistence:
-    enabled: true
+    accessModes:
+      - ReadWriteOnce
     size: 10Gi
-  
   resources:
     requests:
       memory: "256Mi"
       cpu: "250m"
-  
-  initScripts:
-    init.sql: |
-      -- Ваши миграции здесь
-      CREATE TABLE IF NOT EXISTS users (...);
 
-mongo:
+mongodb:
   enabled: true
-  image: mongo:8
-  replicaCount: 1
-  
-  auth:
-    enabled: false
-  
+  image:
+    registry: ""
+    repository: mongo
+    tag: "8.0"
+    pullPolicy: IfNotPresent
   persistence:
-    enabled: true
+    accessModes:
+      - ReadWriteOnce
     size: 10Gi
-  
   resources:
     requests:
       memory: "256Mi"
@@ -107,65 +117,103 @@ mongo:
 
 valkey:
   enabled: true
-  image: valkey/valkey:8-alpine
-  replicaCount: 1
-  
+  image:
+    registry: ""
+    repository: valkey/valkey
+    tag: "8.0-bookworm"
+    pullPolicy: IfNotPresent
   persistence:
-    enabled: true
+    accessModes:
+      - ReadWriteOnce
     size: 1Gi
-  
   resources:
     requests:
       memory: "128Mi"
       cpu: "100m"
 
-prometheus:
+kube-prometheus-stack:
   enabled: true
-  server:
-    persistentVolume:
+  fullnameOverride: ""
+  grafana:
+    enabled: true
+    adminPassword: admin
+    persistence:
       enabled: true
       size: 1Gi
-
-grafana:
-  enabled: true
-  adminPassword: admin
-  persistence:
+    additionalDataSources:
+      - name: Loki
+        type: loki
+        url: http://{{ .Release.Name }}-loki:3100
+        access: proxy
+  prometheus:
+    prometheusSpec:
+      retention: 15d
+      serviceMonitorSelectorNilUsesHelmValues: false
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 5Gi
+  alertmanager:
     enabled: true
-    size: 1Gi
-  datasources:
-    datasources.yaml:
-      apiVersion: 1
-      datasources:
-        - name: Prometheus
-          type: prometheus
-          url: http://prometheus-server:9090
-        - name: Loki
-          type: loki
-          url: http://loki:3100
 
 loki:
   enabled: true
-  persistence:
-    enabled: true
-    size: 1Gi
-  config:
-    table_manager:
-      retention_deletes_enabled: true
+  deploymentMode: SingleBinary
+  loki:
+    auth_enabled: false
+    commonConfig:
+      replication_factor: 1
+    storage:
+      type: filesystem
+    schemaConfig:
+      configs:
+        - from: "2024-01-01"
+          store: tsdb
+          object_store: filesystem
+          schema: v13
+          index:
+            prefix: loki_index_
+            period: 24h
+    limits_config:
       retention_period: 168h
+  singleBinary:
+    replicas: 1
+    persistence:
+      enabled: true
+      size: 5Gi
+  test:
+    enabled: false
+  monitoring:
+    selfMonitoring:
+      enabled: false
+      grafanaAgent:
+        installOperator: false
+    lokiCanary:
+      enabled: false
+
+promtail:
+  enabled: true
+  config:
+    clients:
+      - url: http://{{ .Release.Name }}-loki:3100/loki/api/v1/push
+    snippets:
+      pipelineStages:
+        - cri: {}
+      extraRelabelConfigs:
+        - source_labels:
+            - __meta_kubernetes_pod_label_app_kubernetes_io_name
+          target_label: app
 
 ingress:
-  enabled: true
+  enabled: false
   className: nginx
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
+  annotations: {}
   hosts:
     - host: shortcut.example.com
       paths:
         - path: /
           pathType: Prefix
-          service: shortcut
-          port: 8080
-  tls:
-    - secretName: shortcut-tls
-      hosts:
-        - shortcut.example.com
+  tls: []

@@ -1,0 +1,18 @@
+Shortcut has been installed.
+
+HTTP:    {{ include "shortcut.fullname" . }}:{{ .Values.shortcut.service.httpPort }}
+Metrics: {{ include "shortcut.fullname" . }}:{{ .Values.shortcut.service.metricsPort }}
+
+Dependencies:
+{{- if .Values.postgresql.enabled }}
+  postgres: {{ include "shortcut.postgresHost" . }}:5432
+{{- end }}
+{{- if .Values.mongodb.enabled }}
+  mongo:    {{ include "shortcut.mongoHost" . }}:27017
+{{- end }}
+{{- if .Values.valkey.enabled }}
+  valkey:   {{ include "shortcut.valkeyHost" . }}:6379
+{{- end }}
+
+Before installing, run:
+  helm dependency update ./k8s
