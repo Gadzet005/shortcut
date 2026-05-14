@@ -7,14 +7,14 @@ shortcut:
   env: prod
 
   image:
-    repository: your-registry/shortcut
+    repository: gerkkk/shortcut
     tag: latest
     pullPolicy: IfNotPresent
 
   imagePullSecrets: []
 
   service:
-    type: ClusterIP
+    type: LoadBalancer
     httpPort: 8080
     metricsPort: 2112
 
