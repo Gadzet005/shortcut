@@ -42,6 +42,7 @@ func NewUseCase(
 	namespaceRepo graph.NamespaceRepo,
 	traceRepo trace.Repo,
 	strategyFactory strategy.Factory,
+	metrics graph.GraphMetrics,
 ) useCase {
 	return useCase{
 		client:          client,
@@ -49,6 +50,7 @@ func NewUseCase(
 		logger:          logger,
 		traceRepo:       traceRepo,
 		strategyFactory: strategyFactory,
+		metrics:         metrics,
 	}
 }
 
@@ -58,6 +60,7 @@ type useCase struct {
 	namespaceRepo   graph.NamespaceRepo
 	traceRepo       trace.Repo
 	strategyFactory strategy.Factory
+	metrics         graph.GraphMetrics
 }
 
 func (u useCase) RunGraph(
@@ -122,7 +125,8 @@ func (u useCase) RunGraph(
 	resp, runErr := g.Run(ctx, logger, items, overrides)
 	finished := time.Now()
 
-	durationMs := finished.Sub(start).Milliseconds()
+	duration := finished.Sub(start)
+	durationMs := duration.Milliseconds()
 	if runErr != nil {
 		logger.Info("graph finished",
 			zap.String("status", "error"),
@@ -134,6 +138,10 @@ func (u useCase) RunGraph(
 			zap.String("status", "ok"),
 			zap.Int64("duration_ms", durationMs),
 		)
+	}
+
+	if u.metrics != nil {
+		u.metrics.ObserveRun(namespaceID, graphID, duration, runErr)
 	}
 
 	u.saveTrace(ctx, start, finished, namespaceID, graphID, input, runErr)

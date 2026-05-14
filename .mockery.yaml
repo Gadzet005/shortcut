@@ -16,6 +16,9 @@ packages:
     interfaces:
       NodeExecutor:
       Graph:
+      GraphMetrics:
   github.com/Gadzet005/shortcut/internal/domain/graph/nodes:
     interfaces:
       CacheRepo:
+      NodeMetrics:
+      CacheMetrics:

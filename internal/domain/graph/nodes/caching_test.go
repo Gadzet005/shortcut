@@ -134,5 +134,58 @@ func TestHashItems_DifferentDataProducesDifferentHash(t *testing.T) {
 }
 
 func newCachingExecutor(inner graph.NodeExecutor, repo CacheRepo) *CachingExecutor {
-	return NewCachingExecutor(inner, "node1", "graph-hash", time.Minute, repo)
+	return NewCachingExecutor(inner, "node1", "graph-hash", time.Minute, repo, nil)
+}
+
+type fakeCacheMetrics struct {
+	hits, misses, inserts int
+	lastNode              graph.NodeID
+}
+
+func (f *fakeCacheMetrics) RecordHit(nodeID graph.NodeID)    { f.hits++; f.lastNode = nodeID }
+func (f *fakeCacheMetrics) RecordMiss(nodeID graph.NodeID)   { f.misses++; f.lastNode = nodeID }
+func (f *fakeCacheMetrics) RecordInsert(nodeID graph.NodeID) { f.inserts++; f.lastNode = nodeID }
+
+func TestCachingExecutor_RecordsCacheMetrics(t *testing.T) {
+	repo := mocknodes.NewCacheRepo(t)
+	inner := mockgraph.NewNodeExecutor(t)
+	m := &fakeCacheMetrics{}
+
+	repo.EXPECT().Get(mock.Anything, mock.Anything).Once().Return(graph.NodeExecutorResponse{}, false, nil)
+	repo.EXPECT().Set(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Once().Return(nil)
+	inner.EXPECT().Run(mock.Anything, mock.Anything, mock.Anything).Once().Return(graph.NodeExecutorResponse{}, nil)
+
+	cached := graph.NodeExecutorResponse{Items: map[graph.ItemID]graph.Item{"out": {Data: []byte("c")}}}
+	repo.EXPECT().Get(mock.Anything, mock.Anything).Once().Return(cached, true, nil)
+
+	exec := NewCachingExecutor(inner, "node1", "graph-hash", time.Minute, repo, m)
+	req := graph.NodeExecutorRequest{Items: map[graph.ItemID]graph.Item{"in": {Data: []byte("x")}}}
+
+	_, err := exec.Run(t.Context(), zap.NewNop(), req)
+	require.NoError(t, err)
+	_, err = exec.Run(t.Context(), zap.NewNop(), req)
+	require.NoError(t, err)
+
+	require.Equal(t, 1, m.misses)
+	require.Equal(t, 1, m.inserts)
+	require.Equal(t, 1, m.hits)
+	require.Equal(t, graph.NodeID("node1"), m.lastNode)
+}
+
+func TestCachingExecutor_NoInsertOnSetError(t *testing.T) {
+	repo := mocknodes.NewCacheRepo(t)
+	inner := mockgraph.NewNodeExecutor(t)
+	m := &fakeCacheMetrics{}
+
+	repo.EXPECT().Get(mock.Anything, mock.Anything).Return(graph.NodeExecutorResponse{}, false, nil)
+	repo.EXPECT().Set(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(errors.New("write failed"))
+	inner.EXPECT().Run(mock.Anything, mock.Anything, mock.Anything).Return(graph.NodeExecutorResponse{}, nil)
+
+	exec := NewCachingExecutor(inner, "node1", "graph-hash", time.Minute, repo, m)
+	_, err := exec.Run(t.Context(), zap.NewNop(), graph.NodeExecutorRequest{})
+	require.NoError(t, err)
+
+	require.Equal(t, 1, m.misses)
+	require.Equal(t, 0, m.inserts)
+	require.Equal(t, 0, m.hits)
 }

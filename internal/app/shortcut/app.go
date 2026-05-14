@@ -15,6 +15,7 @@ import (
 	failurepostgres "github.com/Gadzet005/shortcut/internal/repo/failure/postgres"
 	graphlocalrepo "github.com/Gadzet005/shortcut/internal/repo/graph/local"
 	tracemongo "github.com/Gadzet005/shortcut/internal/repo/trace/mongo"
+	"github.com/Gadzet005/shortcut/internal/metrics"
 	failurerecovery "github.com/Gadzet005/shortcut/internal/usecases/failure-recovery"
 	rungraph "github.com/Gadzet005/shortcut/internal/usecases/run-graph"
 	strategyworker "github.com/Gadzet005/shortcut/internal/worker/strategy"
@@ -84,9 +85,13 @@ func (s service) Run(c lifecycle.Context) error {
 	cacheRepo = cachevalkey.NewRepo(vkClient)
 	s.Logger().Info("connected to valkey", zap.String("addr", s.Config().CacheConfig.Addr))
 
+	graphMetrics := metrics.NewGraphMetrics(s.Name())
+	nodeMetrics := metrics.NewNodeMetrics(s.Name())
+	cacheMetrics := metrics.NewCacheMetrics(s.Name())
+
 	graphConfig, err := graphconfig.Convert(cfg, func(msg string) {
 		s.Logger().Warn(msg)
-	}, client, cacheRepo)
+	}, client, cacheRepo, nodeMetrics, cacheMetrics)
 	if err != nil {
 		return errors.WrapFailf(err, "failed to convert graph config")
 	}
@@ -132,7 +137,7 @@ func (s service) Run(c lifecycle.Context) error {
 	recovery := failurerecovery.New(nil, localRepo, s.Logger())
 	strategyFactory := strategy.NewFactory(failureRepo, recovery, s.Logger())
 
-	runGraphUC := rungraph.NewUseCase(client, s.Logger(), localRepo, traceRepo, strategyFactory)
+	runGraphUC := rungraph.NewUseCase(client, s.Logger(), localRepo, traceRepo, strategyFactory, graphMetrics)
 	recovery.SetRunGraphUseCase(runGraphUC)
 
 	resolver := failurerecovery.NewGraphInfoResolver(localRepo)
