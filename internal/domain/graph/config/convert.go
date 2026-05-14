@@ -73,7 +73,11 @@ func convertNamespace(
 			return graph.Namespace{}, errors.Wrapf(err, "graph %s failure steps", graphName)
 		}
 
-		graphHash := computeGraphHash(gCfg, ns.Services)
+		graphHash, err := computeGraphHash(gCfg, ns.Services)
+		if err != nil {
+			return graph.Namespace{}, errors.Wrapf(err, "graph %s", graphName)
+		}
+
 		nodesMap, err := convertGraphNodes(gCfg, ns.Services, namespaceID, client, graphHash, cacheRepo, nodeMetrics, cacheMetrics)
 		if err != nil {
 			return graph.Namespace{}, errors.Wrapf(err, "graph %s", graphName)
