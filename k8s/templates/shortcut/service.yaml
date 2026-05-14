@@ -1,0 +1,21 @@
+{{- if .Values.shortcut.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "shortcut.fullname" . }}
+  labels:
+    {{- include "shortcut.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.shortcut.service.type }}
+  selector:
+    {{- include "shortcut.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.shortcut.service.httpPort }}
+      targetPort: http
+      protocol: TCP
+    - name: metrics
+      port: {{ .Values.shortcut.service.metricsPort }}
+      targetPort: metrics
+      protocol: TCP
+{{- end }}
