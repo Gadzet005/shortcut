@@ -9,6 +9,8 @@ import (
 	"go.uber.org/zap"
 )
 
+const maxParallelism = 100
+
 var _ Graph = graph{}
 
 func NewGraph(
@@ -99,11 +101,14 @@ func (g graph) Run(
 
 	completions := make(chan nodeResult)
 	inFlight := 0
+	sem := make(chan struct{}, maxParallelism)
 
 	launch := func(node Node) {
 		nodeItems := collectItems(node, results)
 		inFlight++
 		go func() {
+			sem <- struct{}{}
+			defer func() { <-sem }()
 			req := NodeExecutorRequest{Items: nodeItems}
 			if override, ok := overrides[node.ID]; ok {
 				req.EndpointOverride = &override
@@ -221,11 +226,14 @@ func (g graph) TryRevert(
 
 	completions := make(chan revertResult)
 	inFlight := 0
+	sem := make(chan struct{}, maxParallelism)
 
 	launch := func(nodeID NodeID) {
 		inFlight++
 		node := g.nodes[nodeID]
 		go func() {
+			sem <- struct{}{}
+			defer func() { <-sem }()
 			ok, err := node.Executor.TryRevert(
 				ctx,
 				logger.With(zap.String("node_id", nodeID.String())),
@@ -357,6 +365,7 @@ func (g graph) TryFinish(
 	completions := make(chan nodeResult)
 	inFlight := 0
 	launched := make(map[NodeID]bool, len(g.nodes))
+	sem := make(chan struct{}, maxParallelism)
 
 	var launch func(node Node)
 	var propagate func(nodeID NodeID, items map[ItemID]Item)
@@ -386,6 +395,8 @@ func (g graph) TryFinish(
 		nodeItems := collectItems(node, results)
 		inFlight++
 		go func() {
+			sem <- struct{}{}
+			defer func() { <-sem }()
 			req := NodeExecutorRequest{Items: nodeItems}
 			if override, ok := overrides[node.ID]; ok {
 				req.EndpointOverride = &override

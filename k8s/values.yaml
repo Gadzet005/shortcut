@@ -1,0 +1,230 @@
+nameOverride: ""
+fullnameOverride: ""
+
+shortcut:
+  enabled: true
+  replicaCount: 3
+  env: prod
+
+  image:
+    repository: your-registry/shortcut
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  imagePullSecrets: []
+
+  service:
+    type: ClusterIP
+    httpPort: 8080
+    metricsPort: 2112
+
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+
+  podAnnotations: {}
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+  externalDatabases:
+    postgres:
+      host: ""
+      port: 5432
+      database: shortcut
+      username: shortcut
+      password: ""
+    mongo:
+      host: ""
+      port: 27017
+      database: shortcut
+      username: ""
+      password: ""
+    valkey:
+      host: ""
+      port: 6379
+      password: ""
+      db: 0
+
+  config:
+    base:
+      app:
+        shutdown-timeout: 10s
+      http:
+        port: 8080
+      metrics:
+        http:
+          port: 2112
+      logs:
+        path: logs/shortcut.log
+      mongo:
+        database: shortcut
+      trace:
+        ttl: 168h
+      failure-worker:
+        interval: 5s
+        batch-size: 32
+        visibility-timeout: 30s
+
+  graphConfigsPath: /app/graphs
+  graphConfigs: {}
+
+  serviceMonitor:
+    enabled: true
+    interval: 15s
+    scrapeTimeout: 10s
+    labels: {}
+
+postgresql:
+  enabled: true
+  image:
+    registry: ""
+    repository: postgres
+    tag: "17-bookworm"
+    pullPolicy: IfNotPresent
+  auth:
+    username: shortcut
+    password: shortcut
+    database: shortcut
+  persistence:
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+
+mongodb:
+  enabled: true
+  image:
+    registry: ""
+    repository: mongo
+    tag: "8.0"
+    pullPolicy: IfNotPresent
+  persistence:
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+
+valkey:
+  enabled: true
+  image:
+    registry: ""
+    repository: valkey/valkey
+    tag: "8.0-bookworm"
+    pullPolicy: IfNotPresent
+  persistence:
+    accessModes:
+      - ReadWriteOnce
+    size: 1Gi
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "100m"
+
+kube-prometheus-stack:
+  enabled: true
+  fullnameOverride: ""
+  grafana:
+    enabled: true
+    adminPassword: admin
+    persistence:
+      enabled: true
+      size: 1Gi
+    additionalDataSources:
+      - name: Loki
+        type: loki
+        url: http://{{ .Release.Name }}-loki:3100
+        access: proxy
+  prometheus:
+    prometheusSpec:
+      retention: 15d
+      serviceMonitorSelectorNilUsesHelmValues: false
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 5Gi
+  alertmanager:
+    enabled: true
+
+# ИСПРАВЛЕННАЯ КОНФИГУРАЦИЯ LOKI
+loki:
+  enabled: true
+  deploymentMode: SingleBinary
+
+  chunksCache:
+    enabled: false
+  resultsCache:
+    enabled: false
+  
+  simpleScalable:
+    replicas: 0
+  
+  read:
+    replicas: 0
+  write:
+    replicas: 0
+  backend:
+    replicas: 0
+  
+  gateway:
+    replicas: 0
+  
+  singleBinary:
+    replicas: 1
+    persistence:
+      enabled: true
+      size: 5Gi
+  
+  loki:
+    useTestSchema: true
+    storage:
+      type: filesystem
+    auth_enabled: false
+  
+  monitoring:
+    selfMonitoring:
+      enabled: false
+    lokiCanary:
+      enabled: false
+
+prometheus-node-exporter:
+  hostRootFs: false
+  tolerations:
+    - operator: Exists
+
+promtail:
+  enabled: true
+  config:
+    clients:
+      - url: http://{{ .Release.Name }}-loki:3100/loki/api/v1/push
+    snippets:
+      pipelineStages:
+        - cri: {}
+      extraRelabelConfigs:
+        - source_labels:
+            - __meta_kubernetes_pod_label_app_kubernetes_io_name
+          target_label: app
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: shortcut.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
