@@ -33,5 +33,10 @@ func (h handlerBase) List(c *gin.Context) {
 	for i, f := range failures {
 		resp[i] = toResponse(f)
 	}
+	logger.Info("failures listed",
+		zap.String("namespace_id", namespaceID),
+		zap.String("graph_id", graphID),
+		zap.Int("count", len(resp)),
+	)
 	c.JSON(http.StatusOK, resp)
 }

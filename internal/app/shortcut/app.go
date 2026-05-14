@@ -15,6 +15,7 @@ import (
 	failurepostgres "github.com/Gadzet005/shortcut/internal/repo/failure/postgres"
 	graphlocalrepo "github.com/Gadzet005/shortcut/internal/repo/graph/local"
 	tracemongo "github.com/Gadzet005/shortcut/internal/repo/trace/mongo"
+	"github.com/Gadzet005/shortcut/internal/metrics"
 	failurerecovery "github.com/Gadzet005/shortcut/internal/usecases/failure-recovery"
 	rungraph "github.com/Gadzet005/shortcut/internal/usecases/run-graph"
 	strategyworker "github.com/Gadzet005/shortcut/internal/worker/strategy"
@@ -28,6 +29,7 @@ import (
 	"github.com/valkey-io/valkey-go"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
+	"go.uber.org/zap"
 )
 
 func NewService() lifecycle.App {
@@ -60,6 +62,10 @@ func (s service) Run(c lifecycle.Context) error {
 	if err != nil {
 		return errors.WrapFailf(err, "failed to load graph config")
 	}
+	s.Logger().Info("graph config loaded",
+		zap.String("path", *graphConfigPath),
+		zap.Int("namespaces", len(cfg.Namespaces)),
+	)
 
 	client := resty.New()
 
@@ -77,10 +83,15 @@ func (s service) Run(c lifecycle.Context) error {
 		return nil
 	})
 	cacheRepo = cachevalkey.NewRepo(vkClient)
+	s.Logger().Info("connected to valkey", zap.String("addr", s.Config().CacheConfig.Addr))
+
+	graphMetrics := metrics.NewGraphMetrics(s.Name())
+	nodeMetrics := metrics.NewNodeMetrics(s.Name())
+	cacheMetrics := metrics.NewCacheMetrics(s.Name())
 
 	graphConfig, err := graphconfig.Convert(cfg, func(msg string) {
 		s.Logger().Warn(msg)
-	}, client, cacheRepo)
+	}, client, cacheRepo, nodeMetrics, cacheMetrics)
 	if err != nil {
 		return errors.WrapFailf(err, "failed to convert graph config")
 	}
@@ -96,6 +107,7 @@ func (s service) Run(c lifecycle.Context) error {
 	c.AddStopper(func(ctx context.Context) error {
 		return mongoClient.Disconnect(ctx)
 	})
+	s.Logger().Info("connected to mongo", zap.String("database", mongoCfg.Database))
 
 	db := mongoClient.Database(mongoCfg.Database)
 	traceRepo, err = tracemongo.NewMongoRepo(c.Context(), db, s.Config().Trace.TTL)
@@ -111,7 +123,8 @@ func (s service) Run(c lifecycle.Context) error {
 		pool.Close()
 		return nil
 	})
-	failureRepo := failurepostgres.NewRepo(pool)
+	s.Logger().Info("connected to postgres")
+	failureRepo := failurepostgres.NewRepo(pool, s.Logger())
 
 	r := s.HTTP("shortcut")
 	r.Use(
@@ -124,7 +137,7 @@ func (s service) Run(c lifecycle.Context) error {
 	recovery := failurerecovery.New(nil, localRepo, s.Logger())
 	strategyFactory := strategy.NewFactory(failureRepo, recovery, s.Logger())
 
-	runGraphUC := rungraph.NewUseCase(client, s.Logger(), localRepo, traceRepo, strategyFactory)
+	runGraphUC := rungraph.NewUseCase(client, s.Logger(), localRepo, traceRepo, strategyFactory, graphMetrics)
 	recovery.SetRunGraphUseCase(runGraphUC)
 
 	resolver := failurerecovery.NewGraphInfoResolver(localRepo)
@@ -134,6 +147,7 @@ func (s service) Run(c lifecycle.Context) error {
 		VisibilityTimeout: s.Config().FailureWorker.VisibilityTimeout,
 	})
 	workerCtx, workerCancel := context.WithCancel(c.Context())
+	s.Logger().Info("starting failure worker")
 	c.RunJob(
 		func(ctx context.Context) { worker.Run(workerCtx) },
 		func(ctx context.Context) error { workerCancel(); return nil },

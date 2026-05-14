@@ -42,6 +42,7 @@ func NewUseCase(
 	namespaceRepo graph.NamespaceRepo,
 	traceRepo trace.Repo,
 	strategyFactory strategy.Factory,
+	metrics graph.GraphMetrics,
 ) useCase {
 	return useCase{
 		client:          client,
@@ -49,6 +50,7 @@ func NewUseCase(
 		logger:          logger,
 		traceRepo:       traceRepo,
 		strategyFactory: strategyFactory,
+		metrics:         metrics,
 	}
 }
 
@@ -58,6 +60,7 @@ type useCase struct {
 	namespaceRepo   graph.NamespaceRepo
 	traceRepo       trace.Repo
 	strategyFactory strategy.Factory
+	metrics         graph.GraphMetrics
 }
 
 func (u useCase) RunGraph(
@@ -65,6 +68,15 @@ func (u useCase) RunGraph(
 	namespaceID graph.NamespaceID,
 	input shortcutapi.HttpRequest,
 ) (shortcutapi.HttpResponse, error) {
+	logger := u.logger.With(
+		zap.String("request_id", trace.RequestIDFromContext(ctx)),
+		zap.String("namespace_id", namespaceID.String()),
+		zap.String("method", input.Method),
+		zap.String("path", input.Path),
+	)
+
+	logger.Info("run graph")
+
 	namespace, err := u.namespaceRepo.GetNamespace(namespaceID)
 	if err != nil {
 		return shortcutapi.HttpResponse{}, errors.Wrap(err, "get graph")
@@ -80,8 +92,12 @@ func (u useCase) RunGraph(
 		return shortcutapi.HttpResponse{}, errors.Wrap(graph.ErrNotFound, "graph not found")
 	}
 
+	logger = logger.With(zap.String("graph_id", graphID.String()))
+	logger.Debug("graph resolved")
+
 	overrides, parseErr := parseNodeOverrides(input.Query["node-rwr"])
 	if parseErr != nil {
+		logger.Warn("invalid node-rwr override", zap.Error(parseErr))
 		return nodeErrorToHTTPResponse(&graph.NodeError{
 			Code:    graph.ErrCodeBadRequest,
 			Payload: map[string]any{"error": parseErr.Error()},
@@ -106,8 +122,27 @@ func (u useCase) RunGraph(
 	}
 
 	start := time.Now()
-	resp, runErr := g.Run(ctx, u.logger, items, overrides)
+	resp, runErr := g.Run(ctx, logger, items, overrides)
 	finished := time.Now()
+
+	duration := finished.Sub(start)
+	durationMs := duration.Milliseconds()
+	if runErr != nil {
+		logger.Info("graph finished",
+			zap.String("status", "error"),
+			zap.Int64("duration_ms", durationMs),
+			zap.Error(runErr),
+		)
+	} else {
+		logger.Info("graph finished",
+			zap.String("status", "ok"),
+			zap.Int64("duration_ms", durationMs),
+		)
+	}
+
+	if u.metrics != nil {
+		u.metrics.ObserveRun(namespaceID, graphID, duration, runErr)
+	}
 
 	u.saveTrace(ctx, start, finished, namespaceID, graphID, input, runErr)
 
@@ -164,7 +199,10 @@ func (u useCase) saveTrace(
 	}
 
 	if saveErr := u.traceRepo.Save(ctx, t); saveErr != nil {
-		u.logger.Error("failed to save trace", zap.Error(saveErr))
+		u.logger.Error("failed to save trace",
+			zap.String("request_id", trace.RequestIDFromContext(ctx)),
+			zap.Error(saveErr),
+		)
 	}
 }
 
@@ -188,11 +226,9 @@ func (u useCase) applyFailureStrategy(
 		return
 	}
 
-	collector, _ := trace.GetCollector(ctx)
-	var requestID string
+	requestID := trace.RequestIDFromContext(ctx)
 	var nodeTraces []trace.NodeTrace
-	if collector != nil {
-		requestID = collector.RequestID().String()
+	if collector, ok := trace.GetCollector(ctx); ok {
 		nodeTraces = collector.NodeTraces()
 	}
 
@@ -212,6 +248,13 @@ func (u useCase) applyFailureStrategy(
 		NumRetry:       0,
 		RequestBody:    rawRequest,
 	}
+
+	u.logger.Info("applying failure strategy",
+		zap.String("request_id", requestID),
+		zap.String("namespace_id", namespace.ID.String()),
+		zap.String("graph_id", graphID.String()),
+		zap.String("strategy", info.FailureStrategy.String()),
+	)
 
 	handler := u.strategyFactory.New(info.FailureStrategy, info.FailureSteps)
 	if err := handler.Handle(ctx, f); err != nil {

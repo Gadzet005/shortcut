@@ -13,10 +13,18 @@ type saveHandler struct {
 }
 
 func (h saveHandler) Handle(ctx context.Context, f failure.Failure) error {
+	h.logger.Info("save started",
+		zap.String("request_id", f.RequestID),
+		zap.String("namespace_id", f.NamespaceID),
+		zap.String("graph_id", f.GraphID),
+	)
+
 	f.Status = failure.StatusFailed
 	if err := h.repo.Save(ctx, f); err != nil {
 		h.logger.Error("save failure record failed", zap.String("request_id", f.RequestID), zap.Error(err))
 		return err
 	}
+
+	h.logger.Info("save finished", zap.String("request_id", f.RequestID))
 	return nil
 }

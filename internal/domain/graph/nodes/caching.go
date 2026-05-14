@@ -24,6 +24,7 @@ type CachingExecutor struct {
 	graphHash string
 	ttl       time.Duration
 	repo      CacheRepo
+	metrics   CacheMetrics
 }
 
 func NewCachingExecutor(
@@ -32,6 +33,7 @@ func NewCachingExecutor(
 	graphHash string,
 	ttl time.Duration,
 	repo CacheRepo,
+	metrics CacheMetrics,
 ) *CachingExecutor {
 	return &CachingExecutor{
 		inner:     inner,
@@ -39,6 +41,7 @@ func NewCachingExecutor(
 		graphHash: graphHash,
 		ttl:       ttl,
 		repo:      repo,
+		metrics:   metrics,
 	}
 }
 
@@ -57,11 +60,18 @@ func (e *CachingExecutor) Run(
 	if err != nil {
 		logger.Warn("cache get failed, falling back to executor", zap.Error(err))
 	} else if ok {
+		if e.metrics != nil {
+			e.metrics.RecordHit(e.nodeID)
+		}
 		if cached.Meta == nil {
 			cached.Meta = make(map[string]any)
 		}
 		cached.Meta["cached"] = true
 		return cached, nil
+	}
+
+	if e.metrics != nil {
+		e.metrics.RecordMiss(e.nodeID)
 	}
 
 	resp, err := e.inner.Run(ctx, logger, req)
@@ -71,6 +81,8 @@ func (e *CachingExecutor) Run(
 
 	if setErr := e.repo.Set(ctx, key, resp, e.ttl); setErr != nil {
 		logger.Warn("cache set failed", zap.Error(setErr))
+	} else if e.metrics != nil {
+		e.metrics.RecordInsert(e.nodeID)
 	}
 
 	return resp, nil

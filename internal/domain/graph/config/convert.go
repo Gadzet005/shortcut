@@ -16,12 +16,19 @@ import (
 
 type warnUserFunc func(s string)
 
-func Convert(cfg Config, warnUser warnUserFunc, client *resty.Client, cacheRepo graphnodes.CacheRepo) (map[graph.NamespaceID]graph.Namespace, error) {
+func Convert(
+	cfg Config,
+	warnUser warnUserFunc,
+	client *resty.Client,
+	cacheRepo graphnodes.CacheRepo,
+	nodeMetrics graphnodes.NodeMetrics,
+	cacheMetrics graphnodes.CacheMetrics,
+) (map[graph.NamespaceID]graph.Namespace, error) {
 	namespaces := make(map[graph.NamespaceID]graph.Namespace)
 
 	for namespaceIDStr, nsCfg := range cfg.Namespaces {
 		namespaceID := graph.NamespaceID(namespaceIDStr)
-		ns, err := convertNamespace(nsCfg, namespaceID, warnUser, client, cacheRepo)
+		ns, err := convertNamespace(nsCfg, namespaceID, warnUser, client, cacheRepo, nodeMetrics, cacheMetrics)
 		if err != nil {
 			return nil, errors.Wrapf(err, "convert namespace %s", namespaceIDStr)
 		}
@@ -37,6 +44,8 @@ func convertNamespace(
 	warnUser warnUserFunc,
 	client *resty.Client,
 	cacheRepo graphnodes.CacheRepo,
+	nodeMetrics graphnodes.NodeMetrics,
+	cacheMetrics graphnodes.CacheMetrics,
 ) (graph.Namespace, error) {
 	nsOut := graph.Namespace{
 		ID:         namespaceID,
@@ -66,9 +75,10 @@ func convertNamespace(
 
 		graphHash, err := computeGraphHash(gCfg, ns.Services)
 		if err != nil {
-			return graph.Namespace{}, errors.Wrapf(err, "graph %s hash", graphName)
+			return graph.Namespace{}, errors.Wrapf(err, "graph %s", graphName)
 		}
-		nodesMap, err := convertGraphNodes(gCfg, ns.Services, namespaceID, client, graphHash, cacheRepo)
+
+		nodesMap, err := convertGraphNodes(gCfg, ns.Services, namespaceID, client, graphHash, cacheRepo, nodeMetrics, cacheMetrics)
 		if err != nil {
 			return graph.Namespace{}, errors.Wrapf(err, "graph %s", graphName)
 		}
@@ -129,14 +139,19 @@ func convertGraphNodes(
 	client *resty.Client,
 	graphHash string,
 	cacheRepo graphnodes.CacheRepo,
+	nodeMetrics graphnodes.NodeMetrics,
+	cacheMetrics graphnodes.CacheMetrics,
 ) (map[graph.NodeID]graph.Node, error) {
 	nodesMap := make(map[graph.NodeID]graph.Node)
 
 	inputNodeID := graph.NodeID(gCfg.InputNode)
+	inputExec := graph.NodeExecutor(graphnodes.NewTransparentNodeExecutor())
+	inputExec = trace.NewTracingExecutor(inputExec, inputNodeID, string(NodeTypeTransparent), nil)
+	inputExec = graphnodes.NewMetricsExecutor(inputExec, inputNodeID, string(NodeTypeTransparent), nodeMetrics)
 	nodesMap[inputNodeID] = graph.Node{
 		ID:           inputNodeID,
 		Dependencies: nil,
-		Executor:     trace.NewTracingExecutor(graphnodes.NewTransparentNodeExecutor(), inputNodeID, string(NodeTypeTransparent), nil),
+		Executor:     inputExec,
 	}
 
 	for nodeName, nCfg := range gCfg.Nodes {
@@ -158,9 +173,10 @@ func convertGraphNodes(
 		}
 
 		if nCfg.Cache != nil && nCfg.Cache.Enabled && cacheRepo != nil {
-			node.Executor = graphnodes.NewCachingExecutor(node.Executor, nodeID, graphHash, nCfg.Cache.TTL, cacheRepo)
+			node.Executor = graphnodes.NewCachingExecutor(node.Executor, nodeID, graphHash, nCfg.Cache.TTL, cacheRepo, cacheMetrics)
 		}
 		node.Executor = trace.NewTracingExecutor(node.Executor, nodeID, nodeType, traceDeps)
+		node.Executor = graphnodes.NewMetricsExecutor(node.Executor, nodeID, nodeType, nodeMetrics)
 		nodesMap[nodeID] = node
 	}
 

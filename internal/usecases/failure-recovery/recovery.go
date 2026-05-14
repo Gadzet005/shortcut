@@ -7,6 +7,7 @@ import (
 
 	"github.com/Gadzet005/shortcut/internal/domain/failure"
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
+	"github.com/Gadzet005/shortcut/internal/domain/trace"
 	rungraph "github.com/Gadzet005/shortcut/internal/usecases/run-graph"
 	"github.com/Gadzet005/shortcut/pkg/errors"
 	shortcutapi "github.com/Gadzet005/shortcut/pkg/shortcut/api"
@@ -56,12 +57,29 @@ func (r *Recovery) Revert(ctx context.Context, namespaceID, graphID, requestID s
 	ok, err := g.TryRevert(ctx, logger, requestID, nodeIDs)
 	if err != nil {
 		logger.Warn("revert traversal returned error", zap.Error(err))
+		return ok, err
 	}
+	logger.Info("revert finished", zap.Bool("ok", ok))
 	return ok, err
 }
 
 func (r *Recovery) Retry(ctx context.Context, namespaceID, graphID, method, path string, body []byte) (bool, error) {
-	return r.runOriginal(ctx, namespaceID, graphID, method, path, body)
+	logger := r.logger.With(
+		zap.String("request_id", trace.RequestIDFromContext(ctx)),
+		zap.String("namespace_id", namespaceID),
+		zap.String("graph_id", graphID),
+		zap.String("method", method),
+		zap.String("path", path),
+	)
+	logger.Info("retry started")
+
+	ok, err := r.runOriginal(ctx, namespaceID, graphID, method, path, body)
+	if err != nil {
+		logger.Warn("retry returned error", zap.Error(err))
+		return ok, err
+	}
+	logger.Info("retry finished", zap.Bool("ok", ok))
+	return ok, nil
 }
 
 func (r *Recovery) Finish(ctx context.Context, namespaceID, graphID, requestID string, visitedNodes []string, method, path string, body []byte) (bool, error) {
@@ -94,6 +112,7 @@ func (r *Recovery) Finish(ctx context.Context, namespaceID, graphID, requestID s
 		logger.Warn("finish traversal failed", zap.Error(err))
 		return false, err
 	}
+	logger.Info("finish finished", zap.Bool("ok", true))
 	return true, nil
 }
 

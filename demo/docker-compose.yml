@@ -42,6 +42,7 @@ services:
       - ./configs:/app/demo/configs:ro
     ports:
       - "8080:8080"
+      - "2112:2112"
     depends_on:
       mongo:
         condition: service_healthy
@@ -49,6 +50,51 @@ services:
         condition: service_healthy
       valkey:
         condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ../tests/infra/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ../tests/infra/grafana/datasources:/etc/grafana/provisioning/datasources
+      - grafana-storage:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
+
+  loki:
+    image: grafana/loki:3.4.2
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ../tests/infra/loki-config.yaml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:3.4.2
+    container_name: promtail
+    volumes:
+      - ../tests/infra/promtail-config.yaml:/etc/promtail/config.yaml
+      - ..:/host/project:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command: -config.file=/etc/promtail/config.yaml
+    depends_on:
+      - loki
 
   user-service:
     build:
@@ -109,3 +155,5 @@ services:
 volumes:
   mongo-data:
   postgres-data:
+  grafana-storage:
+  loki-data:

@@ -50,5 +50,6 @@ func (h handlerBase) Process(c *gin.Context) {
 		return
 	}
 
+	logger.Info("failure processed")
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }

@@ -43,5 +43,10 @@ func (h handlerBase) Delete(c *gin.Context) {
 		return
 	}
 
+	logger.Info("failure deleted",
+		zap.String("request_id", requestID),
+		zap.String("namespace_id", namespaceID),
+		zap.String("graph_id", graphID),
+	)
 	c.Status(http.StatusNoContent)
 }

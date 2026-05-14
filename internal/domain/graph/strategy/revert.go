@@ -13,6 +13,12 @@ type revertHandler struct {
 }
 
 func (h revertHandler) Handle(ctx context.Context, f failure.Failure) error {
+	h.logger.Info("revert started",
+		zap.String("request_id", f.RequestID),
+		zap.String("namespace_id", f.NamespaceID),
+		zap.String("graph_id", f.GraphID),
+	)
+
 	ok, err := h.recovery.Revert(ctx, f.NamespaceID, f.GraphID, f.RequestID, f.VisitedNodes())
 	if err != nil {
 		h.logger.Error("revert failed", zap.String("request_id", f.RequestID), zap.Error(err))
@@ -20,6 +26,9 @@ func (h revertHandler) Handle(ctx context.Context, f failure.Failure) error {
 	}
 	if !ok {
 		h.logger.Warn("revert partially failed", zap.String("request_id", f.RequestID))
+		return nil
 	}
+
+	h.logger.Info("revert finished", zap.String("request_id", f.RequestID))
 	return nil
 }

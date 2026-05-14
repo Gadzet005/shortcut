@@ -8,16 +8,18 @@ import (
 	"github.com/Gadzet005/shortcut/internal/domain/failure"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.uber.org/zap"
 )
 
 var _ failure.Repo = (*Repo)(nil)
 
-func NewRepo(pool *pgxpool.Pool) *Repo {
-	return &Repo{pool: pool}
+func NewRepo(pool *pgxpool.Pool, logger *zap.Logger) *Repo {
+	return &Repo{pool: pool, logger: logger.Named("failure-repo")}
 }
 
 type Repo struct {
-	pool *pgxpool.Pool
+	pool   *pgxpool.Pool
+	logger *zap.Logger
 }
 
 const insertSQL = `
@@ -121,7 +123,18 @@ func (r *Repo) ClaimReadyBatch(ctx context.Context, batchSize int, visibilityTim
 		return nil, err
 	}
 	defer rows.Close()
-	return scanRows(rows)
+
+	out, scanErr := scanRows(rows)
+	if scanErr != nil {
+		return nil, scanErr
+	}
+	if len(out) > 0 {
+		r.logger.Debug("claim ready batch",
+			zap.Int("batch_size", batchSize),
+			zap.Int("claimed", len(out)),
+		)
+	}
+	return out, nil
 }
 
 func (r *Repo) UpdateProgress(ctx context.Context, requestID string, numRetry int64, readyToRetryAt time.Time, status failure.Status) error {

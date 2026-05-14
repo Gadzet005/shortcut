@@ -124,12 +124,12 @@ func TestFactory_DispatchesByStrategy(t *testing.T) {
 }
 
 func TestIgnoreHandler_NoOp(t *testing.T) {
-	err := ignoreHandler{}.Handle(context.Background(), failure.Failure{})
+	err := ignoreHandler{logger: zap.NewNop()}.Handle(context.Background(), failure.Failure{RequestID: "r1"})
 	assert.NoError(t, err)
 }
 
 func TestAbsentHandler_NoOp(t *testing.T) {
-	err := absentHandler{}.Handle(context.Background(), failure.Failure{})
+	err := absentHandler{logger: zap.NewNop()}.Handle(context.Background(), failure.Failure{RequestID: "r1"})
 	assert.NoError(t, err)
 }
 

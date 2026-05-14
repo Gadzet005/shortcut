@@ -46,6 +46,14 @@ func (g graph) Run(
 	items map[ItemID]Item,
 	overrides map[NodeID]string,
 ) (map[ItemID]Item, error) {
+	logger.Debug("graph run",
+		zap.Int("nodes_count", len(g.nodes)),
+		zap.String("input_node", g.inputNode.String()),
+		zap.String("output_node", g.outputNode.String()),
+		zap.Duration("timeout", g.timeout),
+		zap.Int("overrides", len(overrides)),
+	)
+
 	for nodeID := range overrides {
 		if _, ok := g.nodes[nodeID]; !ok {
 			return nil, &NodeError{
@@ -131,6 +139,10 @@ func (g graph) Run(
 
 		if res.err != nil {
 			if firstErr == nil {
+				logger.Warn("node failed, cancelling graph",
+					zap.String("node_id", res.nodeID.String()),
+					zap.Error(res.err),
+				)
 				firstErr = res.err
 				cancel()
 			}
@@ -166,6 +178,9 @@ func (g graph) TryRevert(
 	requestID string,
 	visitedNodes []NodeID,
 ) (bool, error) {
+	logger = logger.With(zap.String("request_id", requestID))
+	logger.Info("graph revert started", zap.Int("visited_count", len(visitedNodes)))
+
 	if g.timeout > 0 {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithTimeout(ctx, g.timeout)
@@ -183,6 +198,7 @@ func (g graph) TryRevert(
 		}
 	}
 	if len(visited) == 0 {
+		logger.Info("graph revert finished", zap.Bool("ok", true), zap.String("reason", "no visited nodes"))
 		return true, nil
 	}
 
@@ -261,8 +277,10 @@ func (g graph) TryRevert(
 	}
 
 	if firstErr != nil {
+		logger.Info("graph revert finished", zap.Bool("ok", false), zap.Error(firstErr))
 		return false, firstErr
 	}
+	logger.Info("graph revert finished", zap.Bool("ok", allOK))
 	return allOK, nil
 }
 
@@ -273,6 +291,8 @@ func (g graph) TryFinish(
 	overrides map[NodeID]string,
 	visitedNodes []NodeID,
 ) (map[ItemID]Item, error) {
+	logger.Info("graph finish started", zap.Int("visited_count", len(visitedNodes)))
+
 	for nodeID := range overrides {
 		if _, ok := g.nodes[nodeID]; !ok {
 			return nil, &NodeError{
@@ -407,6 +427,10 @@ func (g graph) TryFinish(
 
 		if res.err != nil {
 			if firstErr == nil {
+				logger.Warn("node failed during finish, cancelling",
+					zap.String("node_id", res.nodeID.String()),
+					zap.Error(res.err),
+				)
 				firstErr = res.err
 				cancel()
 			}
@@ -421,9 +445,11 @@ func (g graph) TryFinish(
 	}
 
 	if firstErr != nil {
+		logger.Info("graph finish finished", zap.Bool("ok", false), zap.Error(firstErr))
 		return nil, firstErr
 	}
 
+	logger.Info("graph finish finished", zap.Bool("ok", true))
 	return results.GetAll(g.outputNode), nil
 }
 
