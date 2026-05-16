@@ -12,6 +12,7 @@ import (
 const (
 	defaultEndpointName = "unknown"
 	defaultNamespace    = "unknown"
+	defaultPath         = "/"
 )
 
 func Metrics(serviceName string) gin.HandlerFunc {

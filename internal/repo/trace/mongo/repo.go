@@ -1,8 +1,8 @@
 package tracemongo
 
 import (
-	stderrors "errors"
 	"context"
+	stderrors "errors"
 	"time"
 
 	"github.com/Gadzet005/shortcut/internal/domain/trace"

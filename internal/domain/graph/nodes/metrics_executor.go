@@ -14,7 +14,7 @@ func NewMetricsExecutor(
 	inner graph.NodeExecutor,
 	nodeID graph.NodeID,
 	namescaceID graph.NamespaceID,
-	graphID  graph.ID,
+	graphID graph.ID,
 	nodeType string,
 	metrics NodeMetrics,
 ) graph.NodeExecutor {
@@ -29,12 +29,12 @@ func NewMetricsExecutor(
 }
 
 type metricsExecutor struct {
-	inner    graph.NodeExecutor
-	nodeID   graph.NodeID
+	inner       graph.NodeExecutor
+	nodeID      graph.NodeID
 	namescaceID graph.NamespaceID
-	graphID  graph.ID
-	nodeType string
-	metrics  NodeMetrics
+	graphID     graph.ID
+	nodeType    string
+	metrics     NodeMetrics
 }
 
 func (e metricsExecutor) Run(

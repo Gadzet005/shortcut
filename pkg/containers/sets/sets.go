@@ -7,7 +7,7 @@ func New[T comparable]() *Set[T] {
 func NewFromSlice[T comparable](arr []T) *Set[T] {
 	ret := &Set[T]{m: make(map[T]bool)}
 
-	for _, v := range(arr) {
+	for _, v := range arr {
 		ret.Add(v)
 	}
 
@@ -42,7 +42,7 @@ func (s *Set[T]) Clear() {
 func (s *Set[T]) AsSlice() []T {
 	ret := make([]T, 0)
 
-	for k := range(s.m) {
+	for k := range s.m {
 		ret = append(ret, k)
 	}
 

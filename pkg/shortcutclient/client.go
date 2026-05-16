@@ -10,7 +10,6 @@ import (
 	"strings"
 )
 
-
 type Client struct {
 	cfg        Config
 	httpClient *http.Client

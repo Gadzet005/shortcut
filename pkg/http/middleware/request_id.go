@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	RequestIDHeader  = "X-Request-Id"
-	RequestIDKey     = "request_id"
+	RequestIDHeader = "X-Request-Id"
+	RequestIDKey    = "request_id"
 )
 
 func RequestID() gin.HandlerFunc {

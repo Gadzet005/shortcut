@@ -5,12 +5,12 @@ import "time"
 type FailureStrategy string
 
 const (
-	AbsentFailureStrategy  FailureStrategy = "absent"
-	IgnoreFailureStrategy  FailureStrategy = "ignore"
-	RevertFailureStrategy  FailureStrategy = "revert"
-	SaveFailureStrategy    FailureStrategy = "save"
-	FinishFailureStrategy  FailureStrategy = "finish"
-	CustomFailureStrategy  FailureStrategy = "custom"
+	AbsentFailureStrategy FailureStrategy = "absent"
+	IgnoreFailureStrategy FailureStrategy = "ignore"
+	RevertFailureStrategy FailureStrategy = "revert"
+	SaveFailureStrategy   FailureStrategy = "save"
+	FinishFailureStrategy FailureStrategy = "finish"
+	CustomFailureStrategy FailureStrategy = "custom"
 )
 
 func ParseFailureStrategy(fs string) (FailureStrategy, bool) {
@@ -58,9 +58,9 @@ func ParseStrategyAction(s string) (StrategyAction, bool) {
 type StrategyCondition string
 
 const (
-	NoStrategyCondition                    StrategyCondition = ""
-	LastActionSuccessfulStrategyCondition  StrategyCondition = "last_action_successful"
-	LastActionFailedStrategyCondition      StrategyCondition = "last_action_failed"
+	NoStrategyCondition                   StrategyCondition = ""
+	LastActionSuccessfulStrategyCondition StrategyCondition = "last_action_successful"
+	LastActionFailedStrategyCondition     StrategyCondition = "last_action_failed"
 )
 
 type FailureStep struct {

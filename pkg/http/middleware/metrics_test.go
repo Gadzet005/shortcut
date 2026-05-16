@@ -42,11 +42,11 @@ func TestMetrics_RecordsStatusCode(t *testing.T) {
 	require.Equal(t, http.StatusInternalServerError, doRequest(t, r, http.MethodGet, "/fail"))
 	require.Equal(t, http.StatusNotFound, doRequest(t, r, http.MethodGet, "/notfound"))
 
-	require.Equal(t, 2.0, testutil.ToFloat64(m.codesTotal.WithLabelValues(http.MethodGet, "/ok", "200")))
-	require.Equal(t, 1.0, testutil.ToFloat64(m.codesTotal.WithLabelValues(http.MethodGet, "/fail", "500")))
-	require.Equal(t, 1.0, testutil.ToFloat64(m.codesTotal.WithLabelValues(http.MethodGet, "/notfound", "404")))
+	require.Equal(t, 2.0, testutil.ToFloat64(m.codesTotal.WithLabelValues(http.MethodGet, "/ok", "200", defaultPath, defaultNamespace)))
+	require.Equal(t, 1.0, testutil.ToFloat64(m.codesTotal.WithLabelValues(http.MethodGet, "/fail", "500", defaultPath, defaultNamespace)))
+	require.Equal(t, 1.0, testutil.ToFloat64(m.codesTotal.WithLabelValues(http.MethodGet, "/notfound", "404", defaultPath, defaultNamespace)))
 
-	require.Equal(t, 2.0, testutil.ToFloat64(m.requestsCnt.WithLabelValues(http.MethodGet, "/ok")))
+	require.Equal(t, 2.0, testutil.ToFloat64(m.requestsCnt.WithLabelValues(http.MethodGet, "/ok", defaultPath, defaultNamespace)))
 }
 
 func TestMetrics_UnmatchedRouteUsesUnknownLabel(t *testing.T) {
@@ -58,6 +58,6 @@ func TestMetrics_UnmatchedRouteUsesUnknownLabel(t *testing.T) {
 
 	require.Equal(t, http.StatusNotFound, doRequest(t, r, http.MethodGet, "/missing"))
 
-	require.Equal(t, 1.0, testutil.ToFloat64(m.codesTotal.WithLabelValues(http.MethodGet, defaultEndpointName, "404")))
-	require.Equal(t, 1.0, testutil.ToFloat64(m.requestsCnt.WithLabelValues(http.MethodGet, defaultEndpointName)))
+	require.Equal(t, 1.0, testutil.ToFloat64(m.codesTotal.WithLabelValues(http.MethodGet, defaultEndpointName, "404", defaultPath, defaultNamespace)))
+	require.Equal(t, 1.0, testutil.ToFloat64(m.requestsCnt.WithLabelValues(http.MethodGet, defaultEndpointName, defaultPath, defaultNamespace)))
 }
