@@ -85,6 +85,8 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
       - ./tests/infra/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./tests/infra/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./k8s/dashboards:/var/lib/grafana/dashboards/shortcut:ro
       - grafana-storage:/var/lib/grafana
     depends_on:
       - prometheus

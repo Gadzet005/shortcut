@@ -79,6 +79,10 @@ shortcut:
     scrapeTimeout: 10s
     labels: {}
 
+  grafanaDashboards:
+    enabled: true
+    folder: shortcut
+
 postgresql:
   enabled: true
   image:
@@ -145,6 +149,16 @@ kube-prometheus-stack:
         type: loki
         url: http://{{ .Release.Name }}-loki:3100
         access: proxy
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+        labelValue: "1"
+        searchNamespace: ALL
+        folder: /tmp/dashboards
+        defaultFolderName: shortcut
+        provider:
+          foldersFromFilesStructure: true
   prometheus:
     prometheusSpec:
       retention: 15d

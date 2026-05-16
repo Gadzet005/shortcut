@@ -145,3 +145,15 @@ make vet    # go vet
 make lint   # golangci-lint
 make check  # всё сразу + тесты
 ```
+
+## Grafana-дашборды
+
+Дашборды Grafana генерируются из директории с конфигами графов скриптом `scripts/gen_dashboards.py`. Скрипт читает `<configs-dir>/<namespace>/http_router.yaml` и `<configs-dir>/<namespace>/graphs/*.yaml`, и собирает один JSON-дашборд `k8s/dashboards/shortcut.json` со строкой Cluster resources (CPU/память) и свёрнутой строкой на каждый граф (RPS / p95 latency / error ratio по ручкам и по нодам).
+
+```bash
+pip install -r scripts/requirements.txt
+make gen-dashboards                             
+make gen-dashboards DASHBOARDS_CONFIGS_DIR=demo/configs/shop
+```
+
+Полученный `k8s/dashboards/shortcut.json` коммитится в репозиторий. На `helm upgrade` чарт оборачивает каждый JSON из `k8s/dashboards/` в `ConfigMap` с лейблом `grafana_dashboard: "1"`, а Grafana sidecar автоматически подхватывает их и складывает в папку `shortcut`. В `docker-compose.yml` те же файлы примонтированы в Grafana через file-провайдер `tests/infra/grafana/dashboards/dashboards.yaml`.

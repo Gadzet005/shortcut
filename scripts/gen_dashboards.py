@@ -1,0 +1,420 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import os
+import re
+import sys
+import tempfile
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Iterable
+
+import yaml
+
+
+HTTP_ROUTER_FILE = "http_router.yaml"
+GRAPHS_DIR = "graphs"
+DEFAULT_INPUT_NODE = "input"
+
+PANELS_PER_ROW = 24
+PANEL_HEIGHT = 8
+GRAPH_PANEL_WIDTH = 8
+
+
+@dataclass(frozen=True)
+class Route:
+    name: str
+    path: str
+    method: str
+
+
+@dataclass
+class Graph:
+    namespace_id: str
+    graph_id: str
+    node_ids: tuple[str, ...]
+    routes: tuple[Route, ...] = field(default_factory=tuple)
+
+    @property
+    def title(self) -> str:
+        return f"{self.namespace_id} / {self.graph_id}"
+
+    @property
+    def slug(self) -> str:
+        return re.sub(r"[^a-z0-9_-]+", "-", f"{self.namespace_id}-{self.graph_id}".lower()).strip("-")
+
+
+def load_routes(namespace_dir: Path) -> dict[str, list[Route]]:
+    router_path = namespace_dir / HTTP_ROUTER_FILE
+    if not router_path.is_file():
+        return {}
+    with router_path.open() as fh:
+        raw = yaml.safe_load(fh) or {}
+    out: dict[str, list[Route]] = {}
+    for name, route in (raw.get("routes") or {}).items():
+        graph_id = route.get("graph")
+        path = route.get("path", "")
+        method = (route.get("method") or "GET").upper()
+        if not graph_id or not path:
+            continue
+        out.setdefault(graph_id, []).append(Route(name=name, path=path, method=method))
+    for graph_id in out:
+        out[graph_id].sort(key=lambda r: (r.method, r.path, r.name))
+    return out
+
+
+def load_graph_nodes(graph_file: Path) -> tuple[str, ...]:
+    with graph_file.open() as fh:
+        raw = yaml.safe_load(fh) or {}
+    nodes = list((raw.get("nodes") or {}).keys())
+    input_node = raw.get("input-node") or DEFAULT_INPUT_NODE
+    if input_node not in nodes:
+        nodes.append(input_node)
+    return tuple(sorted(nodes))
+
+
+def discover_graphs(configs_dir: Path) -> list[Graph]:
+    out: list[Graph] = []
+    for namespace_dir in sorted(p for p in configs_dir.iterdir() if p.is_dir()):
+        routes_by_graph = load_routes(namespace_dir)
+        graphs_dir = namespace_dir / GRAPHS_DIR
+        if not graphs_dir.is_dir():
+            continue
+        for graph_file in sorted(graphs_dir.glob("*.yaml")):
+            graph_id = graph_file.stem
+            node_ids = load_graph_nodes(graph_file)
+            routes = tuple(routes_by_graph.get(graph_id, ()))
+            out.append(Graph(
+                namespace_id=namespace_dir.name,
+                graph_id=graph_id,
+                node_ids=node_ids,
+                routes=routes,
+            ))
+    return out
+
+
+def regex_alt(values: Iterable[str]) -> str:
+    escaped = sorted({re.escape(v) for v in values})
+    return "^(" + "|".join(escaped) + ")$"
+
+
+def grid_pos(index: int, *, y_base: int, width: int = GRAPH_PANEL_WIDTH, height: int = PANEL_HEIGHT) -> dict:
+    per_row = PANELS_PER_ROW // width
+    return {
+        "x": (index % per_row) * width,
+        "y": y_base + (index // per_row) * height,
+        "w": width,
+        "h": height,
+    }
+
+
+def panel_timeseries(*, panel_id: int, title: str, datasource: str, queries: list[dict], unit: str | None = None, grid: dict, decimals: int | None = None) -> dict:
+    field_config = {
+        "defaults": {
+            "custom": {
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "lineWidth": 1,
+            },
+        },
+        "overrides": [],
+    }
+    if unit:
+        field_config["defaults"]["unit"] = unit
+    if decimals is not None:
+        field_config["defaults"]["decimals"] = decimals
+    return {
+        "id": panel_id,
+        "type": "timeseries",
+        "title": title,
+        "datasource": {"type": "prometheus", "uid": datasource},
+        "gridPos": grid,
+        "targets": queries,
+        "fieldConfig": field_config,
+        "options": {
+            "legend": {"displayMode": "list", "placement": "bottom", "showLegend": True},
+            "tooltip": {"mode": "multi", "sort": "desc"},
+        },
+    }
+
+
+def target(expr: str, *, ref_id: str, legend: str) -> dict:
+    return {
+        "refId": ref_id,
+        "expr": expr,
+        "legendFormat": legend,
+        "datasource": {"type": "prometheus", "uid": "${datasource}"},
+    }
+
+
+def cluster_resources_row(*, datasource: str, panel_id_start: int) -> tuple[dict, list[dict], int]:
+    row = {
+        "id": panel_id_start,
+        "type": "row",
+        "title": "Cluster resources",
+        "collapsed": False,
+        "gridPos": {"x": 0, "y": 0, "w": PANELS_PER_ROW, "h": 1},
+        "panels": [],
+    }
+    cpu_expr = (
+        'sum by(pod) (rate(container_cpu_usage_seconds_total{'
+        'namespace=~"$k8s_namespace",pod=~"$pod",container!="",container!="POD"'
+        '}[$__rate_interval]))'
+    )
+    mem_expr = (
+        'sum by(pod) (container_memory_working_set_bytes{'
+        'namespace=~"$k8s_namespace",pod=~"$pod",container!="",container!="POD"'
+        '})'
+    )
+    cpu_panel = panel_timeseries(
+        panel_id=panel_id_start + 1,
+        title="CPU usage by pod (cores)",
+        datasource=datasource,
+        queries=[target(cpu_expr, ref_id="A", legend="{{pod}}")],
+        unit="none",
+        grid={"x": 0, "y": 1, "w": 12, "h": PANEL_HEIGHT},
+    )
+    mem_panel = panel_timeseries(
+        panel_id=panel_id_start + 2,
+        title="Memory working set by pod",
+        datasource=datasource,
+        queries=[target(mem_expr, ref_id="A", legend="{{pod}}")],
+        unit="bytes",
+        grid={"x": 12, "y": 1, "w": 12, "h": PANEL_HEIGHT},
+    )
+    return row, [cpu_panel, mem_panel], panel_id_start + 3
+
+
+def graph_row(*, graph: Graph, datasource: str, service: str, panel_id_start: int, y_base: int) -> tuple[dict, int]:
+    panels: list[dict] = []
+    next_id = panel_id_start + 1
+    panel_index = 0
+    inner_y = y_base + 1
+
+    if graph.routes:
+        endpoint_re = regex_alt(r.path for r in graph.routes)
+        method_re = regex_alt(r.method for r in graph.routes)
+        common = f'service="{service}",endpoint=~"{endpoint_re}",method=~"{method_re}"'
+
+        rps_expr = (
+            f'sum by(endpoint,method) (rate(http_requests_total{{{common}}}[$__rate_interval]))'
+        )
+        panels.append(panel_timeseries(
+            panel_id=next_id,
+            title="HTTP RPS",
+            datasource=datasource,
+            queries=[target(rps_expr, ref_id="A", legend="{{method}} {{endpoint}}")],
+            unit="reqps",
+            grid=grid_pos(panel_index, y_base=inner_y),
+        ))
+        next_id += 1
+        panel_index += 1
+
+        lat_expr = (
+            f'http_request_duration_quantiles_seconds{{{common},quantile="0.95"}}'
+        )
+        panels.append(panel_timeseries(
+            panel_id=next_id,
+            title="HTTP p95 latency",
+            datasource=datasource,
+            queries=[target(lat_expr, ref_id="A", legend="{{method}} {{endpoint}}")],
+            unit="s",
+            grid=grid_pos(panel_index, y_base=inner_y),
+        ))
+        next_id += 1
+        panel_index += 1
+
+        err_expr = (
+            f'sum by(endpoint,method) (rate(http_codes_total{{{common},code=~"4..|5.."}}[$__rate_interval]))'
+            ' / clamp_min('
+            f'sum by(endpoint,method) (rate(http_codes_total{{{common}}}[$__rate_interval]))'
+            ', 1e-9)'
+        )
+        panels.append(panel_timeseries(
+            panel_id=next_id,
+            title="HTTP error ratio",
+            datasource=datasource,
+            queries=[target(err_expr, ref_id="A", legend="{{method}} {{endpoint}}")],
+            unit="percentunit",
+            grid=grid_pos(panel_index, y_base=inner_y),
+            decimals=3,
+        ))
+        next_id += 1
+        panel_index += 1
+
+    if graph.node_ids:
+        node_re = regex_alt(graph.node_ids)
+        node_common = f'service="{service}",node_id=~"{node_re}"'
+
+        node_rps = f'sum by(node_id) (rate(shortcut_node_requests_total{{{node_common}}}[$__rate_interval]))'
+        panels.append(panel_timeseries(
+            panel_id=next_id,
+            title="Node RPS",
+            datasource=datasource,
+            queries=[target(node_rps, ref_id="A", legend="{{node_id}}")],
+            unit="reqps",
+            grid=grid_pos(panel_index, y_base=inner_y),
+        ))
+        next_id += 1
+        panel_index += 1
+
+        node_lat = f'shortcut_node_duration_seconds{{{node_common},quantile="0.95"}}'
+        panels.append(panel_timeseries(
+            panel_id=next_id,
+            title="Node p95 latency",
+            datasource=datasource,
+            queries=[target(node_lat, ref_id="A", legend="{{node_id}}")],
+            unit="s",
+            grid=grid_pos(panel_index, y_base=inner_y),
+        ))
+        next_id += 1
+        panel_index += 1
+
+        node_err = (
+            f'sum by(node_id) (rate(shortcut_node_errors_total{{{node_common}}}[$__rate_interval]))'
+            ' / clamp_min('
+            f'sum by(node_id) (rate(shortcut_node_requests_total{{{node_common}}}[$__rate_interval]))'
+            ', 1e-9)'
+        )
+        panels.append(panel_timeseries(
+            panel_id=next_id,
+            title="Node error ratio",
+            datasource=datasource,
+            queries=[target(node_err, ref_id="A", legend="{{node_id}}")],
+            unit="percentunit",
+            grid=grid_pos(panel_index, y_base=inner_y),
+            decimals=3,
+        ))
+        next_id += 1
+        panel_index += 1
+
+    row = {
+        "id": panel_id_start,
+        "type": "row",
+        "title": graph.title,
+        "collapsed": True,
+        "gridPos": {"x": 0, "y": y_base, "w": PANELS_PER_ROW, "h": 1},
+        "panels": panels,
+    }
+    return row, next_id
+
+
+def build_dashboard(graphs: list[Graph], *, datasource: str, service: str) -> dict:
+    panels: list[dict] = []
+    panel_id = 1
+
+    cluster_row, cluster_panels, panel_id = cluster_resources_row(datasource=datasource, panel_id_start=panel_id)
+    cluster_row["panels"] = cluster_panels
+    panels.append(cluster_row)
+
+    y_cursor = 1 + PANEL_HEIGHT
+    for graph in sorted(graphs, key=lambda g: (g.namespace_id, g.graph_id)):
+        row, panel_id = graph_row(
+            graph=graph,
+            datasource=datasource,
+            service=service,
+            panel_id_start=panel_id,
+            y_base=y_cursor,
+        )
+        panels.append(row)
+        y_cursor += 1
+
+    templating = {
+        "list": [
+            {
+                "name": "datasource",
+                "type": "datasource",
+                "query": "prometheus",
+                "current": {"text": "Prometheus", "value": "Prometheus"},
+                "hide": 0,
+                "label": "Datasource",
+                "refresh": 1,
+            },
+            {
+                "name": "k8s_namespace",
+                "type": "query",
+                "datasource": {"type": "prometheus", "uid": "${datasource}"},
+                "query": "label_values(kube_pod_info, namespace)",
+                "refresh": 2,
+                "includeAll": True,
+                "allValue": ".*",
+                "current": {"text": "All", "value": "$__all"},
+                "hide": 0,
+                "label": "k8s namespace",
+                "sort": 1,
+            },
+            {
+                "name": "pod",
+                "type": "query",
+                "datasource": {"type": "prometheus", "uid": "${datasource}"},
+                "query": 'label_values(kube_pod_info{namespace=~"$k8s_namespace"}, pod)',
+                "refresh": 2,
+                "includeAll": True,
+                "allValue": ".*",
+                "current": {"text": "All", "value": "$__all"},
+                "hide": 0,
+                "label": "Pod",
+                "sort": 1,
+            },
+        ],
+    }
+
+    return {
+        "annotations": {"list": []},
+        "editable": True,
+        "fiscalYearStartMonth": 0,
+        "graphTooltip": 0,
+        "links": [],
+        "liveNow": False,
+        "panels": panels,
+        "refresh": "30s",
+        "schemaVersion": 39,
+        "tags": ["shortcut", "generated"],
+        "templating": templating,
+        "time": {"from": "now-1h", "to": "now"},
+        "timepicker": {},
+        "timezone": "",
+        "title": "Shortcut",
+        "uid": "shortcut-overview",
+        "weekStart": "",
+    }
+
+
+def write_json(path: Path, data: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.NamedTemporaryFile(
+        "w", delete=False, dir=path.parent, prefix=path.name + ".", suffix=".tmp"
+    ) as tmp:
+        json.dump(data, tmp, indent=2, sort_keys=False)
+        tmp.write("\n")
+        tmp_path = Path(tmp.name)
+    os.replace(tmp_path, path)
+
+
+def main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(description="Generate Grafana dashboards from shortcut graph configs")
+    parser.add_argument("--configs-dir", required=True, type=Path, help="Path to a directory with namespace subdirectories")
+    parser.add_argument("--out-dir", type=Path, default=Path("k8s/dashboards"), help="Output directory for dashboard JSON files")
+    parser.add_argument("--datasource", default="Prometheus", help="Prometheus datasource UID variable default")
+    parser.add_argument("--service", default="shortcut", help="Value of the `service` label written by shortcut")
+    args = parser.parse_args(argv)
+
+    configs_dir: Path = args.configs_dir
+    if not configs_dir.is_dir():
+        print(f"configs dir not found: {configs_dir}", file=sys.stderr)
+        return 1
+
+    graphs = discover_graphs(configs_dir)
+    if not graphs:
+        print(f"no graphs discovered under {configs_dir}", file=sys.stderr)
+        return 1
+
+    dashboard = build_dashboard(graphs, datasource=args.datasource, service=args.service)
+    out_path: Path = args.out_dir / "shortcut.json"
+    write_json(out_path, dashboard)
+    print(f"wrote {out_path} (graphs: {len(graphs)})")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
