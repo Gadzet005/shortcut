@@ -3,7 +3,7 @@ apiVersion: 1
 providers:
   - name: shortcut
     orgId: 1
-    folder: shortcut
+    folder: Shortcut
     type: file
     disableDeletion: false
     updateIntervalSeconds: 10

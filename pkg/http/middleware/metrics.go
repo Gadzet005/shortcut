@@ -9,7 +9,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
-const defaultEndpointName = "unknown"
+const (
+	defaultEndpointName = "unknown"
+	defaultNamespace    = "unknown"
+)
 
 func Metrics(serviceName string) gin.HandlerFunc {
 	return metricsHandler(newHTTPMetrics(serviceName, promauto.With(prometheus.DefaultRegisterer)))
@@ -26,6 +29,16 @@ func metricsHandler(m *httpServiceMetrics) gin.HandlerFunc {
 
 		startTime := time.Now()
 
+		namespace := c.Param("namespace_id")
+		if namespace == "" {
+			namespace = defaultNamespace
+		}
+
+		path := c.Param("path")
+		if path == "" {
+			path = "/"
+		}
+
 		c.Next()
 
 		duration := time.Since(startTime).Seconds()
@@ -35,9 +48,9 @@ func metricsHandler(m *httpServiceMetrics) gin.HandlerFunc {
 		}
 
 		method := c.Request.Method
-		m.requestsCnt.WithLabelValues(method, endpoint).Inc()
-		m.requestQuantiles.WithLabelValues(method, endpoint).Observe(duration)
-		m.codesTotal.WithLabelValues(method, endpoint, strconv.Itoa(c.Writer.Status())).Inc()
+		m.requestsCnt.WithLabelValues(method, endpoint, path, namespace).Inc()
+		m.requestQuantiles.WithLabelValues(method, endpoint, path, namespace).Observe(duration)
+		m.codesTotal.WithLabelValues(method, endpoint, strconv.Itoa(c.Writer.Status()), path, namespace).Inc()
 	}
 }
 
@@ -53,7 +66,7 @@ func newHTTPMetrics(serviceName string, factory promauto.Factory) *httpServiceMe
 				Help:        "Total number of HTTP requests",
 				ConstLabels: constLabels,
 			},
-			[]string{"method", "endpoint"},
+			[]string{"method", "endpoint", "path", "namespace"},
 		),
 		requestQuantiles: factory.NewSummaryVec(
 			prometheus.SummaryOpts{
@@ -70,7 +83,7 @@ func newHTTPMetrics(serviceName string, factory promauto.Factory) *httpServiceMe
 				AgeBuckets: 5,
 				BufCap:     500,
 			},
-			[]string{"method", "endpoint"},
+			[]string{"method", "endpoint", "path", "namespace"},
 		),
 		requestSize: factory.NewHistogramVec(
 			prometheus.HistogramOpts{
@@ -79,7 +92,7 @@ func newHTTPMetrics(serviceName string, factory promauto.Factory) *httpServiceMe
 				ConstLabels: constLabels,
 				Buckets:     []float64{100, 1000, 10000, 100000, 1000000, 10000000},
 			},
-			[]string{"method", "endpoint"},
+			[]string{"method", "endpoint", "path", "namespace"},
 		),
 		responseSize: factory.NewHistogramVec(
 			prometheus.HistogramOpts{
@@ -88,7 +101,7 @@ func newHTTPMetrics(serviceName string, factory promauto.Factory) *httpServiceMe
 				ConstLabels: constLabels,
 				Buckets:     []float64{100, 1000, 10000, 100000, 1000000, 10000000},
 			},
-			[]string{"method", "endpoint"},
+			[]string{"method", "endpoint", "path", "namespace"},
 		),
 		codesTotal: factory.NewCounterVec(
 			prometheus.CounterOpts{
@@ -96,7 +109,7 @@ func newHTTPMetrics(serviceName string, factory promauto.Factory) *httpServiceMe
 				Help:        "Total number of HTTP errors by code",
 				ConstLabels: constLabels,
 			},
-			[]string{"method", "endpoint", "code"},
+			[]string{"method", "endpoint", "code", "path", "namespace"},
 		),
 		panicsTotal: factory.NewCounter(
 			prometheus.CounterOpts{

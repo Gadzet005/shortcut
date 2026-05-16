@@ -6,7 +6,7 @@ MAIN_PATH=./cmd/shortcut
 COVERAGE_FILE=coverage.out
 COVERAGE_HTML=coverage.html
 GOBIN=$(shell go env GOPATH)/bin
-DASHBOARDS_CONFIGS_DIR ?= tests/configs
+DASHBOARDS_CONFIGS_DIR ?= demo/configs
 DASHBOARDS_OUT_DIR ?= k8s/dashboards
 
 install:

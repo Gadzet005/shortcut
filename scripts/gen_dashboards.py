@@ -29,11 +29,21 @@ class Route:
 
 
 @dataclass
+class NodeInfo:
+    id: str
+    cache_enabled: bool = False
+
+
+@dataclass
 class Graph:
     namespace_id: str
     graph_id: str
-    node_ids: tuple[str, ...]
+    nodes: list[NodeInfo]
     routes: tuple[Route, ...] = field(default_factory=tuple)
+
+    @property
+    def node_ids(self) -> tuple[str, ...]:
+        return tuple(n.id for n in self.nodes)
 
     @property
     def title(self) -> str:
@@ -63,14 +73,22 @@ def load_routes(namespace_dir: Path) -> dict[str, list[Route]]:
     return out
 
 
-def load_graph_nodes(graph_file: Path) -> tuple[str, ...]:
+def load_graph_nodes(graph_file: Path) -> list[NodeInfo]:
     with graph_file.open() as fh:
         raw = yaml.safe_load(fh) or {}
-    nodes = list((raw.get("nodes") or {}).keys())
+    
+    nodes_data = raw.get("nodes") or {}
+    nodes = []
+    
+    for node_id, node_config in nodes_data.items():
+        cache_enabled = node_config.get("cache", {}).get("enabled", False)
+        nodes.append(NodeInfo(id=node_id, cache_enabled=cache_enabled))
+    
     input_node = raw.get("input-node") or DEFAULT_INPUT_NODE
-    if input_node not in nodes:
-        nodes.append(input_node)
-    return tuple(sorted(nodes))
+    if input_node not in [n.id for n in nodes]:
+        nodes.append(NodeInfo(id=input_node, cache_enabled=False))
+    
+    return sorted(nodes, key=lambda n: n.id)
 
 
 def discover_graphs(configs_dir: Path) -> list[Graph]:
@@ -82,20 +100,32 @@ def discover_graphs(configs_dir: Path) -> list[Graph]:
             continue
         for graph_file in sorted(graphs_dir.glob("*.yaml")):
             graph_id = graph_file.stem
-            node_ids = load_graph_nodes(graph_file)
+            nodes = load_graph_nodes(graph_file)
             routes = tuple(routes_by_graph.get(graph_id, ()))
             out.append(Graph(
                 namespace_id=namespace_dir.name,
                 graph_id=graph_id,
-                node_ids=node_ids,
+                nodes=nodes,
                 routes=routes,
             ))
     return out
 
 
 def regex_alt(values: Iterable[str]) -> str:
-    escaped = sorted({re.escape(v) for v in values})
-    return "^(" + "|".join(escaped) + ")$"
+    escaped = []
+    for v in values:
+        special = r'.*+?^${}[]()|\\'
+        for char in special:
+            if char in v:
+                v = v.replace(char, "\\" + char)
+        escaped.append(v)
+    
+    escaped = sorted(escaped)
+    
+    if len(escaped) == 1:
+        return escaped[0]
+    
+    return "(" + "|".join(escaped) + ")"
 
 
 def grid_pos(index: int, *, y_base: int, width: int = GRAPH_PANEL_WIDTH, height: int = PANEL_HEIGHT) -> dict:
@@ -185,108 +215,232 @@ def cluster_resources_row(*, datasource: str, panel_id_start: int) -> tuple[dict
     return row, [cpu_panel, mem_panel], panel_id_start + 3
 
 
+def add_node_section(*, panels: list, node: NodeInfo, graph: Graph, datasource: str, service: str, next_id: int, y_base: int) -> tuple[int, int]:
+    current_y = y_base
+    
+    node_header = {
+        "id": next_id,
+        "type": "text",
+        "title": f"Node: {node.id}",
+        "collapsed": False,
+        "gridPos": {"x": 0, "y": current_y, "w": PANELS_PER_ROW, "h": 1},
+        "panels": [],
+    }
+    panels.append(node_header)
+    next_id += 1
+    current_y += 1
+    panel_index = 0
+    
+    node_common = f'service="{service}",namespace="{graph.namespace_id}",graph_id="{graph.graph_id}",node_id="{node.id}"'
+    
+    node_rps = f'rate(shortcut_node_requests_total{{{node_common}}}[$__rate_interval])'
+    panels.append(panel_timeseries(
+        panel_id=next_id,
+        title=f"RPS",
+        datasource=datasource,
+        queries=[target(node_rps, ref_id="A", legend="RPS")],
+        unit="reqps",
+        grid=grid_pos(panel_index, y_base=current_y, width=8, height=PANEL_HEIGHT),
+    ))
+    next_id += 1
+    panel_index += 1
+    
+    node_lat_50 = f'shortcut_node_duration_seconds{{{node_common},quantile="0.5"}}'
+    node_lat_90 = f'shortcut_node_duration_seconds{{{node_common},quantile="0.9"}}'
+    node_lat_95 = f'shortcut_node_duration_seconds{{{node_common},quantile="0.95"}}'
+    node_lat_99 = f'shortcut_node_duration_seconds{{{node_common},quantile="0.99"}}'
+    
+    panels.append(panel_timeseries(
+        panel_id=next_id,
+        title=f"Latency",
+        datasource=datasource,
+        queries=[
+            target(node_lat_50, ref_id="A", legend="p50"),
+            target(node_lat_90, ref_id="B", legend="p90"),
+            target(node_lat_95, ref_id="C", legend="p95"),
+            target(node_lat_99, ref_id="D", legend="p99"),
+        ],
+        unit="s",
+        grid=grid_pos(panel_index, y_base=current_y, width=8, height=PANEL_HEIGHT),
+    ))
+    next_id += 1
+    panel_index += 1
+    
+    node_err = (
+        f'rate(shortcut_node_errors_total{{{node_common}}}[$__rate_interval])'
+        ' / clamp_min('
+        f'rate(shortcut_node_requests_total{{{node_common}}}[$__rate_interval])'
+        ', 1e-9)'
+    )
+    panels.append(panel_timeseries(
+        panel_id=next_id,
+        title=f"Error Ratio",
+        datasource=datasource,
+        queries=[target(node_err, ref_id="A", legend="Error Ratio")],
+        unit="percentunit",
+        grid=grid_pos(panel_index, y_base=current_y, width=8, height=PANEL_HEIGHT),
+        decimals=3,
+    ))
+    next_id += 1
+    
+    current_y += PANEL_HEIGHT
+    
+    if node.cache_enabled:
+        cache_header = {
+            "id": next_id,
+            "type": "text",
+            "title": f"Cache: {node.id}",
+            "collapsed": False,
+            "gridPos": {"x": 0, "y": current_y, "w": PANELS_PER_ROW, "h": 1},
+            "panels": [],
+        }
+        panels.append(cache_header)
+        next_id += 1
+        current_y += 1
+        
+        cache_common = f'service="{service}",namespace="{graph.namespace_id}",graph_id="{graph.graph_id}",node_id="{node.id}"'
+        
+        inserts_expr = f'rate(shortcut_cache_inserts_total{{{cache_common}}}[$__rate_interval])'
+        panels.append(panel_timeseries(
+            panel_id=next_id,
+            title=f"Inserts Rate",
+            datasource=datasource,
+            queries=[target(inserts_expr, ref_id="A", legend="Inserts/s")],
+            unit="ops",
+            grid={"x": 0, "y": current_y, "w": 12, "h": PANEL_HEIGHT},
+        ))
+        next_id += 1
+        
+        hits_expr = f'rate(shortcut_cache_hits_total{{{cache_common}}}[$__rate_interval])'
+        misses_expr = f'rate(shortcut_cache_misses_total{{{cache_common}}}[$__rate_interval])'
+        panels.append(panel_timeseries(
+            panel_id=next_id,
+            title=f"Hits vs Misses",
+            datasource=datasource,
+            queries=[
+                target(hits_expr, ref_id="A", legend="Hits/s"),
+                target(misses_expr, ref_id="B", legend="Misses/s"),
+            ],
+            unit="ops",
+            grid={"x": 12, "y": current_y, "w": 12, "h": PANEL_HEIGHT},
+        ))
+        next_id += 1
+        
+        current_y += PANEL_HEIGHT
+    
+    return next_id, current_y
+
+
 def graph_row(*, graph: Graph, datasource: str, service: str, panel_id_start: int, y_base: int) -> tuple[dict, int]:
     panels: list[dict] = []
     next_id = panel_id_start + 1
-    panel_index = 0
     inner_y = y_base + 1
 
     if graph.routes:
-        endpoint_re = regex_alt(r.path for r in graph.routes)
+        path_re = regex_alt(r.path for r in graph.routes)
         method_re = regex_alt(r.method for r in graph.routes)
-        common = f'service="{service}",endpoint=~"{endpoint_re}",method=~"{method_re}"'
+        
+        common = f'service="{service}",namespace="{graph.namespace_id}",path=~"{path_re}",method=~"{method_re}"'
 
         rps_expr = (
-            f'sum by(endpoint,method) (rate(http_requests_total{{{common}}}[$__rate_interval]))'
+            f'sum by(path,method) (rate(http_requests_total{{{common}}}[$__rate_interval]))'
         )
         panels.append(panel_timeseries(
             panel_id=next_id,
-            title="HTTP RPS",
+            title=f"HTTP RPS",
             datasource=datasource,
-            queries=[target(rps_expr, ref_id="A", legend="{{method}} {{endpoint}}")],
+            queries=[target(rps_expr, ref_id="A", legend="{{method}} {{path}}")],
             unit="reqps",
-            grid=grid_pos(panel_index, y_base=inner_y),
+            grid=grid_pos(0, y_base=inner_y, width=8, height=PANEL_HEIGHT),
         ))
         next_id += 1
-        panel_index += 1
 
         lat_expr = (
             f'http_request_duration_quantiles_seconds{{{common},quantile="0.95"}}'
         )
         panels.append(panel_timeseries(
             panel_id=next_id,
-            title="HTTP p95 latency",
+            title=f"HTTP p95 latency",
             datasource=datasource,
-            queries=[target(lat_expr, ref_id="A", legend="{{method}} {{endpoint}}")],
+            queries=[target(lat_expr, ref_id="A", legend="{{method}} {{path}}")],
             unit="s",
-            grid=grid_pos(panel_index, y_base=inner_y),
+            grid=grid_pos(1, y_base=inner_y, width=8, height=PANEL_HEIGHT),
         ))
         next_id += 1
-        panel_index += 1
 
         err_expr = (
-            f'sum by(endpoint,method) (rate(http_codes_total{{{common},code=~"4..|5.."}}[$__rate_interval]))'
+            f'sum by(path,method) (rate(http_codes_total{{{common},code=~"4..|5.."}}[$__rate_interval]))'
             ' / clamp_min('
-            f'sum by(endpoint,method) (rate(http_codes_total{{{common}}}[$__rate_interval]))'
+            f'sum by(path,method) (rate(http_codes_total{{{common}}}[$__rate_interval]))'
             ', 1e-9)'
         )
         panels.append(panel_timeseries(
             panel_id=next_id,
-            title="HTTP error ratio",
+            title=f"HTTP error ratio",
             datasource=datasource,
-            queries=[target(err_expr, ref_id="A", legend="{{method}} {{endpoint}}")],
+            queries=[target(err_expr, ref_id="A", legend="{{method}} {{path}}")],
             unit="percentunit",
-            grid=grid_pos(panel_index, y_base=inner_y),
+            grid=grid_pos(2, y_base=inner_y, width=8, height=PANEL_HEIGHT),
             decimals=3,
         ))
         next_id += 1
-        panel_index += 1
+        
+        inner_y += PANEL_HEIGHT
 
-    if graph.node_ids:
-        node_re = regex_alt(graph.node_ids)
-        node_common = f'service="{service}",node_id=~"{node_re}"'
-
-        node_rps = f'sum by(node_id) (rate(shortcut_node_requests_total{{{node_common}}}[$__rate_interval]))'
+    if graph.nodes:
+        node_common_all = f'service="{service}",namespace="{graph.namespace_id}",graph_id="{graph.graph_id}"'
+        
+        all_nodes_rps = f'sum by(node_id) (rate(shortcut_node_requests_total{{{node_common_all}}}[$__rate_interval]))'
         panels.append(panel_timeseries(
             panel_id=next_id,
-            title="Node RPS",
+            title=f"All Nodes RPS",
             datasource=datasource,
-            queries=[target(node_rps, ref_id="A", legend="{{node_id}}")],
+            queries=[target(all_nodes_rps, ref_id="A", legend="{{node_id}}")],
             unit="reqps",
-            grid=grid_pos(panel_index, y_base=inner_y),
+            grid=grid_pos(0, y_base=inner_y, width=8, height=PANEL_HEIGHT),
         ))
         next_id += 1
-        panel_index += 1
-
-        node_lat = f'shortcut_node_duration_seconds{{{node_common},quantile="0.95"}}'
+        
+        all_nodes_lat = f'shortcut_node_duration_seconds{{{node_common_all},quantile="0.95"}}'
         panels.append(panel_timeseries(
             panel_id=next_id,
-            title="Node p95 latency",
+            title=f"All Nodes p95 Latency",
             datasource=datasource,
-            queries=[target(node_lat, ref_id="A", legend="{{node_id}}")],
+            queries=[target(all_nodes_lat, ref_id="A", legend="{{node_id}}")],
             unit="s",
-            grid=grid_pos(panel_index, y_base=inner_y),
+            grid=grid_pos(1, y_base=inner_y, width=8, height=PANEL_HEIGHT),
         ))
         next_id += 1
-        panel_index += 1
-
-        node_err = (
-            f'sum by(node_id) (rate(shortcut_node_errors_total{{{node_common}}}[$__rate_interval]))'
+        
+        all_nodes_err = (
+            f'sum by(node_id) (rate(shortcut_node_errors_total{{{node_common_all}}}[$__rate_interval]))'
             ' / clamp_min('
-            f'sum by(node_id) (rate(shortcut_node_requests_total{{{node_common}}}[$__rate_interval]))'
+            f'sum by(node_id) (rate(shortcut_node_requests_total{{{node_common_all}}}[$__rate_interval]))'
             ', 1e-9)'
         )
         panels.append(panel_timeseries(
             panel_id=next_id,
-            title="Node error ratio",
+            title=f"All Nodes Error Ratio",
             datasource=datasource,
-            queries=[target(node_err, ref_id="A", legend="{{node_id}}")],
+            queries=[target(all_nodes_err, ref_id="A", legend="{{node_id}}")],
             unit="percentunit",
-            grid=grid_pos(panel_index, y_base=inner_y),
+            grid=grid_pos(2, y_base=inner_y, width=8, height=PANEL_HEIGHT),
             decimals=3,
         ))
         next_id += 1
-        panel_index += 1
+        
+        inner_y += PANEL_HEIGHT
+        
+        for node in graph.nodes:
+            next_id, inner_y = add_node_section(
+                panels=panels,
+                node=node,
+                graph=graph,
+                datasource=datasource,
+                service=service,
+                next_id=next_id,
+                y_base=inner_y
+            )
 
     row = {
         "id": panel_id_start,
@@ -331,6 +485,19 @@ def build_dashboard(graphs: list[Graph], *, datasource: str, service: str) -> di
                 "refresh": 1,
             },
             {
+                "name": "namespace",
+                "type": "query",
+                "datasource": {"type": "prometheus", "uid": "${datasource}"},
+                "query": "label_values(http_requests_total, namespace)",
+                "refresh": 2,
+                "includeAll": True,
+                "allValue": ".*",
+                "current": {"text": "All", "value": "$__all"},
+                "hide": 0,
+                "label": "Namespace",
+                "sort": 1,
+            },
+            {
                 "name": "k8s_namespace",
                 "type": "query",
                 "datasource": {"type": "prometheus", "uid": "${datasource}"},
@@ -354,6 +521,19 @@ def build_dashboard(graphs: list[Graph], *, datasource: str, service: str) -> di
                 "current": {"text": "All", "value": "$__all"},
                 "hide": 0,
                 "label": "Pod",
+                "sort": 1,
+            },
+            {
+                "name": "path",
+                "type": "query",
+                "datasource": {"type": "prometheus", "uid": "${datasource}"},
+                "query": f'label_values(http_requests_total{{namespace=~"$namespace"}}, path)',
+                "refresh": 2,
+                "includeAll": True,
+                "allValue": ".*",
+                "current": {"text": "All", "value": "$__all"},
+                "hide": 0,
+                "label": "Path",
                 "sort": 1,
             },
         ],

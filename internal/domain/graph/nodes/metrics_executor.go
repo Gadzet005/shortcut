@@ -13,20 +13,26 @@ var _ graph.NodeExecutor = metricsExecutor{}
 func NewMetricsExecutor(
 	inner graph.NodeExecutor,
 	nodeID graph.NodeID,
+	namescaceID graph.NamespaceID,
+	graphID  graph.ID,
 	nodeType string,
 	metrics NodeMetrics,
 ) graph.NodeExecutor {
 	return metricsExecutor{
-		inner:    inner,
-		nodeID:   nodeID,
-		nodeType: nodeType,
-		metrics:  metrics,
+		inner:       inner,
+		nodeID:      nodeID,
+		namescaceID: namescaceID,
+		graphID:     graphID,
+		nodeType:    nodeType,
+		metrics:     metrics,
 	}
 }
 
 type metricsExecutor struct {
 	inner    graph.NodeExecutor
 	nodeID   graph.NodeID
+	namescaceID graph.NamespaceID
+	graphID  graph.ID
 	nodeType string
 	metrics  NodeMetrics
 }
@@ -41,7 +47,7 @@ func (e metricsExecutor) Run(
 	duration := time.Since(start)
 
 	if e.metrics != nil {
-		e.metrics.ObserveRun(e.nodeID, e.nodeType, duration, err)
+		e.metrics.ObserveRun(e.namescaceID, e.graphID, e.nodeID, e.nodeType, duration, err)
 	}
 
 	return resp, err

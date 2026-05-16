@@ -7,7 +7,7 @@ import (
 )
 
 type NodeMetrics interface {
-	ObserveRun(nodeID graph.NodeID, nodeType string, duration time.Duration, err error)
+	ObserveRun(namespaceID graph.NamespaceID, graphID graph.ID, nodeID graph.NodeID, nodeType string, duration time.Duration, err error)
 }
 
 type CacheMetrics interface {

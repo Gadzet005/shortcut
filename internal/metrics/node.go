@@ -16,7 +16,7 @@ type NodeMetrics struct {
 
 func NewNodeMetrics(serviceName string) *NodeMetrics {
 	constLabels := prometheus.Labels{"service": serviceName}
-	labels := []string{"node_id", "node_type"}
+	labels := []string{"namespace", "graph_id", "node_id", "node_type"}
 	return &NodeMetrics{
 		requestsTotal: promauto.NewCounterVec(
 			prometheus.CounterOpts{
@@ -54,11 +54,10 @@ func NewNodeMetrics(serviceName string) *NodeMetrics {
 	}
 }
 
-func (m *NodeMetrics) ObserveRun(nodeID graph.NodeID, nodeType string, duration time.Duration, err error) {
-	id := nodeID.String()
-	m.requestsTotal.WithLabelValues(id, nodeType).Inc()
-	m.requestDuration.WithLabelValues(id, nodeType).Observe(duration.Seconds())
+func (m *NodeMetrics) ObserveRun(namespaceID graph.NamespaceID, graphID graph.ID, nodeID graph.NodeID, nodeType string, duration time.Duration, err error) {
+	m.requestsTotal.WithLabelValues(namespaceID.String(), graphID.String(), nodeID.String(), nodeType).Inc()
+	m.requestDuration.WithLabelValues(namespaceID.String(), graphID.String(), nodeID.String(), nodeType).Observe(duration.Seconds())
 	if err != nil {
-		m.errorsTotal.WithLabelValues(id, nodeType).Inc()
+		m.errorsTotal.WithLabelValues(namespaceID.String(), graphID.String(), nodeID.String(), nodeType).Inc()
 	}
 }
