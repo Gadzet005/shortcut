@@ -271,8 +271,10 @@ def add_node_section(*, panels: list, node: NodeInfo, graph: Graph, datasource: 
         ' / clamp_min('
         f'rate(shortcut_node_requests_total{{{node_common}}}[$__rate_interval])'
         ', 1e-9)'
+        ' or on() vector(0)'
     )
-    panels.append(panel_timeseries(
+
+    errors_panel = panel_timeseries(
         panel_id=next_id,
         title=f"Error Ratio",
         datasource=datasource,
@@ -280,7 +282,12 @@ def add_node_section(*, panels: list, node: NodeInfo, graph: Graph, datasource: 
         unit="percentunit",
         grid=grid_pos(panel_index, y_base=current_y, width=8, height=PANEL_HEIGHT),
         decimals=3,
-    ))
+    )
+
+    errors_panel["fieldConfig"]["defaults"]["max"] = 1.0
+    errors_panel["fieldConfig"]["defaults"]["min"] = 0.0
+
+    panels.append(errors_panel)
     next_id += 1
     
     current_y += PANEL_HEIGHT
@@ -298,7 +305,7 @@ def add_node_section(*, panels: list, node: NodeInfo, graph: Graph, datasource: 
         next_id += 1
         current_y += 1
         
-        cache_common = f'service="{service}",namespace="{graph.namespace_id}",graph_id="{graph.graph_id}",node_id="{node.id}"'
+        cache_common = f'node_id="{node.id}"'
         
         inserts_expr = f'rate(shortcut_cache_inserts_total{{{cache_common}}}[$__rate_interval])'
         panels.append(panel_timeseries(
@@ -373,8 +380,10 @@ def graph_row(*, graph: Graph, datasource: str, service: str, panel_id_start: in
             ' / clamp_min('
             f'sum by(path,method) (rate(http_codes_total{{{common}}}[$__rate_interval]))'
             ', 1e-9)'
+            ' or on() vector(0)'
         )
-        panels.append(panel_timeseries(
+
+        com_errors_panel = panel_timeseries(
             panel_id=next_id,
             title=f"HTTP error ratio",
             datasource=datasource,
@@ -382,7 +391,12 @@ def graph_row(*, graph: Graph, datasource: str, service: str, panel_id_start: in
             unit="percentunit",
             grid=grid_pos(2, y_base=inner_y, width=8, height=PANEL_HEIGHT),
             decimals=3,
-        ))
+        )
+
+        com_errors_panel["fieldConfig"]["defaults"]["max"] = 1.0
+        com_errors_panel["fieldConfig"]["defaults"]["min"] = 0.0
+
+        panels.append(com_errors_panel)
         next_id += 1
         
         inner_y += PANEL_HEIGHT
@@ -417,8 +431,10 @@ def graph_row(*, graph: Graph, datasource: str, service: str, panel_id_start: in
             ' / clamp_min('
             f'sum by(node_id) (rate(shortcut_node_requests_total{{{node_common_all}}}[$__rate_interval]))'
             ', 1e-9)'
+            ' or on() vector(0)'
         )
-        panels.append(panel_timeseries(
+
+        all_errors_panel = panel_timeseries(
             panel_id=next_id,
             title=f"All Nodes Error Ratio",
             datasource=datasource,
@@ -426,7 +442,12 @@ def graph_row(*, graph: Graph, datasource: str, service: str, panel_id_start: in
             unit="percentunit",
             grid=grid_pos(2, y_base=inner_y, width=8, height=PANEL_HEIGHT),
             decimals=3,
-        ))
+        )
+
+        all_errors_panel["fieldConfig"]["defaults"]["max"] = 1.0
+        all_errors_panel["fieldConfig"]["defaults"]["min"] = 0.0
+
+        panels.append(all_errors_panel)
         next_id += 1
         
         inner_y += PANEL_HEIGHT
