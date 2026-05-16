@@ -1,6 +1,7 @@
 package httpmiddleware
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -8,11 +9,17 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
-const defaultEndpointName = "unknown"
+const (
+	defaultEndpointName = "unknown"
+	defaultNamespace    = "unknown"
+	defaultPath         = "/"
+)
 
 func Metrics(serviceName string) gin.HandlerFunc {
-	m := newHTTPMetrics(serviceName)
+	return metricsHandler(newHTTPMetrics(serviceName, promauto.With(prometheus.DefaultRegisterer)))
+}
 
+func metricsHandler(m *httpServiceMetrics) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -23,6 +30,16 @@ func Metrics(serviceName string) gin.HandlerFunc {
 
 		startTime := time.Now()
 
+		namespace := c.Param("namespace_id")
+		if namespace == "" {
+			namespace = defaultNamespace
+		}
+
+		path := c.Param("path")
+		if path == "" {
+			path = "/"
+		}
+
 		c.Next()
 
 		duration := time.Since(startTime).Seconds()
@@ -31,28 +48,28 @@ func Metrics(serviceName string) gin.HandlerFunc {
 			endpoint = defaultEndpointName
 		}
 
-		m.requestsCnt.WithLabelValues(c.Request.Method, endpoint).Inc()
-		m.requestQuantiles.WithLabelValues(c.Request.Method, endpoint).Observe(duration)
-
-		// TODO: fix getting sizes and status code
+		method := c.Request.Method
+		m.requestsCnt.WithLabelValues(method, endpoint, path, namespace).Inc()
+		m.requestQuantiles.WithLabelValues(method, endpoint, path, namespace).Observe(duration)
+		m.codesTotal.WithLabelValues(method, endpoint, strconv.Itoa(c.Writer.Status()), path, namespace).Inc()
 	}
 }
 
-func newHTTPMetrics(serviceName string) *httpServiceMetrics {
+func newHTTPMetrics(serviceName string, factory promauto.Factory) *httpServiceMetrics {
 	constLabels := prometheus.Labels{
 		"service": serviceName,
 	}
 
 	return &httpServiceMetrics{
-		requestsCnt: promauto.NewCounterVec(
+		requestsCnt: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Name:        "http_requests_total",
 				Help:        "Total number of HTTP requests",
 				ConstLabels: constLabels,
 			},
-			[]string{"method", "endpoint"},
+			[]string{"method", "endpoint", "path", "namespace"},
 		),
-		requestQuantiles: promauto.NewSummaryVec(
+		requestQuantiles: factory.NewSummaryVec(
 			prometheus.SummaryOpts{
 				Name:        "http_request_duration_quantiles_seconds",
 				Help:        "Quantiles of HTTP request duration",
@@ -67,35 +84,35 @@ func newHTTPMetrics(serviceName string) *httpServiceMetrics {
 				AgeBuckets: 5,
 				BufCap:     500,
 			},
-			[]string{"method", "endpoint"},
+			[]string{"method", "endpoint", "path", "namespace"},
 		),
-		requestSize: promauto.NewHistogramVec(
+		requestSize: factory.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:        "http_request_size_bytes",
 				Help:        "Size of HTTP requests in bytes",
 				ConstLabels: constLabels,
 				Buckets:     []float64{100, 1000, 10000, 100000, 1000000, 10000000},
 			},
-			[]string{"method", "endpoint"},
+			[]string{"method", "endpoint", "path", "namespace"},
 		),
-		responseSize: promauto.NewHistogramVec(
+		responseSize: factory.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:        "http_response_size_bytes",
 				Help:        "Size of HTTP responses in bytes",
 				ConstLabels: constLabels,
 				Buckets:     []float64{100, 1000, 10000, 100000, 1000000, 10000000},
 			},
-			[]string{"method", "endpoint"},
+			[]string{"method", "endpoint", "path", "namespace"},
 		),
-		codesTotal: promauto.NewCounterVec(
+		codesTotal: factory.NewCounterVec(
 			prometheus.CounterOpts{
 				Name:        "http_codes_total",
 				Help:        "Total number of HTTP errors by code",
 				ConstLabels: constLabels,
 			},
-			[]string{"method", "endpoint", "code"},
+			[]string{"method", "endpoint", "code", "path", "namespace"},
 		),
-		panicsTotal: promauto.NewCounter(
+		panicsTotal: factory.NewCounter(
 			prometheus.CounterOpts{
 				Name:        "http_panics_total",
 				Help:        "Total number of HTTP panics",

@@ -99,10 +99,10 @@ type GraphFileConfig struct {
 }
 
 type NodeFileConfig struct {
-	Type         NodeType              `yaml:"type"`
-	EndpointID   string                `yaml:"endpoint-id"`
-	Dependencies []DependencyConfig    `yaml:"dependencies"`
-	Cache        *CacheNodeFileConfig  `yaml:"cache"`
+	Type         NodeType             `yaml:"type"`
+	EndpointID   string               `yaml:"endpoint-id"`
+	Dependencies []DependencyConfig   `yaml:"dependencies"`
+	Cache        *CacheNodeFileConfig `yaml:"cache"`
 }
 
 type CacheNodeFileConfig struct {

@@ -1,6 +1,9 @@
 nodes:
   get-user:
     endpoint-id: user-service/get-user
+    cache:
+      enabled: true
+      ttl-ms: 10000000
     dependencies:
       - node-id: input
         item-id: http_request

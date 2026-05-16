@@ -78,7 +78,7 @@ func convertNamespace(
 			return graph.Namespace{}, errors.Wrapf(err, "graph %s", graphName)
 		}
 
-		nodesMap, err := convertGraphNodes(gCfg, ns.Services, namespaceID, client, graphHash, cacheRepo, nodeMetrics, cacheMetrics)
+		nodesMap, err := convertGraphNodes(gCfg, ns.Services, namespaceID, graph.ID(graphName), client, graphHash, cacheRepo, nodeMetrics, cacheMetrics)
 		if err != nil {
 			return graph.Namespace{}, errors.Wrapf(err, "graph %s", graphName)
 		}
@@ -136,6 +136,7 @@ func convertGraphNodes(
 	gCfg GraphConfig,
 	services ServicesConfig,
 	namespaceID graph.NamespaceID,
+	graphName graph.ID,
 	client *resty.Client,
 	graphHash string,
 	cacheRepo graphnodes.CacheRepo,
@@ -147,7 +148,7 @@ func convertGraphNodes(
 	inputNodeID := graph.NodeID(gCfg.InputNode)
 	inputExec := graph.NodeExecutor(graphnodes.NewTransparentNodeExecutor())
 	inputExec = trace.NewTracingExecutor(inputExec, inputNodeID, string(NodeTypeTransparent), nil)
-	inputExec = graphnodes.NewMetricsExecutor(inputExec, inputNodeID, string(NodeTypeTransparent), nodeMetrics)
+	inputExec = graphnodes.NewMetricsExecutor(inputExec, inputNodeID, namespaceID, graphName, string(NodeTypeTransparent), nodeMetrics)
 	nodesMap[inputNodeID] = graph.Node{
 		ID:           inputNodeID,
 		Dependencies: nil,
@@ -176,7 +177,7 @@ func convertGraphNodes(
 			node.Executor = graphnodes.NewCachingExecutor(node.Executor, nodeID, graphHash, nCfg.Cache.TTL, cacheRepo, cacheMetrics)
 		}
 		node.Executor = trace.NewTracingExecutor(node.Executor, nodeID, nodeType, traceDeps)
-		node.Executor = graphnodes.NewMetricsExecutor(node.Executor, nodeID, nodeType, nodeMetrics)
+		node.Executor = graphnodes.NewMetricsExecutor(node.Executor, nodeID, namespaceID, graphName, nodeType, nodeMetrics)
 		nodesMap[nodeID] = node
 	}
 

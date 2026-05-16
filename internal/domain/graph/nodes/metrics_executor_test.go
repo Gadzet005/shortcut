@@ -25,7 +25,7 @@ type fakeNodeMetrics struct {
 	calls []nodeMetricsCall
 }
 
-func (f *fakeNodeMetrics) ObserveRun(nodeID graph.NodeID, nodeType string, duration time.Duration, err error) {
+func (f *fakeNodeMetrics) ObserveRun(namespaceID graph.NamespaceID, graphID graph.ID, nodeID graph.NodeID, nodeType string, duration time.Duration, err error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.calls = append(f.calls, nodeMetricsCall{nodeID, nodeType, duration, err})
@@ -47,7 +47,7 @@ func TestMetricsExecutor_Success(t *testing.T) {
 	)
 
 	m := &fakeNodeMetrics{}
-	exec := NewMetricsExecutor(inner, "node-1", "default", m)
+	exec := NewMetricsExecutor(inner, "node-1", "shortcut", "graph", "default", m)
 
 	resp, err := exec.Run(t.Context(), zap.NewNop(), graph.NodeExecutorRequest{})
 	require.NoError(t, err)
@@ -70,7 +70,7 @@ func TestMetricsExecutor_Error(t *testing.T) {
 	)
 
 	m := &fakeNodeMetrics{}
-	exec := NewMetricsExecutor(inner, "node-err", "http", m)
+	exec := NewMetricsExecutor(inner, "node-err", "shortcut", "graph", "http", m)
 
 	_, err := exec.Run(t.Context(), zap.NewNop(), graph.NodeExecutorRequest{})
 	require.ErrorIs(t, err, sentinel)
@@ -86,7 +86,7 @@ func TestMetricsExecutor_NilMetrics(t *testing.T) {
 	inner := mockgraph.NewNodeExecutor(t)
 	inner.EXPECT().Run(mock.Anything, mock.Anything, mock.Anything).Return(graph.NodeExecutorResponse{}, nil)
 
-	exec := NewMetricsExecutor(inner, "node-2", "default", nil)
+	exec := NewMetricsExecutor(inner, "node-2", "shortcut", "graph", "default", nil)
 	_, err := exec.Run(t.Context(), zap.NewNop(), graph.NodeExecutorRequest{})
 	require.NoError(t, err)
 }
@@ -95,7 +95,7 @@ func TestMetricsExecutor_TryRevertDelegates(t *testing.T) {
 	inner := mockgraph.NewNodeExecutor(t)
 	inner.EXPECT().TryRevert(mock.Anything, mock.Anything, "req-1").Return(true, nil)
 
-	exec := NewMetricsExecutor(inner, "node-3", "default", &fakeNodeMetrics{})
+	exec := NewMetricsExecutor(inner, "node-3", "shortcut", "graph", "default", &fakeNodeMetrics{})
 	ok, err := exec.TryRevert(t.Context(), zap.NewNop(), "req-1")
 	require.NoError(t, err)
 	require.True(t, ok)

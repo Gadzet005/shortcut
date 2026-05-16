@@ -1,0 +1,18 @@
+{{- if .Values.shortcut.grafanaDashboards.enabled }}
+{{- range $path, $_ := .Files.Glob "dashboards/*.json" }}
+{{- $name := base $path | trimSuffix ".json" }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "shortcut.fullname" $ }}-dashboard-{{ $name }}
+  labels:
+    {{- include "shortcut.labels" $ | nindent 4 }}
+    grafana_dashboard: "1"
+  annotations:
+    k8s-sidecar-target-directory: {{ $.Values.shortcut.grafanaDashboards.folder | quote }}
+data:
+  {{ $name }}.json: |-
+{{ $.Files.Get $path | indent 4 }}
+{{- end }}
+{{- end }}

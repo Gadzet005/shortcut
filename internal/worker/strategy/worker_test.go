@@ -14,12 +14,12 @@ import (
 )
 
 type fakeRepo struct {
-	mu          sync.Mutex
-	claim       []failure.Failure
-	progress    []progressCall
-	deleted     []string
-	getRequest  failure.Failure
-	saveCalls   int
+	mu         sync.Mutex
+	claim      []failure.Failure
+	progress   []progressCall
+	deleted    []string
+	getRequest failure.Failure
+	saveCalls  int
 }
 
 type progressCall struct {

@@ -14,17 +14,17 @@ import (
 )
 
 type fakeRepo struct {
-	saved      []failure.Failure
-	saveErr    error
-	updateErr  error
-	deleteErr  error
-	progress   []progressCall
-	getResult  failure.Failure
-	getErr     error
-	listResult []failure.Failure
-	listErr    error
+	saved       []failure.Failure
+	saveErr     error
+	updateErr   error
+	deleteErr   error
+	progress    []progressCall
+	getResult   failure.Failure
+	getErr      error
+	listResult  []failure.Failure
+	listErr     error
 	claimResult []failure.Failure
-	claimErr   error
+	claimErr    error
 }
 
 type progressCall struct {
@@ -67,12 +67,12 @@ func (r *fakeRepo) UpdateProgress(_ context.Context, requestID string, numRetry 
 }
 
 type fakeRecovery struct {
-	revertOK   bool
-	revertErr  error
-	retryOK    bool
-	retryErr   error
-	finishOK   bool
-	finishErr  error
+	revertOK    bool
+	revertErr   error
+	retryOK     bool
+	retryErr    error
+	finishOK    bool
+	finishErr   error
 	revertCalls []string
 	retryCalls  int
 	finishCalls []string
