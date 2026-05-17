@@ -7,24 +7,29 @@ import { TraceSummary } from "./components/TraceSummary";
 import { GraphView } from "./components/GraphView";
 import { TimelineView } from "./components/TimelineView";
 import { NodeDetailPanel } from "./components/NodeDetailPanel";
+import { TraceSelector } from "./components/TraceSelector"; // Новый компонент
 
 type ViewTab = "graph" | "timeline";
 
 function App() {
-  const [trace, setTrace] = useState<TraceResponse | null>(null);
+  const [traces, setTraces] = useState<TraceResponse[]>([]);
+  const [selectedTraceIndex, setSelectedTraceIndex] = useState<number>(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<ViewTab>("graph");
 
+  const currentTrace = traces[selectedTraceIndex] || null;
+
   const handleSearch = useCallback(async (requestId: string) => {
     setLoading(true);
     setError(null);
-    setTrace(null);
+    setTraces([]);
+    setSelectedTraceIndex(0);
     setSelectedNodeId(null);
     try {
       const data = await fetchTrace(requestId);
-      setTrace(data);
+      setTraces(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -32,14 +37,19 @@ function App() {
     }
   }, []);
 
+  const handleTraceChange = useCallback((index: number) => {
+    setSelectedTraceIndex(index);
+    setSelectedNodeId(null);
+  }, []);
+
   const handleNodeClick = useCallback((nodeId: string) => {
     setSelectedNodeId(nodeId);
   }, []);
 
   const selectedNode: NodeTraceResponse | null =
-    trace?.node_traces.find((nt) => nt.node_id === selectedNodeId) ?? null;
+    currentTrace?.node_traces.find((nt) => nt.node_id === selectedNodeId) ?? null;
 
-  const hasGraphData = trace?.node_traces.some(
+  const hasGraphData = currentTrace?.node_traces.some(
     (nt) => nt.dependencies && nt.dependencies.length > 0
   );
 
@@ -73,9 +83,16 @@ function App() {
         </div>
       )}
 
-      {trace && (
+      {traces.length > 0 && currentTrace && (
         <div style={{ marginTop: 20 }}>
-          <TraceSummary trace={trace} />
+          {/* Селектор трейсов */}
+          <TraceSelector
+            traces={traces}
+            selectedIndex={selectedTraceIndex}
+            onSelect={handleTraceChange}
+          />
+
+          <TraceSummary trace={currentTrace} />
 
           <div style={{ display: "flex", gap: 8, margin: "16px 0" }}>
             {hasGraphData && (
@@ -99,13 +116,13 @@ function App() {
               {activeTab === "graph" && hasGraphData ? (
                 <ReactFlowProvider>
                   <GraphView
-                    nodeTraces={trace.node_traces}
+                    nodeTraces={currentTrace.node_traces}
                     onNodeClick={handleNodeClick}
                   />
                 </ReactFlowProvider>
               ) : (
                 <TimelineView
-                  trace={trace}
+                  trace={currentTrace}
                   onNodeClick={handleNodeClick}
                   selectedNodeId={selectedNodeId}
                 />

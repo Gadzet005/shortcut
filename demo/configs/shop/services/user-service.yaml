@@ -14,3 +14,6 @@ endpoints:
     path: remove-cart-item
     revert-path: revert-remove-cart-item
     timeout-ms: 1000
+  always-fail:
+    path: always-fail
+    timeout-ms: 1000

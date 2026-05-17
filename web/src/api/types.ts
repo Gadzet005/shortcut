@@ -12,6 +12,8 @@ export interface TraceResponse {
   node_traces: NodeTraceResponse[];
 }
 
+export type TracesResponse = TraceResponse[];
+
 export interface NodeTraceResponse {
   node_id: string;
   node_type?: string;
