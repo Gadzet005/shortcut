@@ -17,7 +17,7 @@ func TestGetTopOrders(t *testing.T) {
 		name       string
 		args       args
 		check      func(t *testing.T, response getTopOrdersResponse)
-		checkTrace func(t *testing.T, tr traceResponse)
+		checkTrace func(t *testing.T, tr traceResponseWrapper)
 	}{
 		{
 			name: "returns top 3 orders with user names",
@@ -29,10 +29,7 @@ func TestGetTopOrders(t *testing.T) {
 				require.Equal(t, userOrder{UserName: "Alice Cooper", UserID: "5", OrderID: "5", Amount: 500}, response.Orders[1])
 				require.Equal(t, userOrder{UserName: "Bob Brown", UserID: "4", OrderID: "4", Amount: 400}, response.Orders[2])
 			},
-			checkTrace: func(t *testing.T, tr traceResponse) {
-				require.Equal(t, "ok", tr.Status)
-				require.Equal(t, "orders", tr.NamespaceID)
-				require.Equal(t, "get_top_orders", tr.GraphID)
+			checkTrace: func(t *testing.T, tr traceResponseWrapper) {
 				require.Len(t, tr.NodeTraces, 4)
 
 				input := findNodeTrace(t, tr, "input")

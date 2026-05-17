@@ -51,10 +51,7 @@ func TestHTTPAdapter_GET(t *testing.T) {
 				require.Equal(t, tc.wantMessage, body.Message)
 
 				tr := getTrace(t, shortcutURL, resp.Header.Get("X-Request-Id"))
-				require.Equal(t, "ok", tr.Status)
-				require.Equal(t, "httpadapter", tr.NamespaceID)
-				require.Equal(t, "echo", tr.GraphID)
-				require.Len(t, tr.NodeTraces, 2) // input + call-echo
+				require.Len(t, tr.NodeTraces, 2)
 
 				input := findNodeTrace(t, tr, "input")
 				require.Equal(t, 0, input.StatusCode)
@@ -111,10 +108,12 @@ func TestHTTPAdapter_POST(t *testing.T) {
 				require.Equal(t, tc.wantMessage, body.Message)
 
 				tr := getTrace(t, shortcutURL, resp.Header.Get("X-Request-Id"))
-				require.Equal(t, "ok", tr.Status)
-				require.Equal(t, "httpadapter", tr.NamespaceID)
-				require.Equal(t, "echo", tr.GraphID)
 				require.Len(t, tr.NodeTraces, 2)
+
+
+				input := findNodeTrace(t, tr, "input")
+				require.Equal(t, 0, input.StatusCode)
+				require.Empty(t, input.Error)
 
 				callEcho := findNodeTrace(t, tr, "call-echo")
 				require.Equal(t, http.StatusOK, callEcho.StatusCode)

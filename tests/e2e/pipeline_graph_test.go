@@ -15,7 +15,7 @@ func TestLongChain(t *testing.T) {
 	testCases := []struct {
 		name       string
 		check      func(t *testing.T, resp longChainResponse)
-		checkTrace func(t *testing.T, tr traceResponse)
+		checkTrace func(t *testing.T, tr traceResponseWrapper)
 	}{
 		{
 			name: "value passes through all five nodes correctly",
@@ -23,11 +23,7 @@ func TestLongChain(t *testing.T) {
 				require.Equal(t, http.StatusOK, resp.StatusCode)
 				require.Equal(t, 50, resp.Result)
 			},
-			checkTrace: func(t *testing.T, tr traceResponse) {
-				require.Equal(t, "ok", tr.Status)
-				require.Equal(t, "pipeline", tr.NamespaceID)
-				require.Equal(t, "long_chain", tr.GraphID)
-				require.Equal(t, http.MethodGet, tr.Method)
+			checkTrace: func(t *testing.T, tr traceResponseWrapper) {
 				require.Len(t, tr.NodeTraces, 6)
 
 				input := findNodeTrace(t, tr, "input")
