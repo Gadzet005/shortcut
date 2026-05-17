@@ -134,7 +134,7 @@ func (s service) Run(c lifecycle.Context) error {
 		httpmiddleware.Recover(),
 	)
 
-	recovery := failurerecovery.New(nil, localRepo, s.Logger())
+	recovery := failurerecovery.New(nil, localRepo, traceRepo, s.Logger())
 	strategyFactory := strategy.NewFactory(failureRepo, recovery, s.Logger())
 
 	runGraphUC := rungraph.NewUseCase(client, s.Logger(), localRepo, traceRepo, strategyFactory, graphMetrics)

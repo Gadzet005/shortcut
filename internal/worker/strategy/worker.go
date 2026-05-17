@@ -12,7 +12,7 @@ import (
 )
 
 type GraphResolver interface {
-	GetFailureSteps(namespaceID graph.NamespaceID, graphID graph.ID) ([]graph.FailureStep, error)
+	GetFailureSteps(namespaceID graph.NamespaceID, graphID graph.ID) ([]graph.FailureStep, graph.FailureStrategy, error)
 }
 
 type Config struct {
@@ -102,7 +102,7 @@ func (w *Worker) tick(ctx context.Context) {
 }
 
 func (w *Worker) processOne(ctx context.Context, f failure.Failure) {
-	steps, err := w.resolver.GetFailureSteps(graph.NamespaceID(f.NamespaceID), graph.ID(f.GraphID))
+	steps, strategy, err := w.resolver.GetFailureSteps(graph.NamespaceID(f.NamespaceID), graph.ID(f.GraphID))
 	if err != nil {
 		w.logger.Error("resolve failure steps failed",
 			zap.String("request_id", f.RequestID),
@@ -113,7 +113,9 @@ func (w *Worker) processOne(ctx context.Context, f failure.Failure) {
 	}
 
 	stepIdx := int(f.NumRetry)
-	if stepIdx >= len(steps) {
+	if strategy == graph.SaveFailureStrategy {
+		return
+	} else if stepIdx >= len(steps) {
 		w.markDone(ctx, f)
 		return
 	}

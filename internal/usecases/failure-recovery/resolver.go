@@ -13,16 +13,16 @@ type graphInfoResolver struct {
 	namespaceRepo graph.NamespaceRepo
 }
 
-func (r *graphInfoResolver) GetFailureSteps(namespaceID graph.NamespaceID, graphID graph.ID) ([]graph.FailureStep, error) {
+func (r *graphInfoResolver) GetFailureSteps(namespaceID graph.NamespaceID, graphID graph.ID) ([]graph.FailureStep, graph.FailureStrategy, error) {
 	ns, err := r.namespaceRepo.GetNamespace(namespaceID)
 	if err != nil {
-		return nil, errors.Wrap(err, "get namespace")
+		return nil, graph.AbsentFailureStrategy, errors.Wrap(err, "get namespace")
 	}
 	info, ok := ns.GraphInfo[graphID]
 	if !ok {
-		return nil, errors.Errorf("graph %s not found in namespace %s", graphID, namespaceID)
+		return nil, graph.AbsentFailureStrategy, errors.Errorf("graph %s not found in namespace %s", graphID, namespaceID)
 	}
-	return info.FailureSteps, nil
+	return info.FailureSteps, info.FailureStrategy, nil
 }
 
 func (r *graphInfoResolver) GetFailureStrategy(namespaceID graph.NamespaceID, graphID graph.ID) (graph.FailureStrategy, error) {

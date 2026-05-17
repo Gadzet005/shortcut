@@ -5448,7 +5448,7 @@
         {
           "id": 121,
           "type": "text",
-          "title": "Node: input",
+          "title": "Node: boom",
           "collapsed": false,
           "gridPos": {
             "x": 0,
@@ -5475,7 +5475,7 @@
           "targets": [
             {
               "refId": "A",
-              "expr": "rate(shortcut_node_requests_total{service=\"shortcut\",namespace=\"shop\",graph_id=\"remove_from_cart\",node_id=\"input\"}[$__rate_interval])",
+              "expr": "rate(shortcut_node_requests_total{service=\"shortcut\",namespace=\"shop\",graph_id=\"remove_from_cart\",node_id=\"boom\"}[$__rate_interval])",
               "legendFormat": "RPS",
               "datasource": {
                 "type": "prometheus",
@@ -5517,6 +5517,193 @@
           "gridPos": {
             "x": 8,
             "y": 31,
+            "w": 8,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "shortcut_node_duration_seconds{service=\"shortcut\",namespace=\"shop\",graph_id=\"remove_from_cart\",node_id=\"boom\",quantile=\"0.5\"}",
+              "legendFormat": "p50",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            },
+            {
+              "refId": "B",
+              "expr": "shortcut_node_duration_seconds{service=\"shortcut\",namespace=\"shop\",graph_id=\"remove_from_cart\",node_id=\"boom\",quantile=\"0.9\"}",
+              "legendFormat": "p90",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            },
+            {
+              "refId": "C",
+              "expr": "shortcut_node_duration_seconds{service=\"shortcut\",namespace=\"shop\",graph_id=\"remove_from_cart\",node_id=\"boom\",quantile=\"0.95\"}",
+              "legendFormat": "p95",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            },
+            {
+              "refId": "D",
+              "expr": "shortcut_node_duration_seconds{service=\"shortcut\",namespace=\"shop\",graph_id=\"remove_from_cart\",node_id=\"boom\",quantile=\"0.99\"}",
+              "legendFormat": "p99",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "lineWidth": 1
+              },
+              "unit": "s"
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "id": 124,
+          "type": "timeseries",
+          "title": "Error Ratio",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
+          "gridPos": {
+            "x": 16,
+            "y": 31,
+            "w": 8,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "rate(shortcut_node_errors_total{service=\"shortcut\",namespace=\"shop\",graph_id=\"remove_from_cart\",node_id=\"boom\"}[$__rate_interval]) / clamp_min(rate(shortcut_node_requests_total{service=\"shortcut\",namespace=\"shop\",graph_id=\"remove_from_cart\",node_id=\"boom\"}[$__rate_interval]), 1e-9) or on() vector(0)",
+              "legendFormat": "Error Ratio",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "lineWidth": 1
+              },
+              "unit": "percentunit",
+              "decimals": 3,
+              "max": 1.0,
+              "min": 0.0
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "id": 125,
+          "type": "text",
+          "title": "Node: input",
+          "collapsed": false,
+          "gridPos": {
+            "x": 0,
+            "y": 39,
+            "w": 24,
+            "h": 1
+          },
+          "panels": []
+        },
+        {
+          "id": 126,
+          "type": "timeseries",
+          "title": "RPS",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 40,
+            "w": 8,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "rate(shortcut_node_requests_total{service=\"shortcut\",namespace=\"shop\",graph_id=\"remove_from_cart\",node_id=\"input\"}[$__rate_interval])",
+              "legendFormat": "RPS",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "lineWidth": 1
+              },
+              "unit": "reqps"
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "id": 127,
+          "type": "timeseries",
+          "title": "Latency",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
+          "gridPos": {
+            "x": 8,
+            "y": 40,
             "w": 8,
             "h": 8
           },
@@ -5582,7 +5769,7 @@
           }
         },
         {
-          "id": 124,
+          "id": 128,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -5591,7 +5778,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 31,
+            "y": 40,
             "w": 8,
             "h": 8
           },
@@ -5633,20 +5820,20 @@
           }
         },
         {
-          "id": 125,
+          "id": 129,
           "type": "text",
           "title": "Node: remove-cart-item",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 39,
+            "y": 48,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 126,
+          "id": 130,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -5655,7 +5842,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 40,
+            "y": 49,
             "w": 8,
             "h": 8
           },
@@ -5694,7 +5881,7 @@
           }
         },
         {
-          "id": 127,
+          "id": 131,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -5703,7 +5890,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 40,
+            "y": 49,
             "w": 8,
             "h": 8
           },
@@ -5769,7 +5956,7 @@
           }
         },
         {
-          "id": 128,
+          "id": 132,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -5778,7 +5965,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 40,
+            "y": 49,
             "w": 8,
             "h": 8
           },
@@ -5820,20 +6007,20 @@
           }
         },
         {
-          "id": 129,
+          "id": 133,
           "type": "text",
           "title": "Node: validate-product",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 48,
+            "y": 57,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 130,
+          "id": 134,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -5842,7 +6029,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 49,
+            "y": 58,
             "w": 8,
             "h": 8
           },
@@ -5881,7 +6068,7 @@
           }
         },
         {
-          "id": 131,
+          "id": 135,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -5890,7 +6077,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 49,
+            "y": 58,
             "w": 8,
             "h": 8
           },
@@ -5956,7 +6143,7 @@
           }
         },
         {
-          "id": 132,
+          "id": 136,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -5965,7 +6152,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 49,
+            "y": 58,
             "w": 8,
             "h": 8
           },
@@ -6007,20 +6194,20 @@
           }
         },
         {
-          "id": 133,
+          "id": 137,
           "type": "text",
           "title": "Node: validate-user",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 57,
+            "y": 66,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 134,
+          "id": 138,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -6029,7 +6216,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 58,
+            "y": 67,
             "w": 8,
             "h": 8
           },
@@ -6068,7 +6255,7 @@
           }
         },
         {
-          "id": 135,
+          "id": 139,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -6077,7 +6264,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 58,
+            "y": 67,
             "w": 8,
             "h": 8
           },
@@ -6143,7 +6330,7 @@
           }
         },
         {
-          "id": 136,
+          "id": 140,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -6152,7 +6339,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 58,
+            "y": 67,
             "w": 8,
             "h": 8
           },
@@ -6196,7 +6383,7 @@
       ]
     },
     {
-      "id": 137,
+      "id": 141,
       "type": "row",
       "title": "shop / user_profile",
       "collapsed": true,
@@ -6208,7 +6395,7 @@
       },
       "panels": [
         {
-          "id": 138,
+          "id": 142,
           "type": "timeseries",
           "title": "HTTP RPS",
           "datasource": {
@@ -6256,7 +6443,7 @@
           }
         },
         {
-          "id": 139,
+          "id": 143,
           "type": "timeseries",
           "title": "HTTP p95 latency",
           "datasource": {
@@ -6304,7 +6491,7 @@
           }
         },
         {
-          "id": 140,
+          "id": 144,
           "type": "timeseries",
           "title": "HTTP error ratio",
           "datasource": {
@@ -6355,7 +6542,7 @@
           }
         },
         {
-          "id": 141,
+          "id": 145,
           "type": "timeseries",
           "title": "All Nodes RPS",
           "datasource": {
@@ -6403,7 +6590,7 @@
           }
         },
         {
-          "id": 142,
+          "id": 146,
           "type": "timeseries",
           "title": "All Nodes p95 Latency",
           "datasource": {
@@ -6451,7 +6638,7 @@
           }
         },
         {
-          "id": 143,
+          "id": 147,
           "type": "timeseries",
           "title": "All Nodes Error Ratio",
           "datasource": {
@@ -6502,7 +6689,7 @@
           }
         },
         {
-          "id": 144,
+          "id": 148,
           "type": "text",
           "title": "Node: get-user",
           "collapsed": false,
@@ -6515,7 +6702,7 @@
           "panels": []
         },
         {
-          "id": 145,
+          "id": 149,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -6563,7 +6750,7 @@
           }
         },
         {
-          "id": 146,
+          "id": 150,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -6638,7 +6825,7 @@
           }
         },
         {
-          "id": 147,
+          "id": 151,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -6689,7 +6876,7 @@
           }
         },
         {
-          "id": 148,
+          "id": 152,
           "type": "text",
           "title": "Node: input",
           "collapsed": false,
@@ -6702,7 +6889,7 @@
           "panels": []
         },
         {
-          "id": 149,
+          "id": 153,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -6750,7 +6937,7 @@
           }
         },
         {
-          "id": 150,
+          "id": 154,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -6825,7 +7012,7 @@
           }
         },
         {
-          "id": 151,
+          "id": 155,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -6876,7 +7063,7 @@
           }
         },
         {
-          "id": 152,
+          "id": 156,
           "type": "text",
           "title": "Node: render",
           "collapsed": false,
@@ -6889,7 +7076,7 @@
           "panels": []
         },
         {
-          "id": 153,
+          "id": 157,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -6937,7 +7124,7 @@
           }
         },
         {
-          "id": 154,
+          "id": 158,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -7012,7 +7199,7 @@
           }
         },
         {
-          "id": 155,
+          "id": 159,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {

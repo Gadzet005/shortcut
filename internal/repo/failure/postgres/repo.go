@@ -53,6 +53,7 @@ func (r *Repo) Save(ctx context.Context, f failure.Failure) error {
 	if err != nil {
 		return err
 	}
+	r.logger.Info("log failure", zap.Any("failure", f), zap.Any("traces", traces))
 	_, err = r.pool.Exec(ctx, insertSQL,
 		f.RequestID,
 		f.NamespaceID,

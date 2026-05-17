@@ -5,6 +5,7 @@ import (
 
 	"github.com/Gadzet005/shortcut/internal/domain/failure"
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
+	"github.com/Gadzet005/shortcut/internal/domain/trace"
 	"github.com/Gadzet005/shortcut/pkg/errors"
 	httpcontext "github.com/Gadzet005/shortcut/pkg/http/context"
 	"github.com/gin-gonic/gin"
@@ -21,6 +22,9 @@ func (h handlerBase) Process(c *gin.Context) {
 		return
 	}
 
+	collector := trace.NewCollector(trace.RequestID(requestID))
+	ctx := trace.WithCollector(c.Request.Context(), collector)
+
 	strategyName, ok := graph.ParseFailureStrategy(strategyParam)
 	if !ok {
 		c.JSON(http.StatusBadRequest, errors.Error("unknown strategy "+strategyParam))
@@ -32,7 +36,7 @@ func (h handlerBase) Process(c *gin.Context) {
 		zap.String("strategy", strategyName.String()),
 	)
 
-	f, err := h.failureRepo.GetByRequestID(c.Request.Context(), requestID)
+	f, err := h.failureRepo.GetByRequestID(ctx, requestID)
 	switch {
 	case errors.Is(err, failure.ErrNotFound):
 		c.JSON(http.StatusNotFound, errors.Error("failure not found"))
@@ -44,7 +48,7 @@ func (h handlerBase) Process(c *gin.Context) {
 	}
 
 	handler := h.factory.New(strategyName, nil)
-	if err := handler.Handle(c.Request.Context(), f); err != nil {
+	if err := handler.Handle(ctx, f); err != nil {
 		logger.Error("process failure failed", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, errors.Error("process failed"))
 		return

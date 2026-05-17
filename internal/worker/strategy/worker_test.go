@@ -100,11 +100,12 @@ func (r *fakeRecovery) Finish(_ context.Context, _, _, _ string, _ []string, _, 
 
 type fakeResolver struct {
 	steps []graph.FailureStep
+	strategy graph.FailureStrategy
 	err   error
 }
 
-func (f *fakeResolver) GetFailureSteps(_ graph.NamespaceID, _ graph.ID) ([]graph.FailureStep, error) {
-	return f.steps, f.err
+func (f *fakeResolver) GetFailureSteps(_ graph.NamespaceID, _ graph.ID) ([]graph.FailureStep, graph.FailureStrategy, error) {
+	return f.steps, f.strategy, f.err
 }
 
 func TestWorker_RetryActionAdvancesStep(t *testing.T) {

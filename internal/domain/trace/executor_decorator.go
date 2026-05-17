@@ -84,7 +84,31 @@ func (e tracingExecutor) TryRevert(
 	logger *zap.Logger,
 	requestID string,
 ) (bool, error) {
-	return e.inner.TryRevert(ctx, logger, requestID)
+	collector, ok := GetCollector(ctx)
+	if !ok {
+		return e.inner.TryRevert(ctx, logger, requestID)
+	}
+
+	start := time.Now()
+	success, err := e.inner.TryRevert(ctx, logger, requestID)
+	finished := time.Now()
+
+	nt := NodeTrace{
+		NodeID:       e.nodeID.String(),
+		NodeType:     e.nodeType,
+		Dependencies: e.dependencies,
+		StartedAt:    start,
+		FinishedAt:   finished,
+		DurationMs:   finished.Sub(start).Milliseconds(),
+	}
+
+	if err != nil {
+		nt.Error = err.Error()
+	}
+
+	collector.Add(nt)
+	return success, err
+
 }
 
 func errorCodeToHTTPStatus(code graph.ErrorCode) int {

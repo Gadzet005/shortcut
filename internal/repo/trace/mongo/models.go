@@ -37,6 +37,13 @@ type nodeDependencyDocument struct {
 	NodeID string `bson:"node_id"`
 }
 
+type requestTracesDocument struct {
+	RequestID string          `bson:"request_id"`
+	Traces    []traceDocument `bson:"traces"`
+	CreatedAt time.Time       `bson:"created_at"`
+	UpdatedAt time.Time       `bson:"updated_at"`
+}
+
 func toDocument(t trace.Trace) traceDocument {
 	nodeTraces := make([]nodeTraceDocument, len(t.NodeTraces))
 	for i, nt := range t.NodeTraces {
@@ -105,4 +112,12 @@ func fromDocument(d traceDocument) trace.Trace {
 		Error:       d.Error,
 		NodeTraces:  nodeTraces,
 	}
+}
+
+func fromDocuments(docs []traceDocument) []trace.Trace {
+	traces := make([]trace.Trace, 0, len(docs))
+	for _, doc := range docs {
+		traces = append(traces, fromDocument(doc))
+	}
+	return traces
 }

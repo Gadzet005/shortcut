@@ -66,21 +66,39 @@ type mongoRepo struct {
 }
 
 func (r *mongoRepo) Save(ctx context.Context, t trace.Trace) error {
-	doc := toDocument(t)
-	_, err := r.collection.InsertOne(ctx, doc)
+	filter := bson.M{"request_id": t.RequestID.String()}
+
+	update := bson.M{
+		"$push": bson.M{
+			"traces": bson.M{
+				"$each":     []interface{}{toDocument(t)},
+				"$position": 0,
+			},
+		},
+		"$setOnInsert": bson.M{
+			"request_id": t.RequestID.String(),
+			"created_at": time.Now(),
+		},
+		"$set": bson.M{
+			"updated_at": time.Now(),
+		},
+	}
+
+	opts := options.UpdateOne().SetUpsert(true)
+	_, err := r.collection.UpdateOne(ctx, filter, update, opts)
 	return err
 }
 
-func (r *mongoRepo) GetByRequestID(ctx context.Context, requestID trace.RequestID) (trace.Trace, error) {
-	var doc traceDocument
+func (r *mongoRepo) GetByRequestID(ctx context.Context, requestID trace.RequestID) ([]trace.Trace, error) {
+	var doc requestTracesDocument
 	err := r.collection.FindOne(ctx, bson.M{"request_id": requestID.String()}).Decode(&doc)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			return trace.Trace{}, trace.ErrNotFound
+			return []trace.Trace{}, nil
 		}
-		return trace.Trace{}, err
+		return nil, err
 	}
-	return fromDocument(doc), nil
+	return fromDocuments(doc.Traces), nil
 }
 
 func (r *mongoRepo) DeleteByRequestID(ctx context.Context, requestID trace.RequestID) error {

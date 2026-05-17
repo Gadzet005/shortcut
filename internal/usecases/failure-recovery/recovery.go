@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/url"
+	"time"
 
 	"github.com/Gadzet005/shortcut/internal/domain/failure"
 	"github.com/Gadzet005/shortcut/internal/domain/graph"
@@ -16,10 +17,11 @@ import (
 
 var _ failure.Recovery = (*Recovery)(nil)
 
-func New(runGraphUC rungraph.UseCase, namespaceRepo graph.NamespaceRepo, logger *zap.Logger) *Recovery {
+func New(runGraphUC rungraph.UseCase, namespaceRepo graph.NamespaceRepo, traceRepo trace.Repo, logger *zap.Logger) *Recovery {
 	return &Recovery{
 		runGraphUC:    runGraphUC,
 		namespaceRepo: namespaceRepo,
+		traceRepo:     traceRepo,
 		logger:        logger.Named("failure-recovery"),
 	}
 }
@@ -27,6 +29,7 @@ func New(runGraphUC rungraph.UseCase, namespaceRepo graph.NamespaceRepo, logger 
 type Recovery struct {
 	runGraphUC    rungraph.UseCase
 	namespaceRepo graph.NamespaceRepo
+	traceRepo     trace.Repo
 	logger        *zap.Logger
 }
 
@@ -45,9 +48,12 @@ func (r *Recovery) Revert(ctx context.Context, namespaceID, graphID, requestID s
 		zap.String("request_id", requestID),
 	)
 
+	start := time.Now()
+
 	g, err := r.lookupGraph(graph.NamespaceID(namespaceID), graph.ID(graphID))
 	if err != nil {
 		logger.Error("revert lookup graph failed", zap.Error(err))
+		r.saveTrace(ctx, start, time.Now(), namespaceID, graphID, requestID, "REVERT", err)
 		return false, err
 	}
 
@@ -55,6 +61,8 @@ func (r *Recovery) Revert(ctx context.Context, namespaceID, graphID, requestID s
 	logger.Info("revert started", zap.Int("visited_nodes", len(nodeIDs)))
 
 	ok, err := g.TryRevert(ctx, logger, requestID, nodeIDs)
+	finished := time.Now()
+	r.saveTrace(ctx, start, finished, namespaceID, graphID, requestID, "REVERT", err)
 	if err != nil {
 		logger.Warn("revert traversal returned error", zap.Error(err))
 		return ok, err
@@ -71,13 +79,19 @@ func (r *Recovery) Retry(ctx context.Context, namespaceID, graphID, method, path
 		zap.String("method", method),
 		zap.String("path", path),
 	)
+
+	start := time.Now()
 	logger.Info("retry started")
 
 	ok, err := r.runOriginal(ctx, namespaceID, graphID, method, path, body)
+	finished := time.Now()
+	r.saveTrace(ctx, start, finished, namespaceID, graphID, trace.RequestIDFromContext(ctx), method+" "+path, err)
+
 	if err != nil {
 		logger.Warn("retry returned error", zap.Error(err))
 		return ok, err
 	}
+
 	logger.Info("retry finished", zap.Bool("ok", ok))
 	return ok, nil
 }
@@ -89,16 +103,22 @@ func (r *Recovery) Finish(ctx context.Context, namespaceID, graphID, requestID s
 		zap.String("request_id", requestID),
 	)
 
+	start := time.Now()
+
 	g, err := r.lookupGraph(graph.NamespaceID(namespaceID), graph.ID(graphID))
 	if err != nil {
 		logger.Warn("finish lookup graph failed, falling back to full re-run", zap.Error(err))
-		return r.runOriginal(ctx, namespaceID, graphID, method, path, body)
+		ok, fallbackErr := r.runOriginal(ctx, namespaceID, graphID, method, path, body)
+		finished := time.Now()
+		r.saveTrace(ctx, start, finished, namespaceID, graphID, requestID, "FINISH_FALLBACK", fallbackErr)
+		return ok, fallbackErr
 	}
 
 	req := decodeRequest(method, path, body)
 	rawHTTPRequest, marshalErr := json.Marshal(req)
 	if marshalErr != nil {
 		logger.Error("finish marshal http request failed", zap.Error(marshalErr))
+		r.saveTrace(ctx, start, time.Now(), namespaceID, graphID, requestID, "FINISH", marshalErr)
 		return false, errors.Wrap(marshalErr, "marshal http request")
 	}
 
@@ -108,12 +128,64 @@ func (r *Recovery) Finish(ctx context.Context, namespaceID, graphID, requestID s
 
 	logger.Info("finish started", zap.Int("visited_nodes", len(visitedNodes)))
 
-	if _, err := g.TryFinish(ctx, logger, items, nil, toNodeIDs(visitedNodes)); err != nil {
+	_, err = g.TryFinish(ctx, logger, items, nil, toNodeIDs(visitedNodes))
+	finished := time.Now()
+
+	r.saveTrace(ctx, start, finished, namespaceID, graphID, requestID, "FINISH", err)
+
+	if err != nil {
 		logger.Warn("finish traversal failed", zap.Error(err))
 		return false, err
 	}
+
 	logger.Info("finish finished", zap.Bool("ok", true))
 	return true, nil
+}
+
+func (r *Recovery) saveTrace(
+	ctx context.Context,
+	start, finished time.Time,
+	namespaceID, graphID, requestID, operation string,
+	runErr error,
+) {
+	if r.traceRepo == nil {
+		return
+	}
+
+	collector, hasCollector := trace.GetCollector(ctx)
+
+	var nodeTraces []trace.NodeTrace
+	if hasCollector {
+		nodeTraces = collector.NodeTraces()
+	} else {
+		nodeTraces = []trace.NodeTrace{}
+	}
+
+	t := trace.Trace{
+		RequestID:   trace.RequestID(requestID),
+		NamespaceID: namespaceID,
+		GraphID:     graphID,
+		Method:      "RECOVERY",
+		Path:        operation,
+		StartedAt:   start,
+		FinishedAt:  finished,
+		DurationMs:  finished.Sub(start).Milliseconds(),
+		Status:      trace.TraceStatusOK,
+		NodeTraces:  nodeTraces,
+	}
+
+	if runErr != nil {
+		t.Status = trace.TraceStatusError
+		t.Error = runErr.Error()
+	}
+
+	if saveErr := r.traceRepo.Save(ctx, t); saveErr != nil {
+		r.logger.Error("failed to save recovery trace",
+			zap.String("request_id", requestID),
+			zap.String("operation", operation),
+			zap.Error(saveErr),
+		)
+	}
 }
 
 func (r *Recovery) lookupGraph(namespaceID graph.NamespaceID, graphID graph.ID) (graph.Graph, error) {

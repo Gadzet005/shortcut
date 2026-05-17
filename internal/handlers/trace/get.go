@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/Gadzet005/shortcut/internal/domain/trace"
+	"github.com/Gadzet005/shortcut/pkg/containers/slices"
 	"github.com/Gadzet005/shortcut/pkg/errors"
 	httpcontext "github.com/Gadzet005/shortcut/pkg/http/context"
 	"github.com/gin-gonic/gin"
@@ -31,7 +32,7 @@ func (h handlerBase) GetTrace(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, toResponse(t))
+	c.JSON(http.StatusOK, slices.Map(t, func(t trace.Trace) traceResponse { return toResponse(t) }))
 }
 
 func toResponse(t trace.Trace) traceResponse {
