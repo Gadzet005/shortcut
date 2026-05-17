@@ -58,8 +58,9 @@ func (s *service) Run(ctx lifecycle.Context) error {
 	r.POST("/get-cart", shortcut.New(handlers.GetCart, s.Logger()))
 	r.POST("/add-cart-item", shortcut.New(handlers.AddCartItem, s.Logger()))
 	r.POST("/remove-cart-item", shortcut.New(handlers.RemoveCartItem, s.Logger()))
-	r.POST("/revert-add-cart-item", handlers.RevertCartItem)
-	r.POST("/revert-remove-cart-item", handlers.RevertCartItem)
+	r.POST("/revert-add-cart-item", handlers.RevertAddCartItem)
+	r.POST("/revert-remove-cart-item", handlers.RevertRemoveCartItem)
+	r.POST("/always-fail", handlers.AlwaysFail)
 
 	return nil
 }

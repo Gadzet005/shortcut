@@ -18,6 +18,11 @@ nodes:
         item-id: user
       - node-id: validate-product
         item-id: product
+  boom:
+    endpoint-id: user-service/always-fail
+    dependencies:
+      - node-id: remove-cart-item
+        item-id: http_response
 
-output-node: remove-cart-item
-failure-strategy: revert
+output-node: boom
+failure-strategy: save
