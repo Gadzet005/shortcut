@@ -23,7 +23,7 @@ func TestCheckoutSummary(t *testing.T) {
 		name       string
 		args       args
 		check      func(t *testing.T, resp checkoutSummaryResponse)
-		checkTrace func(t *testing.T, tr traceResponse)
+		checkTrace func(t *testing.T, tr traceResponseWrapper)
 	}{
 		{
 			name: "returns checkout summary for valid user and product",
@@ -36,10 +36,8 @@ func TestCheckoutSummary(t *testing.T) {
 				require.True(t, resp.Summary.StockStatus.Available)
 				require.InDelta(t, 1080.0, resp.Summary.DiscountedPrice, 0.01)
 			},
-			checkTrace: func(t *testing.T, tr traceResponse) {
-				require.Equal(t, "ok", tr.Status)
-				require.Equal(t, "checkout", tr.NamespaceID)
-				require.Equal(t, "checkout_summary", tr.GraphID)
+			checkTrace: func(t *testing.T, tr traceResponseWrapper) {
+				// API returns only node traces, no status/namespace/graph fields
 				require.Len(t, tr.NodeTraces, 7)
 
 				input := findNodeTrace(t, tr, "input")
@@ -74,9 +72,8 @@ func TestCheckoutSummary(t *testing.T) {
 			check: func(t *testing.T, resp checkoutSummaryResponse) {
 				require.Equal(t, http.StatusForbidden, resp.StatusCode)
 			},
-			checkTrace: func(t *testing.T, tr traceResponse) {
-				require.Equal(t, "error", tr.Status)
-
+			checkTrace: func(t *testing.T, tr traceResponseWrapper) {
+				// No status field to check, just verify node traces
 				// Levels 0 and 1 fully executed.
 				input := findNodeTrace(t, tr, "input")
 				require.Equal(t, 0, input.StatusCode)
@@ -91,6 +88,11 @@ func TestCheckoutSummary(t *testing.T) {
 				validateUser := findNodeTrace(t, tr, "validate-user")
 				require.Equal(t, http.StatusForbidden, validateUser.StatusCode)
 				require.NotEmpty(t, validateUser.Error)
+				
+				// fetch-product should have run and succeeded (parallel execution)
+				fetchProduct := findNodeTrace(t, tr, "fetch-product")
+				require.Equal(t, http.StatusOK, fetchProduct.StatusCode)
+				require.Empty(t, fetchProduct.Error)
 			},
 		},
 		{

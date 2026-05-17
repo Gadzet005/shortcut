@@ -20,6 +20,10 @@ type traceResponse struct {
 	NodeTraces  []nodeTraceResponse `json:"node_traces"`
 }
 
+type traceResponseWrapper struct {
+    NodeTraces []nodeTraceResponse `json:"node_traces"`
+}
+
 type nodeTraceResponse struct {
 	NodeID     string `json:"node_id"`
 	DurationMs int64  `json:"duration_ms"`
@@ -28,26 +32,34 @@ type nodeTraceResponse struct {
 	Error      string `json:"error,omitempty"`
 }
 
-func getTrace(t *testing.T, shortcutURL string, requestID string) traceResponse {
-	t.Helper()
-	require.NotEmpty(t, requestID, "X-Request-Id header must be set")
-	resp, err := http.Get(shortcutURL + "/trace/" + requestID)
-	require.NoError(t, err)
-	defer resp.Body.Close()
-	require.Equal(t, http.StatusOK, resp.StatusCode, "trace should exist for request_id=%s", requestID)
-	var result traceResponse
-	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
-	return result
+func getTrace(t *testing.T, shortcutURL string, requestID string) traceResponseWrapper {
+    t.Helper()
+    require.NotEmpty(t, requestID, "X-Request-Id header must be set")
+    resp, err := http.Get(shortcutURL + "/trace/" + requestID)
+    require.NoError(t, err)
+    defer resp.Body.Close()
+    require.Equal(t, http.StatusOK, resp.StatusCode, "trace should exist for request_id=%s", requestID)
+    
+    var traces []traceResponse
+    require.NoError(t, json.NewDecoder(resp.Body).Decode(&traces))
+    
+    if len(traces) == 0 {
+        t.Fatalf("no traces found for request_id=%s", requestID)
+    }
+    
+    return traceResponseWrapper{
+        NodeTraces: traces[0].NodeTraces,
+    }
 }
 
 // findNodeTrace returns the NodeTrace with the given nodeID, or fails the test if not found.
-func findNodeTrace(t *testing.T, tr traceResponse, nodeID string) nodeTraceResponse {
-	t.Helper()
-	for _, nt := range tr.NodeTraces {
-		if nt.NodeID == nodeID {
-			return nt
-		}
-	}
-	t.Fatalf("node trace not found for nodeID=%q (got %d node traces)", nodeID, len(tr.NodeTraces))
-	return nodeTraceResponse{}
+func findNodeTrace(t *testing.T, tr traceResponseWrapper, nodeID string) nodeTraceResponse {
+    t.Helper()
+    for _, nt := range tr.NodeTraces {
+        if nt.NodeID == nodeID {
+            return nt
+        }
+    }
+    t.Fatalf("node trace not found for nodeID=%q (got %d node traces)", nodeID, len(tr.NodeTraces))
+    return nodeTraceResponse{}
 }

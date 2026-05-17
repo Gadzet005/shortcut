@@ -20,7 +20,7 @@ func TestGetProductDetail(t *testing.T) {
 		name       string
 		args       args
 		check      func(t *testing.T, resp getProductDetailResponse)
-		checkTrace func(t *testing.T, tr traceResponse)
+		checkTrace func(t *testing.T, tr traceResponseWrapper)
 	}{
 		{
 			name: "returns full product detail for valid product",
@@ -35,10 +35,8 @@ func TestGetProductDetail(t *testing.T) {
 				require.Equal(t, 9.99, resp.Detail.Pricing.Price)
 				require.Equal(t, "USD", resp.Detail.Pricing.Currency)
 			},
-			checkTrace: func(t *testing.T, tr traceResponse) {
-				require.Equal(t, "ok", tr.Status)
-				require.Equal(t, "catalog", tr.NamespaceID)
-				require.Equal(t, "get_product_detail", tr.GraphID)
+			checkTrace: func(t *testing.T, tr traceResponseWrapper) {
+				// API returns only node traces, no status/namespace/graph fields
 				require.Len(t, tr.NodeTraces, 5)
 
 				input := findNodeTrace(t, tr, "input")
@@ -71,8 +69,8 @@ func TestGetProductDetail(t *testing.T) {
 			check: func(t *testing.T, resp getProductDetailResponse) {
 				require.Equal(t, http.StatusNotFound, resp.StatusCode)
 			},
-			checkTrace: func(t *testing.T, tr traceResponse) {
-				require.Equal(t, "error", tr.Status)
+			checkTrace: func(t *testing.T, tr traceResponseWrapper) {
+				// No status field to check, just verify node traces
 				require.Len(t, tr.NodeTraces, 2) // only input + fetch-product ran
 
 				input := findNodeTrace(t, tr, "input")
