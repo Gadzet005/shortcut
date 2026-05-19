@@ -14,3 +14,7 @@ scrape_configs:
         replacement: shortcut
       - target_label: environment
         replacement: development
+  
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']

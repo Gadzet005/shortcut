@@ -155,6 +155,18 @@ services:
       - "9104:9104"
     depends_on:
       - shortcut
+  
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    privileged: true
+
 
 volumes:
   mongo-data:

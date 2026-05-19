@@ -89,7 +89,7 @@ export function TraceSelector({ traces, selectedIndex, onSelect }: Props) {
               opacity: selectedIndex === 0 ? 0.5 : 1,
             }}
           >
-            ← Previous
+            ← Next
           </button>
           <button
             onClick={() => onSelect(Math.min(traces.length - 1, selectedIndex + 1))}
@@ -104,7 +104,7 @@ export function TraceSelector({ traces, selectedIndex, onSelect }: Props) {
               opacity: selectedIndex === traces.length - 1 ? 0.5 : 1,
             }}
           >
-            Next →
+            Previous →
           </button>
         </div>
       </div>

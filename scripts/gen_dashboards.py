@@ -206,7 +206,7 @@ def cluster_resources_row(*, datasource: str, panel_id_start: int) -> tuple[dict
     )
     mem_panel = panel_timeseries(
         panel_id=panel_id_start + 2,
-        title="Memory working set by pod",
+        title="Memory by pod",
         datasource=datasource,
         queries=[target(mem_expr, ref_id="A", legend="{{pod}}")],
         unit="bytes",
@@ -367,7 +367,7 @@ def graph_row(*, graph: Graph, datasource: str, service: str, panel_id_start: in
         )
         panels.append(panel_timeseries(
             panel_id=next_id,
-            title=f"HTTP p95 latency",
+            title=f"HTTP latency",
             datasource=datasource,
             queries=[target(lat_expr, ref_id="A", legend="{{method}} {{path}}")],
             unit="s",
@@ -418,7 +418,7 @@ def graph_row(*, graph: Graph, datasource: str, service: str, panel_id_start: in
         all_nodes_lat = f'shortcut_node_duration_seconds{{{node_common_all},quantile="0.95"}}'
         panels.append(panel_timeseries(
             panel_id=next_id,
-            title=f"All Nodes p95 Latency",
+            title=f"All Nodes Latency",
             datasource=datasource,
             queries=[target(all_nodes_lat, ref_id="A", legend="{{node_id}}")],
             unit="s",
