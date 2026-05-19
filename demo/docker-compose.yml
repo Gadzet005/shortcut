@@ -156,17 +156,20 @@ services:
     depends_on:
       - shortcut
   
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    restart: unless-stopped
     ports:
-      - "8081:8080"
+      - "9100:9100"
     volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
       - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-    privileged: true
-
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
 
 volumes:
   mongo-data:

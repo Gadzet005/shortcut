@@ -177,11 +177,11 @@ def target(expr: str, *, ref_id: str, legend: str) -> dict:
     }
 
 
-def cluster_resources_row(*, datasource: str, panel_id_start: int) -> tuple[dict, list[dict], int]:
+def cluster_resources_row_k8s(*, datasource: str, panel_id_start: int) -> tuple[dict, list[dict], int]:
     row = {
         "id": panel_id_start,
         "type": "row",
-        "title": "Cluster resources",
+        "title": "Cluster resources (K8s)",
         "collapsed": False,
         "gridPos": {"x": 0, "y": 0, "w": PANELS_PER_ROW, "h": 1},
         "panels": [],
@@ -213,6 +213,56 @@ def cluster_resources_row(*, datasource: str, panel_id_start: int) -> tuple[dict
         grid={"x": 12, "y": 1, "w": 12, "h": PANEL_HEIGHT},
     )
     return row, [cpu_panel, mem_panel], panel_id_start + 3
+
+
+def cluster_resources_row_docker_compose(*, datasource: str, panel_id_start: int) -> tuple[dict, list[dict], int]:
+    row = {
+        "id": panel_id_start,
+        "type": "row",
+        "title": "Host resources (Docker Compose)",
+        "collapsed": False,
+        "gridPos": {"x": 0, "y": 0, "w": PANELS_PER_ROW, "h": 1},
+        "panels": [],
+    }
+    
+    cpu_expr = '100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[$__rate_interval])) * 100)'
+    cpu_panel = panel_timeseries(
+        panel_id=panel_id_start + 1,
+        title="Host CPU Usage (%)",
+        datasource=datasource,
+        queries=[target(cpu_expr, ref_id="A", legend="CPU %")],
+        unit="percent",
+        grid={"x": 0, "y": 1, "w": 12, "h": PANEL_HEIGHT},
+        decimals=1,
+    )
+    cpu_panel["fieldConfig"]["defaults"]["min"] = 0
+    cpu_panel["fieldConfig"]["defaults"]["max"] = 100
+    
+    mem_expr = '(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100'
+    mem_panel = panel_timeseries(
+        panel_id=panel_id_start + 2,
+        title="Host Memory Usage (%)",
+        datasource=datasource,
+        queries=[target(mem_expr, ref_id="A", legend="Memory %")],
+        unit="percent",
+        grid={"x": 12, "y": 1, "w": 12, "h": PANEL_HEIGHT},
+        decimals=1,
+    )
+    mem_panel["fieldConfig"]["defaults"]["min"] = 0
+    mem_panel["fieldConfig"]["defaults"]["max"] = 100
+    
+    load_expr = 'node_load1'
+    load_panel = panel_timeseries(
+        panel_id=panel_id_start + 3,
+        title="Load Average (1m)",
+        datasource=datasource,
+        queries=[target(load_expr, ref_id="A", legend="Load 1m")],
+        unit="none",
+        grid={"x": 0, "y": 1 + PANEL_HEIGHT, "w": 24, "h": PANEL_HEIGHT},
+        decimals=2,
+    )
+    
+    return row, [cpu_panel, mem_panel, load_panel], panel_id_start + 4
 
 
 def add_node_section(*, panels: list, node: NodeInfo, graph: Graph, datasource: str, service: str, next_id: int, y_base: int) -> tuple[int, int]:
@@ -474,11 +524,11 @@ def graph_row(*, graph: Graph, datasource: str, service: str, panel_id_start: in
     return row, next_id
 
 
-def build_dashboard(graphs: list[Graph], *, datasource: str, service: str) -> dict:
+def build_dashboard_k8s(graphs: list[Graph], *, datasource: str, service: str) -> dict:
     panels: list[dict] = []
     panel_id = 1
 
-    cluster_row, cluster_panels, panel_id = cluster_resources_row(datasource=datasource, panel_id_start=panel_id)
+    cluster_row, cluster_panels, panel_id = cluster_resources_row_k8s(datasource=datasource, panel_id_start=panel_id)
     cluster_row["panels"] = cluster_panels
     panels.append(cluster_row)
 
@@ -570,13 +620,94 @@ def build_dashboard(graphs: list[Graph], *, datasource: str, service: str) -> di
         "panels": panels,
         "refresh": "30s",
         "schemaVersion": 39,
-        "tags": ["shortcut", "generated"],
+        "tags": ["shortcut", "generated", "kubernetes"],
         "templating": templating,
         "time": {"from": "now-1h", "to": "now"},
         "timepicker": {},
         "timezone": "",
-        "title": "Shortcut",
-        "uid": "shortcut-overview",
+        "title": "Shortcut (K8s)",
+        "uid": "shortcut-k8s",
+        "weekStart": "",
+    }
+
+
+def build_dashboard_docker_compose(graphs: list[Graph], *, datasource: str, service: str) -> dict:
+    panels: list[dict] = []
+    panel_id = 1
+
+    cluster_row, cluster_panels, panel_id = cluster_resources_row_docker_compose(datasource=datasource, panel_id_start=panel_id)
+    cluster_row["panels"] = cluster_panels
+    panels.append(cluster_row)
+
+    y_cursor = 1 + PANEL_HEIGHT * 2 
+    for graph in sorted(graphs, key=lambda g: (g.namespace_id, g.graph_id)):
+        row, panel_id = graph_row(
+            graph=graph,
+            datasource=datasource,
+            service=service,
+            panel_id_start=panel_id,
+            y_base=y_cursor,
+        )
+        panels.append(row)
+        y_cursor += 1
+
+    templating = {
+        "list": [
+            {
+                "name": "datasource",
+                "type": "datasource",
+                "query": "prometheus",
+                "current": {"text": "Prometheus", "value": "Prometheus"},
+                "hide": 0,
+                "label": "Datasource",
+                "refresh": 1,
+            },
+            {
+                "name": "namespace",
+                "type": "query",
+                "datasource": {"type": "prometheus", "uid": "${datasource}"},
+                "query": "label_values(http_requests_total, namespace)",
+                "refresh": 2,
+                "includeAll": True,
+                "allValue": ".*",
+                "current": {"text": "All", "value": "$__all"},
+                "hide": 0,
+                "label": "Namespace",
+                "sort": 1,
+            },
+            {
+                "name": "path",
+                "type": "query",
+                "datasource": {"type": "prometheus", "uid": "${datasource}"},
+                "query": f'label_values(http_requests_total{{namespace=~"$namespace"}}, path)',
+                "refresh": 2,
+                "includeAll": True,
+                "allValue": ".*",
+                "current": {"text": "All", "value": "$__all"},
+                "hide": 0,
+                "label": "Path",
+                "sort": 1,
+            },
+        ],
+    }
+
+    return {
+        "annotations": {"list": []},
+        "editable": True,
+        "fiscalYearStartMonth": 0,
+        "graphTooltip": 0,
+        "links": [],
+        "liveNow": False,
+        "panels": panels,
+        "refresh": "30s",
+        "schemaVersion": 39,
+        "tags": ["shortcut", "generated", "docker-compose"],
+        "templating": templating,
+        "time": {"from": "now-1h", "to": "now"},
+        "timepicker": {},
+        "timezone": "",
+        "title": "Shortcut (Docker Compose)",
+        "uid": "shortcut-docker-compose",
         "weekStart": "",
     }
 
@@ -598,6 +729,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--out-dir", type=Path, default=Path("k8s/dashboards"), help="Output directory for dashboard JSON files")
     parser.add_argument("--datasource", default="Prometheus", help="Prometheus datasource UID variable default")
     parser.add_argument("--service", default="shortcut", help="Value of the `service` label written by shortcut")
+    parser.add_argument("--mode", choices=["k8s", "docker-compose"], default="k8s", help="Deployment mode: 'k8s' for Kubernetes pod metrics, 'docker-compose' for host CPU/memory percentages")
     args = parser.parse_args(argv)
 
     configs_dir: Path = args.configs_dir
@@ -609,8 +741,12 @@ def main(argv: list[str]) -> int:
     if not graphs:
         print(f"no graphs discovered under {configs_dir}", file=sys.stderr)
         return 1
+    
+    if args.mode == "docker-compose":
+        dashboard = build_dashboard_docker_compose(graphs, datasource=args.datasource, service=args.service)
+    else:
+        dashboard = build_dashboard_k8s(graphs, datasource=args.datasource, service=args.service)
 
-    dashboard = build_dashboard(graphs, datasource=args.datasource, service=args.service)
     out_path: Path = args.out_dir / "shortcut.json"
     write_json(out_path, dashboard)
     print(f"wrote {out_path} (graphs: {len(graphs)})")

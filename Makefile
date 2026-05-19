@@ -56,3 +56,6 @@ check: fmt vet lint test
 
 gen-dashboards:
 	@python3 scripts/gen_dashboards.py --configs-dir $(DASHBOARDS_CONFIGS_DIR) --out-dir $(DASHBOARDS_OUT_DIR)
+
+gen-dashboards-docker-compose:
+	@python3 scripts/gen_dashboards.py --configs-dir $(DASHBOARDS_CONFIGS_DIR) --out-dir $(DASHBOARDS_OUT_DIR) --mode docker-compose

@@ -11,7 +11,7 @@
     {
       "id": 1,
       "type": "row",
-      "title": "Cluster resources",
+      "title": "Host resources (Docker Compose)",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -23,7 +23,7 @@
         {
           "id": 2,
           "type": "timeseries",
-          "title": "CPU usage by pod (cores)",
+          "title": "Host CPU Usage (%)",
           "datasource": {
             "type": "prometheus",
             "uid": "Prometheus"
@@ -37,8 +37,8 @@
           "targets": [
             {
               "refId": "A",
-              "expr": "sum by(pod) (rate(container_cpu_usage_seconds_total{namespace=~\"$k8s_namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\"}[$__rate_interval]))",
-              "legendFormat": "{{pod}}",
+              "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[$__rate_interval])) * 100)",
+              "legendFormat": "CPU %",
               "datasource": {
                 "type": "prometheus",
                 "uid": "${datasource}"
@@ -52,7 +52,10 @@
                 "fillOpacity": 10,
                 "lineWidth": 1
               },
-              "unit": "none"
+              "unit": "percent",
+              "decimals": 1,
+              "min": 0,
+              "max": 100
             },
             "overrides": []
           },
@@ -71,7 +74,7 @@
         {
           "id": 3,
           "type": "timeseries",
-          "title": "Memory by pod",
+          "title": "Host Memory Usage (%)",
           "datasource": {
             "type": "prometheus",
             "uid": "Prometheus"
@@ -85,8 +88,8 @@
           "targets": [
             {
               "refId": "A",
-              "expr": "sum by(pod) (container_memory_working_set_bytes{namespace=~\"$k8s_namespace\",pod=~\"$pod\",container!=\"\",container!=\"POD\"})",
-              "legendFormat": "{{pod}}",
+              "expr": "(1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100",
+              "legendFormat": "Memory %",
               "datasource": {
                 "type": "prometheus",
                 "uid": "${datasource}"
@@ -100,7 +103,59 @@
                 "fillOpacity": 10,
                 "lineWidth": 1
               },
-              "unit": "bytes"
+              "unit": "percent",
+              "decimals": 1,
+              "min": 0,
+              "max": 100
+            },
+            "overrides": []
+          },
+          "options": {
+            "legend": {
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "mode": "multi",
+              "sort": "desc"
+            }
+          }
+        },
+        {
+          "id": 4,
+          "type": "timeseries",
+          "title": "Load Average (1m)",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "Prometheus"
+          },
+          "gridPos": {
+            "x": 0,
+            "y": 9,
+            "w": 24,
+            "h": 8
+          },
+          "targets": [
+            {
+              "refId": "A",
+              "expr": "node_load1",
+              "legendFormat": "Load 1m",
+              "datasource": {
+                "type": "prometheus",
+                "uid": "${datasource}"
+              }
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "custom": {
+                "drawStyle": "line",
+                "fillOpacity": 10,
+                "lineWidth": 1
+              },
+              "unit": "none",
+              "decimals": 2
             },
             "overrides": []
           },
@@ -119,19 +174,19 @@
       ]
     },
     {
-      "id": 4,
+      "id": 5,
       "type": "row",
       "title": "shop / add_to_cart",
       "collapsed": true,
       "gridPos": {
         "x": 0,
-        "y": 9,
+        "y": 17,
         "w": 24,
         "h": 1
       },
       "panels": [
         {
-          "id": 5,
+          "id": 6,
           "type": "timeseries",
           "title": "HTTP RPS",
           "datasource": {
@@ -140,7 +195,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 10,
+            "y": 18,
             "w": 8,
             "h": 8
           },
@@ -179,7 +234,7 @@
           }
         },
         {
-          "id": 6,
+          "id": 7,
           "type": "timeseries",
           "title": "HTTP latency",
           "datasource": {
@@ -188,7 +243,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 10,
+            "y": 18,
             "w": 8,
             "h": 8
           },
@@ -227,7 +282,7 @@
           }
         },
         {
-          "id": 7,
+          "id": 8,
           "type": "timeseries",
           "title": "HTTP error ratio",
           "datasource": {
@@ -236,7 +291,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 10,
+            "y": 18,
             "w": 8,
             "h": 8
           },
@@ -278,7 +333,7 @@
           }
         },
         {
-          "id": 8,
+          "id": 9,
           "type": "timeseries",
           "title": "All Nodes RPS",
           "datasource": {
@@ -287,7 +342,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 18,
+            "y": 26,
             "w": 8,
             "h": 8
           },
@@ -326,7 +381,7 @@
           }
         },
         {
-          "id": 9,
+          "id": 10,
           "type": "timeseries",
           "title": "All Nodes Latency",
           "datasource": {
@@ -335,7 +390,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 18,
+            "y": 26,
             "w": 8,
             "h": 8
           },
@@ -374,7 +429,7 @@
           }
         },
         {
-          "id": 10,
+          "id": 11,
           "type": "timeseries",
           "title": "All Nodes Error Ratio",
           "datasource": {
@@ -383,7 +438,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 18,
+            "y": 26,
             "w": 8,
             "h": 8
           },
@@ -425,20 +480,20 @@
           }
         },
         {
-          "id": 11,
+          "id": 12,
           "type": "text",
           "title": "Node: add-cart-item",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 26,
+            "y": 34,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 12,
+          "id": 13,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -447,7 +502,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 27,
+            "y": 35,
             "w": 8,
             "h": 8
           },
@@ -486,7 +541,7 @@
           }
         },
         {
-          "id": 13,
+          "id": 14,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -495,7 +550,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 27,
+            "y": 35,
             "w": 8,
             "h": 8
           },
@@ -561,7 +616,7 @@
           }
         },
         {
-          "id": 14,
+          "id": 15,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -570,7 +625,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 27,
+            "y": 35,
             "w": 8,
             "h": 8
           },
@@ -612,20 +667,20 @@
           }
         },
         {
-          "id": 15,
+          "id": 16,
           "type": "text",
           "title": "Node: input",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 35,
+            "y": 43,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 16,
+          "id": 17,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -634,7 +689,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 36,
+            "y": 44,
             "w": 8,
             "h": 8
           },
@@ -673,7 +728,7 @@
           }
         },
         {
-          "id": 17,
+          "id": 18,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -682,7 +737,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 36,
+            "y": 44,
             "w": 8,
             "h": 8
           },
@@ -748,7 +803,7 @@
           }
         },
         {
-          "id": 18,
+          "id": 19,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -757,7 +812,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 36,
+            "y": 44,
             "w": 8,
             "h": 8
           },
@@ -799,20 +854,20 @@
           }
         },
         {
-          "id": 19,
+          "id": 20,
           "type": "text",
           "title": "Node: validate-product",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 44,
+            "y": 52,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 20,
+          "id": 21,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -821,7 +876,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 45,
+            "y": 53,
             "w": 8,
             "h": 8
           },
@@ -860,7 +915,7 @@
           }
         },
         {
-          "id": 21,
+          "id": 22,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -869,7 +924,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 45,
+            "y": 53,
             "w": 8,
             "h": 8
           },
@@ -935,7 +990,7 @@
           }
         },
         {
-          "id": 22,
+          "id": 23,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -944,7 +999,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 45,
+            "y": 53,
             "w": 8,
             "h": 8
           },
@@ -986,20 +1041,20 @@
           }
         },
         {
-          "id": 23,
+          "id": 24,
           "type": "text",
           "title": "Node: validate-user",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 53,
+            "y": 61,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 24,
+          "id": 25,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -1008,7 +1063,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 54,
+            "y": 62,
             "w": 8,
             "h": 8
           },
@@ -1047,7 +1102,7 @@
           }
         },
         {
-          "id": 25,
+          "id": 26,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -1056,7 +1111,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 54,
+            "y": 62,
             "w": 8,
             "h": 8
           },
@@ -1122,7 +1177,7 @@
           }
         },
         {
-          "id": 26,
+          "id": 27,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -1131,7 +1186,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 54,
+            "y": 62,
             "w": 8,
             "h": 8
           },
@@ -1175,19 +1230,19 @@
       ]
     },
     {
-      "id": 27,
+      "id": 28,
       "type": "row",
       "title": "shop / get_cart",
       "collapsed": true,
       "gridPos": {
         "x": 0,
-        "y": 10,
+        "y": 18,
         "w": 24,
         "h": 1
       },
       "panels": [
         {
-          "id": 28,
+          "id": 29,
           "type": "timeseries",
           "title": "HTTP RPS",
           "datasource": {
@@ -1196,7 +1251,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 11,
+            "y": 19,
             "w": 8,
             "h": 8
           },
@@ -1235,7 +1290,7 @@
           }
         },
         {
-          "id": 29,
+          "id": 30,
           "type": "timeseries",
           "title": "HTTP latency",
           "datasource": {
@@ -1244,7 +1299,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 11,
+            "y": 19,
             "w": 8,
             "h": 8
           },
@@ -1283,7 +1338,7 @@
           }
         },
         {
-          "id": 30,
+          "id": 31,
           "type": "timeseries",
           "title": "HTTP error ratio",
           "datasource": {
@@ -1292,7 +1347,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 11,
+            "y": 19,
             "w": 8,
             "h": 8
           },
@@ -1334,7 +1389,7 @@
           }
         },
         {
-          "id": 31,
+          "id": 32,
           "type": "timeseries",
           "title": "All Nodes RPS",
           "datasource": {
@@ -1343,7 +1398,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 19,
+            "y": 27,
             "w": 8,
             "h": 8
           },
@@ -1382,7 +1437,7 @@
           }
         },
         {
-          "id": 32,
+          "id": 33,
           "type": "timeseries",
           "title": "All Nodes Latency",
           "datasource": {
@@ -1391,7 +1446,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 19,
+            "y": 27,
             "w": 8,
             "h": 8
           },
@@ -1430,7 +1485,7 @@
           }
         },
         {
-          "id": 33,
+          "id": 34,
           "type": "timeseries",
           "title": "All Nodes Error Ratio",
           "datasource": {
@@ -1439,7 +1494,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 19,
+            "y": 27,
             "w": 8,
             "h": 8
           },
@@ -1481,20 +1536,20 @@
           }
         },
         {
-          "id": 34,
+          "id": 35,
           "type": "text",
           "title": "Node: get-cart",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 27,
+            "y": 35,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 35,
+          "id": 36,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -1503,7 +1558,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 28,
+            "y": 36,
             "w": 8,
             "h": 8
           },
@@ -1542,7 +1597,7 @@
           }
         },
         {
-          "id": 36,
+          "id": 37,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -1551,7 +1606,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 28,
+            "y": 36,
             "w": 8,
             "h": 8
           },
@@ -1617,7 +1672,7 @@
           }
         },
         {
-          "id": 37,
+          "id": 38,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -1626,7 +1681,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 28,
+            "y": 36,
             "w": 8,
             "h": 8
           },
@@ -1668,20 +1723,20 @@
           }
         },
         {
-          "id": 38,
+          "id": 39,
           "type": "text",
           "title": "Node: input",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 36,
+            "y": 44,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 39,
+          "id": 40,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -1690,7 +1745,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 37,
+            "y": 45,
             "w": 8,
             "h": 8
           },
@@ -1729,7 +1784,7 @@
           }
         },
         {
-          "id": 40,
+          "id": 41,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -1738,7 +1793,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 37,
+            "y": 45,
             "w": 8,
             "h": 8
           },
@@ -1804,7 +1859,7 @@
           }
         },
         {
-          "id": 41,
+          "id": 42,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -1813,7 +1868,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 37,
+            "y": 45,
             "w": 8,
             "h": 8
           },
@@ -1855,20 +1910,20 @@
           }
         },
         {
-          "id": 42,
+          "id": 43,
           "type": "text",
           "title": "Node: list-products",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 45,
+            "y": 53,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 43,
+          "id": 44,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -1877,7 +1932,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 46,
+            "y": 54,
             "w": 8,
             "h": 8
           },
@@ -1916,7 +1971,7 @@
           }
         },
         {
-          "id": 44,
+          "id": 45,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -1925,7 +1980,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 46,
+            "y": 54,
             "w": 8,
             "h": 8
           },
@@ -1991,7 +2046,7 @@
           }
         },
         {
-          "id": 45,
+          "id": 46,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -2000,7 +2055,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 46,
+            "y": 54,
             "w": 8,
             "h": 8
           },
@@ -2042,20 +2097,20 @@
           }
         },
         {
-          "id": 46,
+          "id": 47,
           "type": "text",
           "title": "Node: render",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 54,
+            "y": 62,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 47,
+          "id": 48,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -2064,7 +2119,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 55,
+            "y": 63,
             "w": 8,
             "h": 8
           },
@@ -2103,7 +2158,7 @@
           }
         },
         {
-          "id": 48,
+          "id": 49,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -2112,7 +2167,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 55,
+            "y": 63,
             "w": 8,
             "h": 8
           },
@@ -2178,7 +2233,7 @@
           }
         },
         {
-          "id": 49,
+          "id": 50,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -2187,7 +2242,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 55,
+            "y": 63,
             "w": 8,
             "h": 8
           },
@@ -2231,19 +2286,19 @@
       ]
     },
     {
-      "id": 50,
+      "id": 51,
       "type": "row",
       "title": "shop / product_list",
       "collapsed": true,
       "gridPos": {
         "x": 0,
-        "y": 11,
+        "y": 19,
         "w": 24,
         "h": 1
       },
       "panels": [
         {
-          "id": 51,
+          "id": 52,
           "type": "timeseries",
           "title": "HTTP RPS",
           "datasource": {
@@ -2252,7 +2307,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 12,
+            "y": 20,
             "w": 8,
             "h": 8
           },
@@ -2291,7 +2346,7 @@
           }
         },
         {
-          "id": 52,
+          "id": 53,
           "type": "timeseries",
           "title": "HTTP latency",
           "datasource": {
@@ -2300,7 +2355,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 12,
+            "y": 20,
             "w": 8,
             "h": 8
           },
@@ -2339,7 +2394,7 @@
           }
         },
         {
-          "id": 53,
+          "id": 54,
           "type": "timeseries",
           "title": "HTTP error ratio",
           "datasource": {
@@ -2348,7 +2403,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 12,
+            "y": 20,
             "w": 8,
             "h": 8
           },
@@ -2390,7 +2445,7 @@
           }
         },
         {
-          "id": 54,
+          "id": 55,
           "type": "timeseries",
           "title": "All Nodes RPS",
           "datasource": {
@@ -2399,7 +2454,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 20,
+            "y": 28,
             "w": 8,
             "h": 8
           },
@@ -2438,7 +2493,7 @@
           }
         },
         {
-          "id": 55,
+          "id": 56,
           "type": "timeseries",
           "title": "All Nodes Latency",
           "datasource": {
@@ -2447,7 +2502,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 20,
+            "y": 28,
             "w": 8,
             "h": 8
           },
@@ -2486,7 +2541,7 @@
           }
         },
         {
-          "id": 56,
+          "id": 57,
           "type": "timeseries",
           "title": "All Nodes Error Ratio",
           "datasource": {
@@ -2495,7 +2550,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 20,
+            "y": 28,
             "w": 8,
             "h": 8
           },
@@ -2537,20 +2592,20 @@
           }
         },
         {
-          "id": 57,
+          "id": 58,
           "type": "text",
           "title": "Node: get-recommendations",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 28,
+            "y": 36,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 58,
+          "id": 59,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -2559,7 +2614,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 29,
+            "y": 37,
             "w": 8,
             "h": 8
           },
@@ -2598,7 +2653,7 @@
           }
         },
         {
-          "id": 59,
+          "id": 60,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -2607,7 +2662,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 29,
+            "y": 37,
             "w": 8,
             "h": 8
           },
@@ -2673,7 +2728,7 @@
           }
         },
         {
-          "id": 60,
+          "id": 61,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -2682,7 +2737,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 29,
+            "y": 37,
             "w": 8,
             "h": 8
           },
@@ -2724,20 +2779,20 @@
           }
         },
         {
-          "id": 61,
+          "id": 62,
           "type": "text",
           "title": "Node: get-user",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 37,
+            "y": 45,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 62,
+          "id": 63,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -2746,7 +2801,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 38,
+            "y": 46,
             "w": 8,
             "h": 8
           },
@@ -2785,7 +2840,7 @@
           }
         },
         {
-          "id": 63,
+          "id": 64,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -2794,7 +2849,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 38,
+            "y": 46,
             "w": 8,
             "h": 8
           },
@@ -2860,7 +2915,7 @@
           }
         },
         {
-          "id": 64,
+          "id": 65,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -2869,7 +2924,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 38,
+            "y": 46,
             "w": 8,
             "h": 8
           },
@@ -2911,20 +2966,20 @@
           }
         },
         {
-          "id": 65,
+          "id": 66,
           "type": "text",
           "title": "Cache: get-user",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 46,
+            "y": 54,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 66,
+          "id": 67,
           "type": "timeseries",
           "title": "Inserts Rate",
           "datasource": {
@@ -2933,7 +2988,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 47,
+            "y": 55,
             "w": 12,
             "h": 8
           },
@@ -2972,7 +3027,7 @@
           }
         },
         {
-          "id": 67,
+          "id": 68,
           "type": "timeseries",
           "title": "Hits vs Misses",
           "datasource": {
@@ -2981,7 +3036,7 @@
           },
           "gridPos": {
             "x": 12,
-            "y": 47,
+            "y": 55,
             "w": 12,
             "h": 8
           },
@@ -3029,20 +3084,20 @@
           }
         },
         {
-          "id": 68,
+          "id": 69,
           "type": "text",
           "title": "Node: input",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 55,
+            "y": 63,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 69,
+          "id": 70,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -3051,7 +3106,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 56,
+            "y": 64,
             "w": 8,
             "h": 8
           },
@@ -3090,7 +3145,7 @@
           }
         },
         {
-          "id": 70,
+          "id": 71,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -3099,7 +3154,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 56,
+            "y": 64,
             "w": 8,
             "h": 8
           },
@@ -3165,7 +3220,7 @@
           }
         },
         {
-          "id": 71,
+          "id": 72,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -3174,7 +3229,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 56,
+            "y": 64,
             "w": 8,
             "h": 8
           },
@@ -3216,20 +3271,20 @@
           }
         },
         {
-          "id": 72,
+          "id": 73,
           "type": "text",
           "title": "Node: list-products",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 64,
+            "y": 72,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 73,
+          "id": 74,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -3238,7 +3293,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 65,
+            "y": 73,
             "w": 8,
             "h": 8
           },
@@ -3277,7 +3332,7 @@
           }
         },
         {
-          "id": 74,
+          "id": 75,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -3286,7 +3341,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 65,
+            "y": 73,
             "w": 8,
             "h": 8
           },
@@ -3352,7 +3407,7 @@
           }
         },
         {
-          "id": 75,
+          "id": 76,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -3361,7 +3416,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 65,
+            "y": 73,
             "w": 8,
             "h": 8
           },
@@ -3403,20 +3458,20 @@
           }
         },
         {
-          "id": 76,
+          "id": 77,
           "type": "text",
           "title": "Node: render",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 73,
+            "y": 81,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 77,
+          "id": 78,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -3425,7 +3480,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 74,
+            "y": 82,
             "w": 8,
             "h": 8
           },
@@ -3464,7 +3519,7 @@
           }
         },
         {
-          "id": 78,
+          "id": 79,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -3473,7 +3528,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 74,
+            "y": 82,
             "w": 8,
             "h": 8
           },
@@ -3539,7 +3594,7 @@
           }
         },
         {
-          "id": 79,
+          "id": 80,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -3548,7 +3603,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 74,
+            "y": 82,
             "w": 8,
             "h": 8
           },
@@ -3592,19 +3647,19 @@
       ]
     },
     {
-      "id": 80,
+      "id": 81,
       "type": "row",
       "title": "shop / product_page",
       "collapsed": true,
       "gridPos": {
         "x": 0,
-        "y": 12,
+        "y": 20,
         "w": 24,
         "h": 1
       },
       "panels": [
         {
-          "id": 81,
+          "id": 82,
           "type": "timeseries",
           "title": "HTTP RPS",
           "datasource": {
@@ -3613,7 +3668,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 13,
+            "y": 21,
             "w": 8,
             "h": 8
           },
@@ -3652,7 +3707,7 @@
           }
         },
         {
-          "id": 82,
+          "id": 83,
           "type": "timeseries",
           "title": "HTTP latency",
           "datasource": {
@@ -3661,7 +3716,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 13,
+            "y": 21,
             "w": 8,
             "h": 8
           },
@@ -3700,7 +3755,7 @@
           }
         },
         {
-          "id": 83,
+          "id": 84,
           "type": "timeseries",
           "title": "HTTP error ratio",
           "datasource": {
@@ -3709,7 +3764,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 13,
+            "y": 21,
             "w": 8,
             "h": 8
           },
@@ -3751,7 +3806,7 @@
           }
         },
         {
-          "id": 84,
+          "id": 85,
           "type": "timeseries",
           "title": "All Nodes RPS",
           "datasource": {
@@ -3760,7 +3815,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 21,
+            "y": 29,
             "w": 8,
             "h": 8
           },
@@ -3799,7 +3854,7 @@
           }
         },
         {
-          "id": 85,
+          "id": 86,
           "type": "timeseries",
           "title": "All Nodes Latency",
           "datasource": {
@@ -3808,7 +3863,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 21,
+            "y": 29,
             "w": 8,
             "h": 8
           },
@@ -3847,7 +3902,7 @@
           }
         },
         {
-          "id": 86,
+          "id": 87,
           "type": "timeseries",
           "title": "All Nodes Error Ratio",
           "datasource": {
@@ -3856,7 +3911,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 21,
+            "y": 29,
             "w": 8,
             "h": 8
           },
@@ -3898,20 +3953,20 @@
           }
         },
         {
-          "id": 87,
+          "id": 88,
           "type": "text",
           "title": "Node: get-product",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 29,
+            "y": 37,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 88,
+          "id": 89,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -3920,7 +3975,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 30,
+            "y": 38,
             "w": 8,
             "h": 8
           },
@@ -3959,7 +4014,7 @@
           }
         },
         {
-          "id": 89,
+          "id": 90,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -3968,7 +4023,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 30,
+            "y": 38,
             "w": 8,
             "h": 8
           },
@@ -4034,7 +4089,7 @@
           }
         },
         {
-          "id": 90,
+          "id": 91,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -4043,7 +4098,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 30,
+            "y": 38,
             "w": 8,
             "h": 8
           },
@@ -4085,20 +4140,20 @@
           }
         },
         {
-          "id": 91,
+          "id": 92,
           "type": "text",
           "title": "Cache: get-product",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 38,
+            "y": 46,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 92,
+          "id": 93,
           "type": "timeseries",
           "title": "Inserts Rate",
           "datasource": {
@@ -4107,7 +4162,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 39,
+            "y": 47,
             "w": 12,
             "h": 8
           },
@@ -4146,7 +4201,7 @@
           }
         },
         {
-          "id": 93,
+          "id": 94,
           "type": "timeseries",
           "title": "Hits vs Misses",
           "datasource": {
@@ -4155,7 +4210,7 @@
           },
           "gridPos": {
             "x": 12,
-            "y": 39,
+            "y": 47,
             "w": 12,
             "h": 8
           },
@@ -4203,20 +4258,20 @@
           }
         },
         {
-          "id": 94,
+          "id": 95,
           "type": "text",
           "title": "Node: get-recommendations",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 47,
+            "y": 55,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 95,
+          "id": 96,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -4225,7 +4280,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 48,
+            "y": 56,
             "w": 8,
             "h": 8
           },
@@ -4264,7 +4319,7 @@
           }
         },
         {
-          "id": 96,
+          "id": 97,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -4273,7 +4328,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 48,
+            "y": 56,
             "w": 8,
             "h": 8
           },
@@ -4339,7 +4394,7 @@
           }
         },
         {
-          "id": 97,
+          "id": 98,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -4348,7 +4403,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 48,
+            "y": 56,
             "w": 8,
             "h": 8
           },
@@ -4390,20 +4445,20 @@
           }
         },
         {
-          "id": 98,
+          "id": 99,
           "type": "text",
           "title": "Node: get-user",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 56,
+            "y": 64,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 99,
+          "id": 100,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -4412,7 +4467,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 57,
+            "y": 65,
             "w": 8,
             "h": 8
           },
@@ -4451,7 +4506,7 @@
           }
         },
         {
-          "id": 100,
+          "id": 101,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -4460,7 +4515,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 57,
+            "y": 65,
             "w": 8,
             "h": 8
           },
@@ -4526,7 +4581,7 @@
           }
         },
         {
-          "id": 101,
+          "id": 102,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -4535,7 +4590,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 57,
+            "y": 65,
             "w": 8,
             "h": 8
           },
@@ -4577,20 +4632,20 @@
           }
         },
         {
-          "id": 102,
+          "id": 103,
           "type": "text",
           "title": "Node: input",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 65,
+            "y": 73,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 103,
+          "id": 104,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -4599,7 +4654,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 66,
+            "y": 74,
             "w": 8,
             "h": 8
           },
@@ -4638,7 +4693,7 @@
           }
         },
         {
-          "id": 104,
+          "id": 105,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -4647,7 +4702,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 66,
+            "y": 74,
             "w": 8,
             "h": 8
           },
@@ -4713,7 +4768,7 @@
           }
         },
         {
-          "id": 105,
+          "id": 106,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -4722,7 +4777,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 66,
+            "y": 74,
             "w": 8,
             "h": 8
           },
@@ -4764,20 +4819,20 @@
           }
         },
         {
-          "id": 106,
+          "id": 107,
           "type": "text",
           "title": "Node: list-recommended-products",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 74,
+            "y": 82,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 107,
+          "id": 108,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -4786,7 +4841,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 75,
+            "y": 83,
             "w": 8,
             "h": 8
           },
@@ -4825,7 +4880,7 @@
           }
         },
         {
-          "id": 108,
+          "id": 109,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -4834,7 +4889,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 75,
+            "y": 83,
             "w": 8,
             "h": 8
           },
@@ -4900,7 +4955,7 @@
           }
         },
         {
-          "id": 109,
+          "id": 110,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -4909,7 +4964,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 75,
+            "y": 83,
             "w": 8,
             "h": 8
           },
@@ -4951,20 +5006,20 @@
           }
         },
         {
-          "id": 110,
+          "id": 111,
           "type": "text",
           "title": "Node: render",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 83,
+            "y": 91,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 111,
+          "id": 112,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -4973,7 +5028,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 84,
+            "y": 92,
             "w": 8,
             "h": 8
           },
@@ -5012,7 +5067,7 @@
           }
         },
         {
-          "id": 112,
+          "id": 113,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -5021,7 +5076,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 84,
+            "y": 92,
             "w": 8,
             "h": 8
           },
@@ -5087,7 +5142,7 @@
           }
         },
         {
-          "id": 113,
+          "id": 114,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -5096,7 +5151,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 84,
+            "y": 92,
             "w": 8,
             "h": 8
           },
@@ -5140,19 +5195,19 @@
       ]
     },
     {
-      "id": 114,
+      "id": 115,
       "type": "row",
       "title": "shop / remove_from_cart",
       "collapsed": true,
       "gridPos": {
         "x": 0,
-        "y": 13,
+        "y": 21,
         "w": 24,
         "h": 1
       },
       "panels": [
         {
-          "id": 115,
+          "id": 116,
           "type": "timeseries",
           "title": "HTTP RPS",
           "datasource": {
@@ -5161,7 +5216,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 14,
+            "y": 22,
             "w": 8,
             "h": 8
           },
@@ -5200,7 +5255,7 @@
           }
         },
         {
-          "id": 116,
+          "id": 117,
           "type": "timeseries",
           "title": "HTTP latency",
           "datasource": {
@@ -5209,7 +5264,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 14,
+            "y": 22,
             "w": 8,
             "h": 8
           },
@@ -5248,7 +5303,7 @@
           }
         },
         {
-          "id": 117,
+          "id": 118,
           "type": "timeseries",
           "title": "HTTP error ratio",
           "datasource": {
@@ -5257,7 +5312,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 14,
+            "y": 22,
             "w": 8,
             "h": 8
           },
@@ -5299,7 +5354,7 @@
           }
         },
         {
-          "id": 118,
+          "id": 119,
           "type": "timeseries",
           "title": "All Nodes RPS",
           "datasource": {
@@ -5308,7 +5363,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 22,
+            "y": 30,
             "w": 8,
             "h": 8
           },
@@ -5347,7 +5402,7 @@
           }
         },
         {
-          "id": 119,
+          "id": 120,
           "type": "timeseries",
           "title": "All Nodes Latency",
           "datasource": {
@@ -5356,7 +5411,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 22,
+            "y": 30,
             "w": 8,
             "h": 8
           },
@@ -5395,7 +5450,7 @@
           }
         },
         {
-          "id": 120,
+          "id": 121,
           "type": "timeseries",
           "title": "All Nodes Error Ratio",
           "datasource": {
@@ -5404,7 +5459,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 22,
+            "y": 30,
             "w": 8,
             "h": 8
           },
@@ -5446,20 +5501,20 @@
           }
         },
         {
-          "id": 121,
+          "id": 122,
           "type": "text",
           "title": "Node: boom",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 30,
+            "y": 38,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 122,
+          "id": 123,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -5468,7 +5523,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 31,
+            "y": 39,
             "w": 8,
             "h": 8
           },
@@ -5507,7 +5562,7 @@
           }
         },
         {
-          "id": 123,
+          "id": 124,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -5516,7 +5571,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 31,
+            "y": 39,
             "w": 8,
             "h": 8
           },
@@ -5582,7 +5637,7 @@
           }
         },
         {
-          "id": 124,
+          "id": 125,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -5591,7 +5646,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 31,
+            "y": 39,
             "w": 8,
             "h": 8
           },
@@ -5633,20 +5688,20 @@
           }
         },
         {
-          "id": 125,
+          "id": 126,
           "type": "text",
           "title": "Node: input",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 39,
+            "y": 47,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 126,
+          "id": 127,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -5655,7 +5710,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 40,
+            "y": 48,
             "w": 8,
             "h": 8
           },
@@ -5694,7 +5749,7 @@
           }
         },
         {
-          "id": 127,
+          "id": 128,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -5703,7 +5758,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 40,
+            "y": 48,
             "w": 8,
             "h": 8
           },
@@ -5769,7 +5824,7 @@
           }
         },
         {
-          "id": 128,
+          "id": 129,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -5778,7 +5833,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 40,
+            "y": 48,
             "w": 8,
             "h": 8
           },
@@ -5820,20 +5875,20 @@
           }
         },
         {
-          "id": 129,
+          "id": 130,
           "type": "text",
           "title": "Node: remove-cart-item",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 48,
+            "y": 56,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 130,
+          "id": 131,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -5842,7 +5897,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 49,
+            "y": 57,
             "w": 8,
             "h": 8
           },
@@ -5881,7 +5936,7 @@
           }
         },
         {
-          "id": 131,
+          "id": 132,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -5890,7 +5945,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 49,
+            "y": 57,
             "w": 8,
             "h": 8
           },
@@ -5956,7 +6011,7 @@
           }
         },
         {
-          "id": 132,
+          "id": 133,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -5965,7 +6020,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 49,
+            "y": 57,
             "w": 8,
             "h": 8
           },
@@ -6007,20 +6062,20 @@
           }
         },
         {
-          "id": 133,
+          "id": 134,
           "type": "text",
           "title": "Node: validate-product",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 57,
+            "y": 65,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 134,
+          "id": 135,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -6029,7 +6084,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 58,
+            "y": 66,
             "w": 8,
             "h": 8
           },
@@ -6068,7 +6123,7 @@
           }
         },
         {
-          "id": 135,
+          "id": 136,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -6077,7 +6132,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 58,
+            "y": 66,
             "w": 8,
             "h": 8
           },
@@ -6143,7 +6198,7 @@
           }
         },
         {
-          "id": 136,
+          "id": 137,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -6152,7 +6207,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 58,
+            "y": 66,
             "w": 8,
             "h": 8
           },
@@ -6194,20 +6249,20 @@
           }
         },
         {
-          "id": 137,
+          "id": 138,
           "type": "text",
           "title": "Node: validate-user",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 66,
+            "y": 74,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 138,
+          "id": 139,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -6216,7 +6271,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 67,
+            "y": 75,
             "w": 8,
             "h": 8
           },
@@ -6255,7 +6310,7 @@
           }
         },
         {
-          "id": 139,
+          "id": 140,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -6264,7 +6319,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 67,
+            "y": 75,
             "w": 8,
             "h": 8
           },
@@ -6330,7 +6385,7 @@
           }
         },
         {
-          "id": 140,
+          "id": 141,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -6339,7 +6394,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 67,
+            "y": 75,
             "w": 8,
             "h": 8
           },
@@ -6383,19 +6438,19 @@
       ]
     },
     {
-      "id": 141,
+      "id": 142,
       "type": "row",
       "title": "shop / user_profile",
       "collapsed": true,
       "gridPos": {
         "x": 0,
-        "y": 14,
+        "y": 22,
         "w": 24,
         "h": 1
       },
       "panels": [
         {
-          "id": 142,
+          "id": 143,
           "type": "timeseries",
           "title": "HTTP RPS",
           "datasource": {
@@ -6404,7 +6459,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 15,
+            "y": 23,
             "w": 8,
             "h": 8
           },
@@ -6443,7 +6498,7 @@
           }
         },
         {
-          "id": 143,
+          "id": 144,
           "type": "timeseries",
           "title": "HTTP latency",
           "datasource": {
@@ -6452,7 +6507,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 15,
+            "y": 23,
             "w": 8,
             "h": 8
           },
@@ -6491,7 +6546,7 @@
           }
         },
         {
-          "id": 144,
+          "id": 145,
           "type": "timeseries",
           "title": "HTTP error ratio",
           "datasource": {
@@ -6500,7 +6555,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 15,
+            "y": 23,
             "w": 8,
             "h": 8
           },
@@ -6542,7 +6597,7 @@
           }
         },
         {
-          "id": 145,
+          "id": 146,
           "type": "timeseries",
           "title": "All Nodes RPS",
           "datasource": {
@@ -6551,7 +6606,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 23,
+            "y": 31,
             "w": 8,
             "h": 8
           },
@@ -6590,7 +6645,7 @@
           }
         },
         {
-          "id": 146,
+          "id": 147,
           "type": "timeseries",
           "title": "All Nodes Latency",
           "datasource": {
@@ -6599,7 +6654,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 23,
+            "y": 31,
             "w": 8,
             "h": 8
           },
@@ -6638,7 +6693,7 @@
           }
         },
         {
-          "id": 147,
+          "id": 148,
           "type": "timeseries",
           "title": "All Nodes Error Ratio",
           "datasource": {
@@ -6647,7 +6702,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 23,
+            "y": 31,
             "w": 8,
             "h": 8
           },
@@ -6689,20 +6744,20 @@
           }
         },
         {
-          "id": 148,
+          "id": 149,
           "type": "text",
           "title": "Node: get-user",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 31,
+            "y": 39,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 149,
+          "id": 150,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -6711,7 +6766,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 32,
+            "y": 40,
             "w": 8,
             "h": 8
           },
@@ -6750,7 +6805,7 @@
           }
         },
         {
-          "id": 150,
+          "id": 151,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -6759,7 +6814,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 32,
+            "y": 40,
             "w": 8,
             "h": 8
           },
@@ -6825,7 +6880,7 @@
           }
         },
         {
-          "id": 151,
+          "id": 152,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -6834,7 +6889,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 32,
+            "y": 40,
             "w": 8,
             "h": 8
           },
@@ -6876,20 +6931,20 @@
           }
         },
         {
-          "id": 152,
+          "id": 153,
           "type": "text",
           "title": "Node: input",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 40,
+            "y": 48,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 153,
+          "id": 154,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -6898,7 +6953,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 41,
+            "y": 49,
             "w": 8,
             "h": 8
           },
@@ -6937,7 +6992,7 @@
           }
         },
         {
-          "id": 154,
+          "id": 155,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -6946,7 +7001,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 41,
+            "y": 49,
             "w": 8,
             "h": 8
           },
@@ -7012,7 +7067,7 @@
           }
         },
         {
-          "id": 155,
+          "id": 156,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -7021,7 +7076,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 41,
+            "y": 49,
             "w": 8,
             "h": 8
           },
@@ -7063,20 +7118,20 @@
           }
         },
         {
-          "id": 156,
+          "id": 157,
           "type": "text",
           "title": "Node: render",
           "collapsed": false,
           "gridPos": {
             "x": 0,
-            "y": 49,
+            "y": 57,
             "w": 24,
             "h": 1
           },
           "panels": []
         },
         {
-          "id": 157,
+          "id": 158,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -7085,7 +7140,7 @@
           },
           "gridPos": {
             "x": 0,
-            "y": 50,
+            "y": 58,
             "w": 8,
             "h": 8
           },
@@ -7124,7 +7179,7 @@
           }
         },
         {
-          "id": 158,
+          "id": 159,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -7133,7 +7188,7 @@
           },
           "gridPos": {
             "x": 8,
-            "y": 50,
+            "y": 58,
             "w": 8,
             "h": 8
           },
@@ -7199,7 +7254,7 @@
           }
         },
         {
-          "id": 159,
+          "id": 160,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -7208,7 +7263,7 @@
           },
           "gridPos": {
             "x": 16,
-            "y": 50,
+            "y": 58,
             "w": 8,
             "h": 8
           },
@@ -7256,7 +7311,8 @@
   "schemaVersion": 39,
   "tags": [
     "shortcut",
-    "generated"
+    "generated",
+    "docker-compose"
   ],
   "templating": {
     "list": [
@@ -7292,44 +7348,6 @@
         "sort": 1
       },
       {
-        "name": "k8s_namespace",
-        "type": "query",
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
-        "query": "label_values(kube_pod_info, namespace)",
-        "refresh": 2,
-        "includeAll": true,
-        "allValue": ".*",
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
-        "hide": 0,
-        "label": "k8s namespace",
-        "sort": 1
-      },
-      {
-        "name": "pod",
-        "type": "query",
-        "datasource": {
-          "type": "prometheus",
-          "uid": "${datasource}"
-        },
-        "query": "label_values(kube_pod_info{namespace=~\"$k8s_namespace\"}, pod)",
-        "refresh": 2,
-        "includeAll": true,
-        "allValue": ".*",
-        "current": {
-          "text": "All",
-          "value": "$__all"
-        },
-        "hide": 0,
-        "label": "Pod",
-        "sort": 1
-      },
-      {
         "name": "path",
         "type": "query",
         "datasource": {
@@ -7356,7 +7374,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Shortcut",
-  "uid": "shortcut-overview",
+  "title": "Shortcut (Docker Compose)",
+  "uid": "shortcut-docker-compose",
   "weekStart": ""
 }
