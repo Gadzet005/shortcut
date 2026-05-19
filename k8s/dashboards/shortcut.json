@@ -71,7 +71,7 @@
         {
           "id": 3,
           "type": "timeseries",
-          "title": "Memory working set by pod",
+          "title": "Memory by pod",
           "datasource": {
             "type": "prometheus",
             "uid": "Prometheus"
@@ -181,7 +181,7 @@
         {
           "id": 6,
           "type": "timeseries",
-          "title": "HTTP p95 latency",
+          "title": "HTTP latency",
           "datasource": {
             "type": "prometheus",
             "uid": "Prometheus"
@@ -328,7 +328,7 @@
         {
           "id": 9,
           "type": "timeseries",
-          "title": "All Nodes p95 Latency",
+          "title": "All Nodes Latency",
           "datasource": {
             "type": "prometheus",
             "uid": "Prometheus"
@@ -1237,7 +1237,7 @@
         {
           "id": 29,
           "type": "timeseries",
-          "title": "HTTP p95 latency",
+          "title": "HTTP latency",
           "datasource": {
             "type": "prometheus",
             "uid": "Prometheus"
@@ -1384,7 +1384,7 @@
         {
           "id": 32,
           "type": "timeseries",
-          "title": "All Nodes p95 Latency",
+          "title": "All Nodes Latency",
           "datasource": {
             "type": "prometheus",
             "uid": "Prometheus"
@@ -2293,7 +2293,7 @@
         {
           "id": 52,
           "type": "timeseries",
-          "title": "HTTP p95 latency",
+          "title": "HTTP latency",
           "datasource": {
             "type": "prometheus",
             "uid": "Prometheus"
@@ -2440,7 +2440,7 @@
         {
           "id": 55,
           "type": "timeseries",
-          "title": "All Nodes p95 Latency",
+          "title": "All Nodes Latency",
           "datasource": {
             "type": "prometheus",
             "uid": "Prometheus"
@@ -3654,7 +3654,7 @@
         {
           "id": 82,
           "type": "timeseries",
-          "title": "HTTP p95 latency",
+          "title": "HTTP latency",
           "datasource": {
             "type": "prometheus",
             "uid": "Prometheus"
@@ -3801,7 +3801,7 @@
         {
           "id": 85,
           "type": "timeseries",
-          "title": "All Nodes p95 Latency",
+          "title": "All Nodes Latency",
           "datasource": {
             "type": "prometheus",
             "uid": "Prometheus"
@@ -5202,7 +5202,7 @@
         {
           "id": 116,
           "type": "timeseries",
-          "title": "HTTP p95 latency",
+          "title": "HTTP latency",
           "datasource": {
             "type": "prometheus",
             "uid": "Prometheus"
@@ -5349,7 +5349,7 @@
         {
           "id": 119,
           "type": "timeseries",
-          "title": "All Nodes p95 Latency",
+          "title": "All Nodes Latency",
           "datasource": {
             "type": "prometheus",
             "uid": "Prometheus"
@@ -6445,7 +6445,7 @@
         {
           "id": 143,
           "type": "timeseries",
-          "title": "HTTP p95 latency",
+          "title": "HTTP latency",
           "datasource": {
             "type": "prometheus",
             "uid": "Prometheus"
@@ -6592,7 +6592,7 @@
         {
           "id": 146,
           "type": "timeseries",
-          "title": "All Nodes p95 Latency",
+          "title": "All Nodes Latency",
           "datasource": {
             "type": "prometheus",
             "uid": "Prometheus"
