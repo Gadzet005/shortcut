@@ -181,7 +181,7 @@ def cluster_resources_row_k8s(*, datasource: str, panel_id_start: int) -> tuple[
     row = {
         "id": panel_id_start,
         "type": "row",
-        "title": "Cluster resources (K8s)",
+        "title": "Cluster resources",
         "collapsed": False,
         "gridPos": {"x": 0, "y": 0, "w": PANELS_PER_ROW, "h": 1},
         "panels": [],
@@ -219,7 +219,7 @@ def cluster_resources_row_docker_compose(*, datasource: str, panel_id_start: int
     row = {
         "id": panel_id_start,
         "type": "row",
-        "title": "Host resources (Docker Compose)",
+        "title": "Host resources",
         "collapsed": False,
         "gridPos": {"x": 0, "y": 0, "w": PANELS_PER_ROW, "h": 1},
         "panels": [],
@@ -251,18 +251,7 @@ def cluster_resources_row_docker_compose(*, datasource: str, panel_id_start: int
     mem_panel["fieldConfig"]["defaults"]["min"] = 0
     mem_panel["fieldConfig"]["defaults"]["max"] = 100
     
-    load_expr = 'node_load1'
-    load_panel = panel_timeseries(
-        panel_id=panel_id_start + 3,
-        title="Load Average (1m)",
-        datasource=datasource,
-        queries=[target(load_expr, ref_id="A", legend="Load 1m")],
-        unit="none",
-        grid={"x": 0, "y": 1 + PANEL_HEIGHT, "w": 24, "h": PANEL_HEIGHT},
-        decimals=2,
-    )
-    
-    return row, [cpu_panel, mem_panel, load_panel], panel_id_start + 4
+    return row, [cpu_panel, mem_panel], panel_id_start + 3
 
 
 def add_node_section(*, panels: list, node: NodeInfo, graph: Graph, datasource: str, service: str, next_id: int, y_base: int) -> tuple[int, int]:
@@ -620,13 +609,13 @@ def build_dashboard_k8s(graphs: list[Graph], *, datasource: str, service: str) -
         "panels": panels,
         "refresh": "30s",
         "schemaVersion": 39,
-        "tags": ["shortcut", "generated", "kubernetes"],
+        "tags": ["shortcut", "generated"],
         "templating": templating,
         "time": {"from": "now-1h", "to": "now"},
         "timepicker": {},
         "timezone": "",
-        "title": "Shortcut (K8s)",
-        "uid": "shortcut-k8s",
+        "title": "Shortcut",
+        "uid": "shortcut",
         "weekStart": "",
     }
 
@@ -701,13 +690,13 @@ def build_dashboard_docker_compose(graphs: list[Graph], *, datasource: str, serv
         "panels": panels,
         "refresh": "30s",
         "schemaVersion": 39,
-        "tags": ["shortcut", "generated", "docker-compose"],
+        "tags": ["shortcut", "generated"],
         "templating": templating,
         "time": {"from": "now-1h", "to": "now"},
         "timepicker": {},
         "timezone": "",
-        "title": "Shortcut (Docker Compose)",
-        "uid": "shortcut-docker-compose",
+        "title": "Shortcut",
+        "uid": "shortcut",
         "weekStart": "",
     }
 

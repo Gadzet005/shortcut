@@ -11,7 +11,7 @@
     {
       "id": 1,
       "type": "row",
-      "title": "Host resources (Docker Compose)",
+      "title": "Host resources",
       "collapsed": false,
       "gridPos": {
         "x": 0,
@@ -121,60 +121,11 @@
               "sort": "desc"
             }
           }
-        },
-        {
-          "id": 4,
-          "type": "timeseries",
-          "title": "Load Average (1m)",
-          "datasource": {
-            "type": "prometheus",
-            "uid": "Prometheus"
-          },
-          "gridPos": {
-            "x": 0,
-            "y": 9,
-            "w": 24,
-            "h": 8
-          },
-          "targets": [
-            {
-              "refId": "A",
-              "expr": "node_load1",
-              "legendFormat": "Load 1m",
-              "datasource": {
-                "type": "prometheus",
-                "uid": "${datasource}"
-              }
-            }
-          ],
-          "fieldConfig": {
-            "defaults": {
-              "custom": {
-                "drawStyle": "line",
-                "fillOpacity": 10,
-                "lineWidth": 1
-              },
-              "unit": "none",
-              "decimals": 2
-            },
-            "overrides": []
-          },
-          "options": {
-            "legend": {
-              "displayMode": "list",
-              "placement": "bottom",
-              "showLegend": true
-            },
-            "tooltip": {
-              "mode": "multi",
-              "sort": "desc"
-            }
-          }
         }
       ]
     },
     {
-      "id": 5,
+      "id": 4,
       "type": "row",
       "title": "shop / add_to_cart",
       "collapsed": true,
@@ -186,7 +137,7 @@
       },
       "panels": [
         {
-          "id": 6,
+          "id": 5,
           "type": "timeseries",
           "title": "HTTP RPS",
           "datasource": {
@@ -234,7 +185,7 @@
           }
         },
         {
-          "id": 7,
+          "id": 6,
           "type": "timeseries",
           "title": "HTTP latency",
           "datasource": {
@@ -282,7 +233,7 @@
           }
         },
         {
-          "id": 8,
+          "id": 7,
           "type": "timeseries",
           "title": "HTTP error ratio",
           "datasource": {
@@ -333,7 +284,7 @@
           }
         },
         {
-          "id": 9,
+          "id": 8,
           "type": "timeseries",
           "title": "All Nodes RPS",
           "datasource": {
@@ -381,7 +332,7 @@
           }
         },
         {
-          "id": 10,
+          "id": 9,
           "type": "timeseries",
           "title": "All Nodes Latency",
           "datasource": {
@@ -429,7 +380,7 @@
           }
         },
         {
-          "id": 11,
+          "id": 10,
           "type": "timeseries",
           "title": "All Nodes Error Ratio",
           "datasource": {
@@ -480,7 +431,7 @@
           }
         },
         {
-          "id": 12,
+          "id": 11,
           "type": "text",
           "title": "Node: add-cart-item",
           "collapsed": false,
@@ -493,7 +444,7 @@
           "panels": []
         },
         {
-          "id": 13,
+          "id": 12,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -541,7 +492,7 @@
           }
         },
         {
-          "id": 14,
+          "id": 13,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -616,7 +567,7 @@
           }
         },
         {
-          "id": 15,
+          "id": 14,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -667,7 +618,7 @@
           }
         },
         {
-          "id": 16,
+          "id": 15,
           "type": "text",
           "title": "Node: input",
           "collapsed": false,
@@ -680,7 +631,7 @@
           "panels": []
         },
         {
-          "id": 17,
+          "id": 16,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -728,7 +679,7 @@
           }
         },
         {
-          "id": 18,
+          "id": 17,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -803,7 +754,7 @@
           }
         },
         {
-          "id": 19,
+          "id": 18,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -854,7 +805,7 @@
           }
         },
         {
-          "id": 20,
+          "id": 19,
           "type": "text",
           "title": "Node: validate-product",
           "collapsed": false,
@@ -867,7 +818,7 @@
           "panels": []
         },
         {
-          "id": 21,
+          "id": 20,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -915,7 +866,7 @@
           }
         },
         {
-          "id": 22,
+          "id": 21,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -990,7 +941,7 @@
           }
         },
         {
-          "id": 23,
+          "id": 22,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -1041,7 +992,7 @@
           }
         },
         {
-          "id": 24,
+          "id": 23,
           "type": "text",
           "title": "Node: validate-user",
           "collapsed": false,
@@ -1054,7 +1005,7 @@
           "panels": []
         },
         {
-          "id": 25,
+          "id": 24,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -1102,7 +1053,7 @@
           }
         },
         {
-          "id": 26,
+          "id": 25,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -1177,7 +1128,7 @@
           }
         },
         {
-          "id": 27,
+          "id": 26,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -1230,7 +1181,7 @@
       ]
     },
     {
-      "id": 28,
+      "id": 27,
       "type": "row",
       "title": "shop / get_cart",
       "collapsed": true,
@@ -1242,7 +1193,7 @@
       },
       "panels": [
         {
-          "id": 29,
+          "id": 28,
           "type": "timeseries",
           "title": "HTTP RPS",
           "datasource": {
@@ -1290,7 +1241,7 @@
           }
         },
         {
-          "id": 30,
+          "id": 29,
           "type": "timeseries",
           "title": "HTTP latency",
           "datasource": {
@@ -1338,7 +1289,7 @@
           }
         },
         {
-          "id": 31,
+          "id": 30,
           "type": "timeseries",
           "title": "HTTP error ratio",
           "datasource": {
@@ -1389,7 +1340,7 @@
           }
         },
         {
-          "id": 32,
+          "id": 31,
           "type": "timeseries",
           "title": "All Nodes RPS",
           "datasource": {
@@ -1437,7 +1388,7 @@
           }
         },
         {
-          "id": 33,
+          "id": 32,
           "type": "timeseries",
           "title": "All Nodes Latency",
           "datasource": {
@@ -1485,7 +1436,7 @@
           }
         },
         {
-          "id": 34,
+          "id": 33,
           "type": "timeseries",
           "title": "All Nodes Error Ratio",
           "datasource": {
@@ -1536,7 +1487,7 @@
           }
         },
         {
-          "id": 35,
+          "id": 34,
           "type": "text",
           "title": "Node: get-cart",
           "collapsed": false,
@@ -1549,7 +1500,7 @@
           "panels": []
         },
         {
-          "id": 36,
+          "id": 35,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -1597,7 +1548,7 @@
           }
         },
         {
-          "id": 37,
+          "id": 36,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -1672,7 +1623,7 @@
           }
         },
         {
-          "id": 38,
+          "id": 37,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -1723,7 +1674,7 @@
           }
         },
         {
-          "id": 39,
+          "id": 38,
           "type": "text",
           "title": "Node: input",
           "collapsed": false,
@@ -1736,7 +1687,7 @@
           "panels": []
         },
         {
-          "id": 40,
+          "id": 39,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -1784,7 +1735,7 @@
           }
         },
         {
-          "id": 41,
+          "id": 40,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -1859,7 +1810,7 @@
           }
         },
         {
-          "id": 42,
+          "id": 41,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -1910,7 +1861,7 @@
           }
         },
         {
-          "id": 43,
+          "id": 42,
           "type": "text",
           "title": "Node: list-products",
           "collapsed": false,
@@ -1923,7 +1874,7 @@
           "panels": []
         },
         {
-          "id": 44,
+          "id": 43,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -1971,7 +1922,7 @@
           }
         },
         {
-          "id": 45,
+          "id": 44,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -2046,7 +1997,7 @@
           }
         },
         {
-          "id": 46,
+          "id": 45,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -2097,7 +2048,7 @@
           }
         },
         {
-          "id": 47,
+          "id": 46,
           "type": "text",
           "title": "Node: render",
           "collapsed": false,
@@ -2110,7 +2061,7 @@
           "panels": []
         },
         {
-          "id": 48,
+          "id": 47,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -2158,7 +2109,7 @@
           }
         },
         {
-          "id": 49,
+          "id": 48,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -2233,7 +2184,7 @@
           }
         },
         {
-          "id": 50,
+          "id": 49,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -2286,7 +2237,7 @@
       ]
     },
     {
-      "id": 51,
+      "id": 50,
       "type": "row",
       "title": "shop / product_list",
       "collapsed": true,
@@ -2298,7 +2249,7 @@
       },
       "panels": [
         {
-          "id": 52,
+          "id": 51,
           "type": "timeseries",
           "title": "HTTP RPS",
           "datasource": {
@@ -2346,7 +2297,7 @@
           }
         },
         {
-          "id": 53,
+          "id": 52,
           "type": "timeseries",
           "title": "HTTP latency",
           "datasource": {
@@ -2394,7 +2345,7 @@
           }
         },
         {
-          "id": 54,
+          "id": 53,
           "type": "timeseries",
           "title": "HTTP error ratio",
           "datasource": {
@@ -2445,7 +2396,7 @@
           }
         },
         {
-          "id": 55,
+          "id": 54,
           "type": "timeseries",
           "title": "All Nodes RPS",
           "datasource": {
@@ -2493,7 +2444,7 @@
           }
         },
         {
-          "id": 56,
+          "id": 55,
           "type": "timeseries",
           "title": "All Nodes Latency",
           "datasource": {
@@ -2541,7 +2492,7 @@
           }
         },
         {
-          "id": 57,
+          "id": 56,
           "type": "timeseries",
           "title": "All Nodes Error Ratio",
           "datasource": {
@@ -2592,7 +2543,7 @@
           }
         },
         {
-          "id": 58,
+          "id": 57,
           "type": "text",
           "title": "Node: get-recommendations",
           "collapsed": false,
@@ -2605,7 +2556,7 @@
           "panels": []
         },
         {
-          "id": 59,
+          "id": 58,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -2653,7 +2604,7 @@
           }
         },
         {
-          "id": 60,
+          "id": 59,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -2728,7 +2679,7 @@
           }
         },
         {
-          "id": 61,
+          "id": 60,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -2779,7 +2730,7 @@
           }
         },
         {
-          "id": 62,
+          "id": 61,
           "type": "text",
           "title": "Node: get-user",
           "collapsed": false,
@@ -2792,7 +2743,7 @@
           "panels": []
         },
         {
-          "id": 63,
+          "id": 62,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -2840,7 +2791,7 @@
           }
         },
         {
-          "id": 64,
+          "id": 63,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -2915,7 +2866,7 @@
           }
         },
         {
-          "id": 65,
+          "id": 64,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -2966,7 +2917,7 @@
           }
         },
         {
-          "id": 66,
+          "id": 65,
           "type": "text",
           "title": "Cache: get-user",
           "collapsed": false,
@@ -2979,7 +2930,7 @@
           "panels": []
         },
         {
-          "id": 67,
+          "id": 66,
           "type": "timeseries",
           "title": "Inserts Rate",
           "datasource": {
@@ -3027,7 +2978,7 @@
           }
         },
         {
-          "id": 68,
+          "id": 67,
           "type": "timeseries",
           "title": "Hits vs Misses",
           "datasource": {
@@ -3084,7 +3035,7 @@
           }
         },
         {
-          "id": 69,
+          "id": 68,
           "type": "text",
           "title": "Node: input",
           "collapsed": false,
@@ -3097,7 +3048,7 @@
           "panels": []
         },
         {
-          "id": 70,
+          "id": 69,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -3145,7 +3096,7 @@
           }
         },
         {
-          "id": 71,
+          "id": 70,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -3220,7 +3171,7 @@
           }
         },
         {
-          "id": 72,
+          "id": 71,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -3271,7 +3222,7 @@
           }
         },
         {
-          "id": 73,
+          "id": 72,
           "type": "text",
           "title": "Node: list-products",
           "collapsed": false,
@@ -3284,7 +3235,7 @@
           "panels": []
         },
         {
-          "id": 74,
+          "id": 73,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -3332,7 +3283,7 @@
           }
         },
         {
-          "id": 75,
+          "id": 74,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -3407,7 +3358,7 @@
           }
         },
         {
-          "id": 76,
+          "id": 75,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -3458,7 +3409,7 @@
           }
         },
         {
-          "id": 77,
+          "id": 76,
           "type": "text",
           "title": "Node: render",
           "collapsed": false,
@@ -3471,7 +3422,7 @@
           "panels": []
         },
         {
-          "id": 78,
+          "id": 77,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -3519,7 +3470,7 @@
           }
         },
         {
-          "id": 79,
+          "id": 78,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -3594,7 +3545,7 @@
           }
         },
         {
-          "id": 80,
+          "id": 79,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -3647,7 +3598,7 @@
       ]
     },
     {
-      "id": 81,
+      "id": 80,
       "type": "row",
       "title": "shop / product_page",
       "collapsed": true,
@@ -3659,7 +3610,7 @@
       },
       "panels": [
         {
-          "id": 82,
+          "id": 81,
           "type": "timeseries",
           "title": "HTTP RPS",
           "datasource": {
@@ -3707,7 +3658,7 @@
           }
         },
         {
-          "id": 83,
+          "id": 82,
           "type": "timeseries",
           "title": "HTTP latency",
           "datasource": {
@@ -3755,7 +3706,7 @@
           }
         },
         {
-          "id": 84,
+          "id": 83,
           "type": "timeseries",
           "title": "HTTP error ratio",
           "datasource": {
@@ -3806,7 +3757,7 @@
           }
         },
         {
-          "id": 85,
+          "id": 84,
           "type": "timeseries",
           "title": "All Nodes RPS",
           "datasource": {
@@ -3854,7 +3805,7 @@
           }
         },
         {
-          "id": 86,
+          "id": 85,
           "type": "timeseries",
           "title": "All Nodes Latency",
           "datasource": {
@@ -3902,7 +3853,7 @@
           }
         },
         {
-          "id": 87,
+          "id": 86,
           "type": "timeseries",
           "title": "All Nodes Error Ratio",
           "datasource": {
@@ -3953,7 +3904,7 @@
           }
         },
         {
-          "id": 88,
+          "id": 87,
           "type": "text",
           "title": "Node: get-product",
           "collapsed": false,
@@ -3966,7 +3917,7 @@
           "panels": []
         },
         {
-          "id": 89,
+          "id": 88,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -4014,7 +3965,7 @@
           }
         },
         {
-          "id": 90,
+          "id": 89,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -4089,7 +4040,7 @@
           }
         },
         {
-          "id": 91,
+          "id": 90,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -4140,7 +4091,7 @@
           }
         },
         {
-          "id": 92,
+          "id": 91,
           "type": "text",
           "title": "Cache: get-product",
           "collapsed": false,
@@ -4153,7 +4104,7 @@
           "panels": []
         },
         {
-          "id": 93,
+          "id": 92,
           "type": "timeseries",
           "title": "Inserts Rate",
           "datasource": {
@@ -4201,7 +4152,7 @@
           }
         },
         {
-          "id": 94,
+          "id": 93,
           "type": "timeseries",
           "title": "Hits vs Misses",
           "datasource": {
@@ -4258,7 +4209,7 @@
           }
         },
         {
-          "id": 95,
+          "id": 94,
           "type": "text",
           "title": "Node: get-recommendations",
           "collapsed": false,
@@ -4271,7 +4222,7 @@
           "panels": []
         },
         {
-          "id": 96,
+          "id": 95,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -4319,7 +4270,7 @@
           }
         },
         {
-          "id": 97,
+          "id": 96,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -4394,7 +4345,7 @@
           }
         },
         {
-          "id": 98,
+          "id": 97,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -4445,7 +4396,7 @@
           }
         },
         {
-          "id": 99,
+          "id": 98,
           "type": "text",
           "title": "Node: get-user",
           "collapsed": false,
@@ -4458,7 +4409,7 @@
           "panels": []
         },
         {
-          "id": 100,
+          "id": 99,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -4506,7 +4457,7 @@
           }
         },
         {
-          "id": 101,
+          "id": 100,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -4581,7 +4532,7 @@
           }
         },
         {
-          "id": 102,
+          "id": 101,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -4632,7 +4583,7 @@
           }
         },
         {
-          "id": 103,
+          "id": 102,
           "type": "text",
           "title": "Node: input",
           "collapsed": false,
@@ -4645,7 +4596,7 @@
           "panels": []
         },
         {
-          "id": 104,
+          "id": 103,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -4693,7 +4644,7 @@
           }
         },
         {
-          "id": 105,
+          "id": 104,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -4768,7 +4719,7 @@
           }
         },
         {
-          "id": 106,
+          "id": 105,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -4819,7 +4770,7 @@
           }
         },
         {
-          "id": 107,
+          "id": 106,
           "type": "text",
           "title": "Node: list-recommended-products",
           "collapsed": false,
@@ -4832,7 +4783,7 @@
           "panels": []
         },
         {
-          "id": 108,
+          "id": 107,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -4880,7 +4831,7 @@
           }
         },
         {
-          "id": 109,
+          "id": 108,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -4955,7 +4906,7 @@
           }
         },
         {
-          "id": 110,
+          "id": 109,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -5006,7 +4957,7 @@
           }
         },
         {
-          "id": 111,
+          "id": 110,
           "type": "text",
           "title": "Node: render",
           "collapsed": false,
@@ -5019,7 +4970,7 @@
           "panels": []
         },
         {
-          "id": 112,
+          "id": 111,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -5067,7 +5018,7 @@
           }
         },
         {
-          "id": 113,
+          "id": 112,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -5142,7 +5093,7 @@
           }
         },
         {
-          "id": 114,
+          "id": 113,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -5195,7 +5146,7 @@
       ]
     },
     {
-      "id": 115,
+      "id": 114,
       "type": "row",
       "title": "shop / remove_from_cart",
       "collapsed": true,
@@ -5207,7 +5158,7 @@
       },
       "panels": [
         {
-          "id": 116,
+          "id": 115,
           "type": "timeseries",
           "title": "HTTP RPS",
           "datasource": {
@@ -5255,7 +5206,7 @@
           }
         },
         {
-          "id": 117,
+          "id": 116,
           "type": "timeseries",
           "title": "HTTP latency",
           "datasource": {
@@ -5303,7 +5254,7 @@
           }
         },
         {
-          "id": 118,
+          "id": 117,
           "type": "timeseries",
           "title": "HTTP error ratio",
           "datasource": {
@@ -5354,7 +5305,7 @@
           }
         },
         {
-          "id": 119,
+          "id": 118,
           "type": "timeseries",
           "title": "All Nodes RPS",
           "datasource": {
@@ -5402,7 +5353,7 @@
           }
         },
         {
-          "id": 120,
+          "id": 119,
           "type": "timeseries",
           "title": "All Nodes Latency",
           "datasource": {
@@ -5450,7 +5401,7 @@
           }
         },
         {
-          "id": 121,
+          "id": 120,
           "type": "timeseries",
           "title": "All Nodes Error Ratio",
           "datasource": {
@@ -5501,7 +5452,7 @@
           }
         },
         {
-          "id": 122,
+          "id": 121,
           "type": "text",
           "title": "Node: boom",
           "collapsed": false,
@@ -5514,7 +5465,7 @@
           "panels": []
         },
         {
-          "id": 123,
+          "id": 122,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -5562,7 +5513,7 @@
           }
         },
         {
-          "id": 124,
+          "id": 123,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -5637,7 +5588,7 @@
           }
         },
         {
-          "id": 125,
+          "id": 124,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -5688,7 +5639,7 @@
           }
         },
         {
-          "id": 126,
+          "id": 125,
           "type": "text",
           "title": "Node: input",
           "collapsed": false,
@@ -5701,7 +5652,7 @@
           "panels": []
         },
         {
-          "id": 127,
+          "id": 126,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -5749,7 +5700,7 @@
           }
         },
         {
-          "id": 128,
+          "id": 127,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -5824,7 +5775,7 @@
           }
         },
         {
-          "id": 129,
+          "id": 128,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -5875,7 +5826,7 @@
           }
         },
         {
-          "id": 130,
+          "id": 129,
           "type": "text",
           "title": "Node: remove-cart-item",
           "collapsed": false,
@@ -5888,7 +5839,7 @@
           "panels": []
         },
         {
-          "id": 131,
+          "id": 130,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -5936,7 +5887,7 @@
           }
         },
         {
-          "id": 132,
+          "id": 131,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -6011,7 +5962,7 @@
           }
         },
         {
-          "id": 133,
+          "id": 132,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -6062,7 +6013,7 @@
           }
         },
         {
-          "id": 134,
+          "id": 133,
           "type": "text",
           "title": "Node: validate-product",
           "collapsed": false,
@@ -6075,7 +6026,7 @@
           "panels": []
         },
         {
-          "id": 135,
+          "id": 134,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -6123,7 +6074,7 @@
           }
         },
         {
-          "id": 136,
+          "id": 135,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -6198,7 +6149,7 @@
           }
         },
         {
-          "id": 137,
+          "id": 136,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -6249,7 +6200,7 @@
           }
         },
         {
-          "id": 138,
+          "id": 137,
           "type": "text",
           "title": "Node: validate-user",
           "collapsed": false,
@@ -6262,7 +6213,7 @@
           "panels": []
         },
         {
-          "id": 139,
+          "id": 138,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -6310,7 +6261,7 @@
           }
         },
         {
-          "id": 140,
+          "id": 139,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -6385,7 +6336,7 @@
           }
         },
         {
-          "id": 141,
+          "id": 140,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -6438,7 +6389,7 @@
       ]
     },
     {
-      "id": 142,
+      "id": 141,
       "type": "row",
       "title": "shop / user_profile",
       "collapsed": true,
@@ -6450,7 +6401,7 @@
       },
       "panels": [
         {
-          "id": 143,
+          "id": 142,
           "type": "timeseries",
           "title": "HTTP RPS",
           "datasource": {
@@ -6498,7 +6449,7 @@
           }
         },
         {
-          "id": 144,
+          "id": 143,
           "type": "timeseries",
           "title": "HTTP latency",
           "datasource": {
@@ -6546,7 +6497,7 @@
           }
         },
         {
-          "id": 145,
+          "id": 144,
           "type": "timeseries",
           "title": "HTTP error ratio",
           "datasource": {
@@ -6597,7 +6548,7 @@
           }
         },
         {
-          "id": 146,
+          "id": 145,
           "type": "timeseries",
           "title": "All Nodes RPS",
           "datasource": {
@@ -6645,7 +6596,7 @@
           }
         },
         {
-          "id": 147,
+          "id": 146,
           "type": "timeseries",
           "title": "All Nodes Latency",
           "datasource": {
@@ -6693,7 +6644,7 @@
           }
         },
         {
-          "id": 148,
+          "id": 147,
           "type": "timeseries",
           "title": "All Nodes Error Ratio",
           "datasource": {
@@ -6744,7 +6695,7 @@
           }
         },
         {
-          "id": 149,
+          "id": 148,
           "type": "text",
           "title": "Node: get-user",
           "collapsed": false,
@@ -6757,7 +6708,7 @@
           "panels": []
         },
         {
-          "id": 150,
+          "id": 149,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -6805,7 +6756,7 @@
           }
         },
         {
-          "id": 151,
+          "id": 150,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -6880,7 +6831,7 @@
           }
         },
         {
-          "id": 152,
+          "id": 151,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -6931,7 +6882,7 @@
           }
         },
         {
-          "id": 153,
+          "id": 152,
           "type": "text",
           "title": "Node: input",
           "collapsed": false,
@@ -6944,7 +6895,7 @@
           "panels": []
         },
         {
-          "id": 154,
+          "id": 153,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -6992,7 +6943,7 @@
           }
         },
         {
-          "id": 155,
+          "id": 154,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -7067,7 +7018,7 @@
           }
         },
         {
-          "id": 156,
+          "id": 155,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -7118,7 +7069,7 @@
           }
         },
         {
-          "id": 157,
+          "id": 156,
           "type": "text",
           "title": "Node: render",
           "collapsed": false,
@@ -7131,7 +7082,7 @@
           "panels": []
         },
         {
-          "id": 158,
+          "id": 157,
           "type": "timeseries",
           "title": "RPS",
           "datasource": {
@@ -7179,7 +7130,7 @@
           }
         },
         {
-          "id": 159,
+          "id": 158,
           "type": "timeseries",
           "title": "Latency",
           "datasource": {
@@ -7254,7 +7205,7 @@
           }
         },
         {
-          "id": 160,
+          "id": 159,
           "type": "timeseries",
           "title": "Error Ratio",
           "datasource": {
@@ -7311,8 +7262,7 @@
   "schemaVersion": 39,
   "tags": [
     "shortcut",
-    "generated",
-    "docker-compose"
+    "generated"
   ],
   "templating": {
     "list": [
@@ -7374,7 +7324,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Shortcut (Docker Compose)",
-  "uid": "shortcut-docker-compose",
+  "title": "Shortcut",
+  "uid": "shortcut",
   "weekStart": ""
 }
