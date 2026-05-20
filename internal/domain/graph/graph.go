@@ -132,7 +132,6 @@ func (g graph) Run(
 		if res.err != nil {
 			if firstErr == nil {
 				firstErr = res.err
-				cancel()
 			}
 			continue
 		}
