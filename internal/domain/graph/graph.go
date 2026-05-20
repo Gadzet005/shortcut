@@ -144,7 +144,6 @@ func (g graph) Run(
 					zap.Error(res.err),
 				)
 				firstErr = res.err
-				cancel()
 			}
 			continue
 		}
